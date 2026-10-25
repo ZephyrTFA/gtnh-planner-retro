@@ -65,5 +65,7 @@ a shard diff (`~/cmp-field.js`). The 2.9 export in WSL is such a graft.
   chances replayed in `eec-drops.mjs`). Sparge Tower rolled outputs and fusion startup EU
   are per-recipe export fields; `sparge-byproducts.mjs` appends rolled slots AFTER the
   exported ones so recipe ids stay stable.
+- An item input's chance (`inputChance`, out of 10000) becomes `amount` x chance plus `consumeChance`; the recipe id
+  hashes the whole stack, so it keeps the id an export without the chance gave it.
 - Faint fluid icons: repair only captures under 20% mean opacity, starting from the
   original PNGs (`normalize-fluid-icon-alpha.mjs`).
