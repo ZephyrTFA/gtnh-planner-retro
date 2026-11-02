@@ -119,7 +119,13 @@ await normalizeFluidIconAlpha(outDir);
 // icons become content-hashed sprite sheets and every index and shard points
 // into them; recipes.json keeps its paths (it is pipeline input, never served).
 console.log(`Packing icon sheets for ${versionId}.`);
-await runNodeStep("Icon sheet packing", ["tools/dataset-pipeline/scripts/build-icon-sheets.mjs", outDir]);
+await runNodeStep("Icon sheet packing", [
+  "tools/dataset-pipeline/scripts/build-icon-sheets.mjs",
+  outDir,
+  // Mod textures named by asset hint (the aspects other mods add) come from the pack's jars.
+  "--assets",
+  path.join(serverInstanceDir, "pack"),
+]);
 
 const compressedRecipeDatasetPath = `${recipeDatasetPath}.gz`;
 const uncompressedSizeBytes = (await fs.stat(recipeDatasetPath)).size;

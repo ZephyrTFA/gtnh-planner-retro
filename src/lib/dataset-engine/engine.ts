@@ -77,12 +77,12 @@ interface LoadedRecipeIndex {
   resources: DatasetResource[];
   resourceIndex: DatasetResourceIndexEntry[];
   /** Cached made-by/used-by recipe counts per `kind:id`, from the lookup index. */
-  resourceDirectionCounts?: Map<string, { madeBy: number; usedBy: number }>;
+  resourceDirectionCounts?: Map<string, DirectionCounts>;
   /**
    * The same counts, precomputed by the pipeline (build-browser-indexes.mjs) as
    * [kind:id, madeBy, usedBy], so the item list does not wait for the lookup index.
    */
-  directionCounts?: Array<[string, number, number]>;
+  directionCounts?: Array<[string, number, number, number?]>;
   recipeMaps: string[];
   recipeMapIcons?: RecipeMapIconEntry[];
   machineHandlerIcons?: MachineHandlerIconEntry[];
@@ -528,6 +528,7 @@ async function loadRecipeBodies(
 }
 
 export type ResourceQuerySort =
+  | "common"
   | "relevance"
   | "name"
   | "mod"
@@ -541,31 +542,43 @@ export type ResourceQuerySort =
  * inverted index the recipe search queries - so a Spruce Log's counts include
  * the oredict recipes it satisfies. Computed once per loaded dataset.
  */
+/** How often a resource is made and used, and in how many machine types (recipe maps) either happens. */
+interface DirectionCounts {
+  madeBy: number;
+  usedBy: number;
+  maps: number;
+}
+
 async function getResourceDirectionCounts(
   catalog: LoadedRecipeIndex,
-): Promise<Map<string, { madeBy: number; usedBy: number }>> {
+): Promise<Map<string, DirectionCounts>> {
   if (catalog.resourceDirectionCounts) {
     return catalog.resourceDirectionCounts;
   }
 
-  const counts = new Map<string, { madeBy: number; usedBy: number }>();
-  if (catalog.directionCounts) {
-    for (const [resourceKey, madeBy, usedBy] of catalog.directionCounts) {
-      counts.set(resourceKey, { madeBy, usedBy });
+  const counts = new Map<string, DirectionCounts>();
+  if (catalog.directionCounts && catalog.directionCounts.every((entry) => entry[3] !== undefined)) {
+    for (const [resourceKey, madeBy, usedBy, maps] of catalog.directionCounts) {
+      counts.set(resourceKey, { madeBy, usedBy, maps: maps ?? 0 });
     }
     catalog.resourceDirectionCounts = counts;
     return counts;
   }
-  const credit = (key: string, total: number) => {
+  const mapsByResource = new Map<string, Set<number | string>>();
+  const credit = (key: string, total: number, maps: Iterable<number | string> = []) => {
     const colon = key.indexOf(":");
     const mode = key.slice(0, colon);
     const resourceKey = key.slice(colon + 1);
-    const entry = counts.get(resourceKey) ?? { madeBy: 0, usedBy: 0 };
+    const entry = counts.get(resourceKey) ?? { madeBy: 0, usedBy: 0, maps: 0 };
     if (mode === "recipes") {
       entry.madeBy += total;
     } else if (mode === "uses") {
       entry.usedBy += total;
     }
+    const seen = mapsByResource.get(resourceKey) ?? new Set();
+    for (const map of maps) seen.add(map);
+    mapsByResource.set(resourceKey, seen);
+    entry.maps = seen.size;
     counts.set(resourceKey, entry);
   };
 
@@ -576,7 +589,7 @@ async function getResourceDirectionCounts(
       for (const recipeIndexes of recipesByMap.values()) {
         total += recipeIndexes.length;
       }
-      credit(key, total);
+      credit(key, total, recipesByMap.keys());
     }
   } else {
     const recipeCatalog = await loadRecipeIndex(catalog.version.id);
@@ -747,7 +760,7 @@ function sortResourceMatches(
   catalog: LoadedRecipeIndex,
   matches: Array<{ resourceIndex: number; score: number }>,
   sort: ResourceQuerySort,
-  directionCounts: Map<string, { madeBy: number; usedBy: number }>,
+  directionCounts: Map<string, DirectionCounts>,
   popularity?: Map<string, number>,
 ) {
   const nameOf = (match: { resourceIndex: number }) => {
@@ -764,6 +777,7 @@ function sortResourceMatches(
       (resource && directionCounts.get(`${resource.kind}:${resource.id}`)) ?? {
         madeBy: 0,
         usedBy: 0,
+        maps: 0,
       }
     );
   };
@@ -793,6 +807,23 @@ function sortResourceMatches(
     return [...matches].sort(
       (left, right) =>
         countsOf(right).usedBy - countsOf(left).usedBy || nameOf(left).localeCompare(nameOf(right)),
+    );
+  }
+
+  if (sort === "common") {
+    // Most used: in how many machine types a thing is made or used, weighted
+    // by how many recipes. Iron, water, circuits and cells lead; a tool that
+    // every crafting recipe takes, or an aspect only Thaumcraft machines know,
+    // does not. A typed query still wins first.
+    const commonOf = (match: { resourceIndex: number }) => {
+      const counts = countsOf(match);
+      return counts.maps * Math.log1p(counts.madeBy + counts.usedBy);
+    };
+    return [...matches].sort(
+      (left, right) =>
+        right.score - left.score ||
+        commonOf(right) - commonOf(left) ||
+        nameOf(left).localeCompare(nameOf(right)),
     );
   }
 

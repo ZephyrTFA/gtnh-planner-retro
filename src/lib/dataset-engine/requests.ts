@@ -161,6 +161,7 @@ function parseResourceQuery(params: URLSearchParams): Parameters<typeof queryDat
       sortParam === "recipes" ||
       sortParam === "made" ||
       sortParam === "uses" ||
+      sortParam === "common" ||
       sortParam === "popular"
         ? sortParam
         : undefined,

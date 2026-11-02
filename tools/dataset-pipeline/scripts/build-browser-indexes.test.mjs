@@ -23,8 +23,8 @@ describe("build-browser-indexes", () => {
         ["uses:fluid:oxygen", [[2, [6, 7]]]],
       ]),
     ).toEqual([
-      ["item:steel", 3, 1],
-      ["fluid:oxygen", 0, 2],
+      ["item:steel", 3, 1, 3],
+      ["fluid:oxygen", 0, 2, 1],
     ]);
   });
 
@@ -41,7 +41,7 @@ describe("build-browser-indexes", () => {
     const out = path.join(dir, "out");
     await buildBrowserIndexes({ sourceDir: source, outDir: out, encodeSearchTokens });
 
-    expect(readGz(path.join(out, "resource-index.json.gz")).directionCounts).toEqual([["item:steel", 1, 0]]);
+    expect(readGz(path.join(out, "resource-index.json.gz")).directionCounts).toEqual([["item:steel", 1, 0, 1]]);
     const lookup = readGz(path.join(out, "recipe-lookup-index.json.gz"));
     expect(lookup.searchText).toBeUndefined();
     expect(lookup.searchTokens).toEqual(["steel", "ingot", "iron"]);

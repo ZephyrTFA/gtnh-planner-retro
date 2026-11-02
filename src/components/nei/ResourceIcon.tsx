@@ -471,6 +471,10 @@ function IconImage({
   }
 
   const atlas = resource.iconAtlas;
+  if (atlas && resource.kind === "aspect") {
+    // Aspect art is a white shape the game tints: a sheet cell drawn as a mask.
+    return <AspectIconImage resource={resource} mask={atlasMask(atlas)} iconPixelSize={iconPixelSize} />;
+  }
   if (atlas) {
     return <AtlasIconImage resource={resource} atlas={atlas} iconPixelSize={iconPixelSize} onReady={onReady} />;
   }
@@ -495,7 +499,7 @@ function IconImage({
 
   if (resource.kind === "aspect") {
     return (
-      <AspectIconImage resource={resource} iconPath={iconPath} iconPixelSize={iconPixelSize} />
+      <AspectIconImage resource={resource} mask={wholeMask(iconPath)} iconPixelSize={iconPixelSize} />
     );
   }
 
@@ -626,13 +630,48 @@ function SpritePlaceholder({ settled }: { settled: boolean }) {
   );
 }
 
+/** Where an aspect's mask comes from: a whole texture, or one cell of a sprite sheet. */
+interface AspectMask {
+  url: string;
+  size: string;
+  position: string;
+  /** The sheet cell, for the image export (export-atlas-cells.ts). */
+  cell?: string;
+}
+
+function wholeMask(iconPath: string): AspectMask {
+  return { url: textureUrl(iconPath), size: "100% 100%", position: "0 0" };
+}
+
+function atlasMask(atlas: ResourceIconAtlasRef): AspectMask {
+  return {
+    url: textureUrl(atlas.imagePath),
+    size: `${(atlas.atlasWidth / atlas.width) * 100}% ${(atlas.atlasHeight / atlas.height) * 100}%`,
+    position: `${getAtlasBackgroundPosition(atlas.x, atlas.atlasWidth, atlas.width)} ${getAtlasBackgroundPosition(atlas.y, atlas.atlasHeight, atlas.height)}`,
+    cell: `${atlas.imagePath}#${atlas.x},${atlas.y},${atlas.width},${atlas.height}`,
+  };
+}
+
+function maskStyle(mask: AspectMask) {
+  return {
+    WebkitMaskImage: `url('${mask.url}')`,
+    maskImage: `url('${mask.url}')`,
+    WebkitMaskSize: mask.size,
+    maskSize: mask.size,
+    WebkitMaskPosition: mask.position,
+    maskPosition: mask.position,
+    WebkitMaskRepeat: "no-repeat",
+    maskRepeat: "no-repeat",
+  };
+}
+
 function AspectIconImage({
   resource,
-  iconPath,
+  mask,
   iconPixelSize,
 }: {
   resource: Pick<ResourceAmount, "id" | "displayName" | "dominantColor">;
-  iconPath: string;
+  mask: AspectMask;
   iconPixelSize?: number;
 }) {
   const color = resource.dominantColor ?? getFallbackAspectColor(resource.id);
@@ -651,23 +690,13 @@ function AspectIconImage({
     >
       <span
         className="absolute inset-0 bg-black opacity-45"
-        style={{
-          WebkitMaskImage: `url('${textureUrl(iconPath)}')`,
-          maskImage: `url('${textureUrl(iconPath)}')`,
-          WebkitMaskSize: "100% 100%",
-          maskSize: "100% 100%",
-          transform: "translate(1px, 1px)",
-        }}
+        data-atlas-mask={mask.cell}
+        style={{ ...maskStyle(mask), transform: "translate(1px, 1px)" }}
       />
       <span
         className="absolute inset-0"
-        style={{
-          backgroundColor: color,
-          WebkitMaskImage: `url('${textureUrl(iconPath)}')`,
-          maskImage: `url('${textureUrl(iconPath)}')`,
-          WebkitMaskSize: "100% 100%",
-          maskSize: "100% 100%",
-        }}
+        data-atlas-mask={mask.cell}
+        style={{ backgroundColor: color, ...maskStyle(mask) }}
       />
     </span>
   );

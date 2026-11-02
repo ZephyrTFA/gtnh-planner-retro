@@ -30,6 +30,7 @@ import { isFromBrowseMenu, useBrowseMenu } from "./browse-menu";
 import { ControlsCard } from "./ControlsCard";
 import { MinecraftTooltip } from "./nei/MinecraftTooltip";
 import { isSwatchFluid, ResourceIcon, spriteArtPixels } from "./nei/ResourceIcon";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 /**
  * THE ITEM PANEL: search box, six filters, sort, paged result grid and the
@@ -79,7 +80,7 @@ export function ResourceIndexPane({
   // Popular is the resting default: with nothing typed it shows what players
   // actually build. A typed query still ranks name relevance first server-side,
   // so the sort only decides the untyped list and ties.
-  const [resourceSort, setResourceSort] = useState<ResourceSortMode>("popular");
+  const [resourceSort, setResourceSort] = useState<ResourceSortMode>(DEFAULT_RESOURCE_SORT);
   const [resourceFilter, setResourceFilter] = useState<ResourceFilterMode>("all");
   const [resourceMods, setResourceMods] = useState<Array<{ id: string; count: number }>>([]);
   const [resourceSearchOutcome, setResourceSearchOutcome] = useState<SearchOutcome>(EXACT_SEARCH);
@@ -352,12 +353,13 @@ export function ResourceIndexPane({
               aria-label="Sort results"
               className="col-span-3 h-6 min-w-0 rounded-[4px] border border-neutral-700 bg-[#17191d] px-1.5 text-[11px] text-neutral-100 outline-none"
             >
-              <option value="popular">Most popular</option>
+              {ONLINE_FEATURES ? <option value="popular">Most popular</option> : null}
+              <option value="common">Most used</option>
               <option value="relevance">Best match</option>
               <option value="name">Name A–Z</option>
               <option value="mod">By mod</option>
               <option value="made">Most ways to make</option>
-              <option value="uses">Most used</option>
+              <option value="uses">Used in most recipes</option>
             </select>
           </div>
         </ControlsCard>
@@ -424,7 +426,14 @@ const RESOURCE_PAGER_HEIGHT = 31;
 /** One mouse notch is 100 on most platforms, so one notch is one page. */
 const RESOURCE_WHEEL_PAGE_DELTA = 80;
 
-type ResourceSortMode = "relevance" | "popular" | "name" | "mod" | "made" | "uses";
+export type ResourceSortMode = "relevance" | "common" | "popular" | "name" | "mod" | "made" | "uses";
+
+/**
+ * How the item list opens. "Most popular" is what the community builds and
+ * needs its server; without one the list opens on what is most used across
+ * the game's machines.
+ */
+export const DEFAULT_RESOURCE_SORT: ResourceSortMode = ONLINE_FEATURES ? "popular" : "common";
 
 /**
  * The list's filter: six mutually exclusive answers, because the kind and

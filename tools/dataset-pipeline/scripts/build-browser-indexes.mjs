@@ -4,9 +4,10 @@
  * The dataset worker (src/lib/dataset-engine) reads both forms; answers are
  * identical either way.
  *
- * - resource-index.json.gz gains `directionCounts` ([kind:id, madeBy, usedBy]
- *   per resource, summed from the lookup index exactly as the engine does), so
- *   the item list sorts without downloading the recipe lookup index at all.
+ * - resource-index.json.gz gains `directionCounts` ([kind:id, madeBy, usedBy,
+ *   machine types] per resource, summed from the lookup index exactly as the
+ *   engine does), so the item list sorts without downloading the recipe lookup
+ *   index at all.
  * - recipe-lookup-index.json.gz trades `searchText` (about 140 MiB of text for
  *   2.9.0) for `searchTokens` (each distinct word once) and `searchTokenIds`
  *   (each recipe's words as numbers, split by the app's own splitSearchTokens),
@@ -75,12 +76,13 @@ export function directionCountsOf(entries) {
     const colon = key.indexOf(":");
     const mode = key.slice(0, colon);
     const resourceKey = key.slice(colon + 1);
-    const entry = counts.get(resourceKey) ?? [resourceKey, 0, 0];
+    const entry = counts.get(resourceKey) ?? [resourceKey, 0, 0, new Set()];
     if (mode === "recipes") entry[1] += total;
     else if (mode === "uses") entry[2] += total;
+    for (const [mapId] of recipesByMap) entry[3].add(mapId);
     counts.set(resourceKey, entry);
   }
-  return [...counts.values()];
+  return [...counts.values()].map(([key, madeBy, usedBy, maps]) => [key, madeBy, usedBy, maps.size]);
 }
 
 /** The app's own word splitting, so the pipeline and the browser agree on every token. */

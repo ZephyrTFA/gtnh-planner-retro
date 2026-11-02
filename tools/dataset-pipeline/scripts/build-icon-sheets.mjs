@@ -15,10 +15,13 @@
  *   they can be cached forever.
  * - Every `iconPath` into textures/rendered becomes the app's `iconAtlas` ref,
  *   and textures/rendered is not part of the output.
+ * - An `asset:<mod>:<path>` icon (a texture the exporter names but does not
+ *   render, such as the aspects other mods add to Thaumcraft) is read from the
+ *   pack's mod jars (`--assets <pack dir>`, needs `unzip`) and packed the same way.
  *
  * Usage:
- *   build-icon-sheets.mjs <dataset-version-dir>                  in place (a build)
- *   build-icon-sheets.mjs <dataset-version-dir> --out <new-dir>  into a copy; the source is read only
+ *   build-icon-sheets.mjs <dataset-version-dir> [--assets <pack-dir>]                  in place (a build)
+ *   build-icon-sheets.mjs <dataset-version-dir> --out <new-dir> [--assets <pack-dir>]  into a copy; the source is read only
  *
  * Needs `cwebp` (libwebp; the pipeline image installs the `webp` package).
  */
@@ -38,21 +41,35 @@ export const COLUMNS = 8;
 export const ROWS = 8;
 export const PER_SHEET = COLUMNS * ROWS;
 const RENDERED_MARK = "/textures/rendered/";
+const ASSET_PREFIX = "asset:";
+
+/** An icon this step packs: a rendered capture, or a mod texture named by asset hint. */
+function isPackable(iconPath) {
+  return typeof iconPath === "string" && (iconPath.includes(RENDERED_MARK) || iconPath.startsWith(ASSET_PREFIX));
+}
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const args = process.argv.slice(2);
   const outIndex = args.indexOf("--out");
-  const sourceDir = args.find((arg, index) => !arg.startsWith("--") && index !== outIndex + 1);
+  const assetsIndex = args.indexOf("--assets");
+  const sourceDir = args.find(
+    (arg, index) => !arg.startsWith("--") && index !== outIndex + 1 && index !== assetsIndex + 1,
+  );
   const outDir = outIndex >= 0 ? args[outIndex + 1] : undefined;
+  const assetsDir = assetsIndex >= 0 ? args[assetsIndex + 1] : undefined;
   if (!sourceDir || !fs.existsSync(path.join(sourceDir, "resource-index.json.gz"))) {
     throw new Error("Usage: build-icon-sheets.mjs <dataset-version-dir> [--out <new-dir>]");
   }
-  await buildIconSheets({ sourceDir: path.resolve(sourceDir), outDir: outDir && path.resolve(outDir) });
+  await buildIconSheets({
+    sourceDir: path.resolve(sourceDir),
+    outDir: outDir && path.resolve(outDir),
+    assetsDir: assetsDir && path.resolve(assetsDir),
+  });
 }
 
-export async function buildIconSheets({ sourceDir, outDir, encode = encodeWebpWithCwebp, order }) {
+export async function buildIconSheets({ sourceDir, outDir, assetsDir, encode = encodeWebpWithCwebp, order, readAsset }) {
   const workDir = outDir ?? sourceDir;
   const renderedDir = path.join(sourceDir, "textures", "rendered");
   if (!fs.existsSync(renderedDir)) {
@@ -79,7 +96,7 @@ export async function buildIconSheets({ sourceDir, outDir, encode = encodeWebpWi
   // Every referenced icon with the resource that shows it.
   const owners = new Map();
   const note = (node) => {
-    if (typeof node.iconPath === "string" && node.iconPath.includes(RENDERED_MARK) && !owners.has(node.iconPath)) {
+    if (isPackable(node.iconPath) && !owners.has(node.iconPath)) {
       owners.set(node.iconPath, `${node.modId ?? ""}|${node.id ?? ""}`);
     }
   };
@@ -129,11 +146,24 @@ export async function buildIconSheets({ sourceDir, outDir, encode = encodeWebpWi
     sheet = newSheetBuffer();
     cellsInSheet = 0;
   };
+  const assetBytes = readAsset ?? (assetsDir ? jarAssetReader(assetsDir) : () => undefined);
+  const iconBytes = (iconPath) => {
+    if (iconPath.startsWith(ASSET_PREFIX)) {
+      const hint = iconPath.slice(ASSET_PREFIX.length);
+      const colon = hint.indexOf(":");
+      return colon > 0 ? assetBytes(`assets/${hint.slice(0, colon)}/${hint.slice(colon + 1).replace(/^\/+/, "")}`) : undefined;
+    }
+    return fs.readFileSync(path.join(renderedDir, path.basename(iconPath)));
+  };
   for (const iconPath of ordered) {
-    const file = path.join(renderedDir, path.basename(iconPath));
     let cell;
     try {
-      cell = downscaleToCell(PNG.sync.read(fs.readFileSync(file)));
+      const bytes = iconBytes(iconPath);
+      if (!bytes) throw new Error("no such icon");
+      // Rendered captures and mod textures alike fill their cell: a capture
+      // carries its own margin, and a texture drawn as a mask (an aspect) is
+      // meant to fill its box.
+      cell = downscaleToCell(PNG.sync.read(bytes));
     } catch {
       missing += 1;
       continue;
@@ -172,7 +202,7 @@ export async function buildIconSheets({ sourceDir, outDir, encode = encodeWebpWi
   let rewritten = 0;
   let dropped = 0;
   const rewrite = (node) => {
-    if (typeof node.iconPath !== "string" || !node.iconPath.includes(RENDERED_MARK)) return;
+    if (!isPackable(node.iconPath)) return;
     const atlas = atlasFor(node.iconPath);
     delete node.iconPath;
     if (atlas) {
@@ -325,12 +355,51 @@ async function itemListIconOrder(sourceDir, versionId) {
       query: "",
       offset: 0,
       limit: 1_000_000,
-      sort: "popular",
+      // The list's default without a community server (DEFAULT_RESOURCE_SORT).
+      sort: "common",
     });
     return result.resources.map((resource) => resource.iconPath).filter(Boolean);
   } finally {
     await fsp.rm(bundleFile, { force: true });
   }
+}
+
+/**
+ * Reads `assets/<mod>/<path>` out of the pack's mod jars (any .jar under
+ * `packDir`), by the path's lower case as Forge resolves it. Jars are listed
+ * once, on the first asset asked for.
+ */
+export function jarAssetReader(packDir) {
+  let entries;
+  const index = () => {
+    if (entries) return entries;
+    entries = new Map();
+    const jars = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith(".jar")) jars.push(full);
+      }
+    };
+    walk(packDir);
+    for (const jar of jars.sort()) {
+      const listing = spawnSync("unzip", ["-Z1", jar], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+      for (const name of listing.stdout?.split("\n") ?? []) {
+        if (name.startsWith("assets/") && name.endsWith(".png") && !entries.has(name.toLowerCase())) {
+          entries.set(name.toLowerCase(), { jar, name });
+        }
+      }
+    }
+    console.log(`Indexed ${entries.size} textures in ${jars.length} jars under ${packDir}.`);
+    return entries;
+  };
+  return (assetPath) => {
+    const found = index().get(assetPath.toLowerCase());
+    if (!found) return undefined;
+    const result = spawnSync("unzip", ["-p", found.jar, found.name], { maxBuffer: 64 * 1024 * 1024 });
+    return result.status === 0 ? result.stdout : undefined;
+  };
 }
 
 function listShards(dir) {

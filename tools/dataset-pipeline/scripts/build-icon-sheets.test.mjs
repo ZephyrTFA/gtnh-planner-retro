@@ -104,6 +104,31 @@ describe("build-icon-sheets", () => {
     expect(readGz(path.join(source, "resource-index.json.gz")).resourceIndex[0].iconPath).toBe(rendered("iron-1.png"));
   });
 
+  it("packs mod textures named by asset hint, read from the pack", async () => {
+    const { source, out } = fixture();
+    const indexFile = path.join(source, "resource-index.json.gz");
+    const index = readGz(indexFile);
+    index.resourceIndex.push({ kind: "aspect", id: "thaumcraft:aspect:radio", iconPath: "asset:gregtech:textures/aspects/RADIO.png" });
+    fs.writeFileSync(indexFile, gz(index));
+    const asked = [];
+    const radio = icon([255, 255, 255, 255]);
+    const summary = await buildIconSheets({
+      sourceDir: source,
+      outDir: out,
+      encode: rawEncode,
+      order: [],
+      readAsset: (assetPath) => {
+        asked.push(assetPath);
+        return assetPath === "assets/gregtech/textures/aspects/RADIO.png" ? radio : undefined;
+      },
+    });
+    expect(asked).toEqual(["assets/gregtech/textures/aspects/RADIO.png"]);
+    expect(summary.distinctIcons).toBe(3);
+    const aspect = readGz(path.join(out, "resource-index.json.gz")).resourceIndex.at(-1);
+    expect(aspect.iconPath).toBeUndefined();
+    expect(aspect.iconAtlas).toMatchObject({ width: CELL, height: CELL });
+  });
+
   it("works in place, as the pipeline runs it, and drops the loose icons", async () => {
     const { source } = fixture();
     await buildIconSheets({ sourceDir: source, encode: rawEncode, order: [] });

@@ -8,7 +8,7 @@ import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
  * URL; the returned function puts the sheets back.
  */
 export async function inlineAtlasCells(root: HTMLElement): Promise<() => void> {
-  const cells = [...root.querySelectorAll<HTMLElement>("[data-atlas-cell]")];
+  const cells = [...root.querySelectorAll<HTMLElement>("[data-atlas-cell], [data-atlas-mask]")];
   if (cells.length === 0) return () => {};
   const sheets = new Map<string, Promise<HTMLImageElement | undefined>>();
   const cuts = new Map<string, Promise<string | undefined>>();
@@ -16,7 +16,9 @@ export async function inlineAtlasCells(root: HTMLElement): Promise<() => void> {
 
   await Promise.all(
     cells.map(async (element) => {
-      const ref = element.dataset.atlasCell ?? "";
+      // A background cell, or a cell used as a mask (aspects).
+      const asMask = element.dataset.atlasMask !== undefined;
+      const ref = (asMask ? element.dataset.atlasMask : element.dataset.atlasCell) ?? "";
       let cut = cuts.get(ref);
       if (!cut) {
         cut = cutCell(ref, sheets);
@@ -24,6 +26,20 @@ export async function inlineAtlasCells(root: HTMLElement): Promise<() => void> {
       }
       const dataUrl = await cut;
       if (!dataUrl) return;
+      if (asMask) {
+        const saved = element.getAttribute("style");
+        element.style.setProperty("mask-image", `url("${dataUrl}")`);
+        element.style.setProperty("-webkit-mask-image", `url("${dataUrl}")`);
+        element.style.setProperty("mask-size", "100% 100%");
+        element.style.setProperty("-webkit-mask-size", "100% 100%");
+        element.style.setProperty("mask-position", "0 0");
+        element.style.setProperty("-webkit-mask-position", "0 0");
+        restores.push(() => {
+          if (saved === null) element.removeAttribute("style");
+          else element.setAttribute("style", saved);
+        });
+        return;
+      }
       const { backgroundImage, backgroundSize, backgroundPosition } = element.style;
       element.style.backgroundImage = `url("${dataUrl}")`;
       element.style.backgroundSize = "100% 100%";

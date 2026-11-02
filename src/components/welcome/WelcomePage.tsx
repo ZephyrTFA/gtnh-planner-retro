@@ -20,6 +20,7 @@ import { openLibrary } from "@/lib/library/library-tab";
 import { openSidebarTab } from "@/lib/sidebar-tab";
 import { APP_VERSION } from "@/lib/version";
 import { ONLINE_FEATURES } from "@/lib/site";
+import { DEFAULT_RESOURCE_SORT } from "@/components/ResourceIndexPane";
 import { leaveWelcomeTab, setWelcomeOnStartup, useWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { writeWorkspaceView } from "@/lib/workspace-view";
 import { useDesignStore } from "@/store/design-store";
@@ -60,7 +61,7 @@ function useBackdropIcons(): BackdropIcon[] {
     queryRecipeDatasetResources(
       manifestUrl ?? DEFAULT_DATASET_MANIFEST_URL,
       version,
-      { query: "", offset: 0, limit: BACKDROP_ICON_COUNT, kind: "item", sort: "popular" },
+      { query: "", offset: 0, limit: BACKDROP_ICON_COUNT, kind: "item", sort: DEFAULT_RESOURCE_SORT },
       { signal: controller.signal },
     )
       .then((result) => {
