@@ -1,0 +1,16 @@
+// Cloudflare Workers static assets: the static export in out/, served as files only.
+// No "main" script, so no request ever runs code: static asset requests are free and
+// unmetered, which leaves nothing for a third party to run up. Keep it that way: a
+// Worker script (or run_worker_first) would make every request a billed invocation.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gtnh-planner-retro",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page"
+  },
+  "routes": [{ "pattern": "gtnhplanretro.tfaluc.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
+}
