@@ -111,6 +111,11 @@ await buildRecipeIndex(recipeDatasetPath, outDir);
 // rebuilding an existing version must not reuse an immutable ghost-icon URL.
 console.log(`Normalizing fluid icon alpha for ${versionId}.`);
 await normalizeFluidIconAlpha(outDir);
+// After the fluid repair, so the sheets hold the repaired pixels. The loose
+// icons become content-hashed sprite sheets and every index and shard points
+// into them; recipes.json keeps its paths (it is pipeline input, never served).
+console.log(`Packing icon sheets for ${versionId}.`);
+await runNodeStep("Icon sheet packing", ["tools/dataset-pipeline/scripts/build-icon-sheets.mjs", outDir]);
 
 const compressedRecipeDatasetPath = `${recipeDatasetPath}.gz`;
 const uncompressedSizeBytes = (await fs.stat(recipeDatasetPath)).size;
@@ -325,6 +330,16 @@ async function buildRecipeIndex(datasetPath, datasetOutDir) {
 
   if (exitCode !== 0) {
     throw new Error(`Recipe index build failed with exit code ${exitCode}.`);
+  }
+}
+
+async function runNodeStep(label, args) {
+  const exitCode = await new Promise((resolve) => {
+    const child = spawn("node", args, { stdio: "inherit", env: process.env });
+    child.on("exit", (code) => resolve(code ?? 1));
+  });
+  if (exitCode !== 0) {
+    throw new Error(`${label} failed with exit code ${exitCode}.`);
   }
 }
 

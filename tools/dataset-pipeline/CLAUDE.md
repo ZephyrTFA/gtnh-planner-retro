@@ -29,6 +29,13 @@ Rebuilds must run `normalize-fluid-icon-alpha.mjs` (with `--rename`) after the i
 builds and before publishing, or faint fluids ship invisible. Texture URLs are cache-immutable: fix pixels under a NEW filename (`--rename`),
 and patch whole basenames only.
 
+Icons ship as sprite sheets, not loose PNGs: `build-icon-sheets.mjs` runs after the fluid
+repair, dedupes every referenced icon by pixels, downscales 256 -> 128 nearest-neighbour,
+packs 64 per lossless WebP sheet (`textures/sheets/sheet-<hash>.webp`, item-list order
+first) and rewrites every `iconPath` in the indexes and shards to an `iconAtlas` ref.
+`textures/rendered` is not shipped. It needs `cwebp` (the image installs `webp`). Run it on
+an existing dataset with `--out <dir>` to leave the source untouched.
+
 A fresh export is NOT deterministic: crafting, furnace, bee, crop and essentia recipes
 reorder, re-minting ~37,000 ids. When an export only ADDS fields, graft them onto the
 published export (`~/graft-sparge.js`, matching recipes by content key) and confirm with
