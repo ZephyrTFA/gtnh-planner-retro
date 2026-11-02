@@ -106,6 +106,10 @@ console.log(`Building resource index for ${versionId}.`);
 await buildResourceIndex(recipeDatasetPath);
 console.log(`Building recipe index for ${versionId}.`);
 await buildRecipeIndex(recipeDatasetPath, outDir);
+// What the browser would otherwise build on every first visit: the item
+// list's recipe counts and the recipe search text as word numbers.
+console.log(`Precomputing browser indexes for ${versionId}.`);
+await runNodeStep("Browser index build", ["tools/dataset-pipeline/scripts/build-browser-indexes.mjs", outDir]);
 // After the indexes so the pass can read fluid references from them. Content
 // hash the repaired icons and update every artifact, including recipes.json:
 // rebuilding an existing version must not reuse an immutable ghost-icon URL.

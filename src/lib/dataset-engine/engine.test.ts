@@ -11,7 +11,7 @@ import {
 describe("dataset query text search", () => {
   it("matches substrings inside tokens without matching across token boundaries", () => {
     const index = buildTextSearchIndex(["Hydrogen Sulfide"], [0]);
-    const tokens = index.tokensByEntry[0] ?? [];
+    const tokens = index.tokensOf(0);
 
     const sulfide = parseSearchQuery("ulfide");
     expect(queryTextSearchIndex(index, sulfide) ?? [0]).toContain(0);

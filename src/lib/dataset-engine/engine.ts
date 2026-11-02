@@ -41,6 +41,7 @@ import {
 import {
   buildSearchVocabulary,
   buildTextSearchIndex,
+  buildTokenIdSearchIndex,
   buildTokenSearchIndex,
   matchSearchEntry,
   matchSearchTokens,
@@ -77,6 +78,11 @@ interface LoadedRecipeIndex {
   resourceIndex: DatasetResourceIndexEntry[];
   /** Cached made-by/used-by recipe counts per `kind:id`, from the lookup index. */
   resourceDirectionCounts?: Map<string, { madeBy: number; usedBy: number }>;
+  /**
+   * The same counts, precomputed by the pipeline (build-browser-indexes.mjs) as
+   * [kind:id, madeBy, usedBy], so the item list does not wait for the lookup index.
+   */
+  directionCounts?: Array<[string, number, number]>;
   recipeMaps: string[];
   recipeMapIcons?: RecipeMapIconEntry[];
   machineHandlerIcons?: MachineHandlerIconEntry[];
@@ -113,6 +119,9 @@ interface RecipeLookupIndexFile {
   tierIndexes: number[];
   iconScores?: number[];
   searchText?: string[];
+  /** The search text as word numbers into searchTokens (build-browser-indexes.mjs); replaces searchText. */
+  searchTokens?: string[];
+  searchTokenIds?: number[][];
   entries: Array<[string, Array<[number, number[]]>]>;
 }
 
@@ -140,6 +149,8 @@ interface LoadedRecipeLookupIndex {
   tierIndexes: number[];
   iconScores: number[];
   searchText: string[];
+  searchTokens?: string[];
+  searchTokenIds?: number[][];
   searchIndex?: TextSearchIndex;
   entries: Map<string, Map<number, number[]>>;
 }
@@ -538,6 +549,13 @@ async function getResourceDirectionCounts(
   }
 
   const counts = new Map<string, { madeBy: number; usedBy: number }>();
+  if (catalog.directionCounts) {
+    for (const [resourceKey, madeBy, usedBy] of catalog.directionCounts) {
+      counts.set(resourceKey, { madeBy, usedBy });
+    }
+    catalog.resourceDirectionCounts = counts;
+    return counts;
+  }
   const credit = (key: string, total: number) => {
     const colon = key.indexOf(":");
     const mode = key.slice(0, colon);
@@ -1122,7 +1140,7 @@ function scoreRecipeCandidates(
     if (narrowedSet && !narrowedSet.has(recipeIndex)) {
       continue;
     }
-    const score = matchSearchTokens(query, searchIndex.tokensByEntry[recipeIndex] ?? [], options);
+    const score = matchSearchTokens(query, searchIndex.tokensOf(recipeIndex), options);
     if (score !== undefined) {
       matches.push({ recipeIndex, score, iconScore: 0 });
     }
@@ -1139,7 +1157,7 @@ function scoreRecipeIndexes(
 ): RankedRecipe[] {
   const matches: RankedRecipe[] = [];
   for (const recipeIndex of recipeIndexes) {
-    const score = matchSearchTokens(query, searchIndex.tokensByEntry[recipeIndex] ?? [], options);
+    const score = matchSearchTokens(query, searchIndex.tokensOf(recipeIndex), options);
     if (score !== undefined) {
       matches.push({ recipeIndex, score, iconScore: 0 });
     }
@@ -1580,7 +1598,7 @@ async function getRecipeSearchIndex(
   catalog: LoadedRecipeIndex,
   lookup: LoadedRecipeLookupIndex,
 ): Promise<{ index: TextSearchIndex; entryCount: number }> {
-  if (lookup.searchText.length) {
+  if (lookup.searchText.length || lookup.searchTokenIds?.length) {
     return { index: ensureLookupSearchIndex(lookup), entryCount: lookup.recipeCount };
   }
 
@@ -1825,6 +1843,8 @@ async function loadRecipeLookupIndex(version: DatasetVersion): Promise<LoadedRec
       tierIndexes: payload.tierIndexes,
       iconScores: payload.iconScores ?? [],
       searchText: payload.searchText ?? [],
+      searchTokens: payload.searchTokens,
+      searchTokenIds: payload.searchTokenIds,
       entries: new Map(payload.entries.map(([key, recipesByMap]) => [key, new Map(recipesByMap)])),
     };
     loadedRecipeLookupIndexes.set(cacheKey, loaded);
@@ -2125,10 +2145,13 @@ async function getPassiveSourceResourceKeys(
 }
 
 function ensureLookupSearchIndex(lookup: LoadedRecipeLookupIndex): TextSearchIndex {
-  lookup.searchIndex ??= buildTextSearchIndex(
-    lookup.searchText,
-    lookup.searchText.map((_, index) => index),
-  );
+  lookup.searchIndex ??=
+    lookup.searchTokens && lookup.searchTokenIds
+      ? buildTokenIdSearchIndex(lookup.searchTokens, lookup.searchTokenIds)
+      : buildTextSearchIndex(
+          lookup.searchText,
+          lookup.searchText.map((_, index) => index),
+        );
   return lookup.searchIndex;
 }
 

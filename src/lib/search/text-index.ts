@@ -18,9 +18,13 @@ import {
 } from "./text-search";
 
 export interface TextSearchIndex {
-  tokensByEntry: string[][];
+  /** An entry's distinct words, in the order they first appear. */
+  tokensOf: (entry: number) => string[];
+  /** Each trigram's entries, ascending. */
   trigramToEntries: Map<string, number[]>;
 }
+
+const NO_TOKENS: string[] = [];
 
 export interface SearchVocabulary {
   tokens: string[];
@@ -88,7 +92,83 @@ export function buildTokenSearchIndex(
     }
   }
 
-  return { tokensByEntry, trigramToEntries };
+  return { tokensOf: (entry) => tokensByEntry[entry] ?? NO_TOKENS, trigramToEntries };
+}
+
+/**
+ * The same index from entries already reduced to word numbers: `vocabulary`
+ * is every distinct word once, and each entry lists its words' positions in
+ * it (in first-appearance order, as splitSearchTokens gives them). The
+ * pipeline writes recipe search text this way, so a browser never splits
+ * hundreds of megabytes of text, and each word's trigrams are worked out once
+ * instead of once per entry it appears in. The result is identical to
+ * buildTextSearchIndex over the original text.
+ */
+export function buildTokenIdSearchIndex(
+  vocabulary: readonly string[],
+  tokenIdsByEntry: readonly (readonly number[])[],
+): TextSearchIndex {
+  const trigramIds = new Map<string, number>();
+  const trigramNames: string[] = [];
+  const trigramsOfToken = vocabulary.map((token) =>
+    getTokenTrigrams(token).map((trigram) => {
+      let id = trigramIds.get(trigram);
+      if (id === undefined) {
+        id = trigramNames.length;
+        trigramIds.set(trigram, id);
+        trigramNames.push(trigram);
+      }
+      return id;
+    }),
+  );
+
+  const postings: number[][] = trigramNames.map(() => []);
+  // The last entry each trigram was posted for: an entry counts once per trigram.
+  const lastEntry = new Int32Array(trigramNames.length).fill(-1);
+  for (let entry = 0; entry < tokenIdsByEntry.length; entry += 1) {
+    const ids = tokenIdsByEntry[entry];
+    if (!ids) continue;
+    for (const tokenId of ids) {
+      const trigrams = trigramsOfToken[tokenId];
+      if (!trigrams) continue;
+      for (const trigram of trigrams) {
+        if (lastEntry[trigram] !== entry) {
+          lastEntry[trigram] = entry;
+          postings[trigram]!.push(entry);
+        }
+      }
+    }
+  }
+
+  const trigramToEntries = new Map<string, number[]>();
+  trigramNames.forEach((trigram, id) => {
+    trigramToEntries.set(trigram, postings[id]!);
+  });
+  return {
+    tokensOf: (entry) => {
+      const ids = tokenIdsByEntry[entry];
+      return ids ? ids.map((id) => vocabulary[id] ?? "") : NO_TOKENS;
+    },
+    trigramToEntries,
+  };
+}
+
+/** Splits each text into its distinct words as numbers into one shared vocabulary (the pipeline's form). */
+export function encodeSearchTokens(searchText: readonly string[]): { vocabulary: string[]; tokenIds: number[][] } {
+  const ids = new Map<string, number>();
+  const vocabulary: string[] = [];
+  const tokenIds = searchText.map((text) =>
+    [...new Set(splitSearchTokens(text ?? ""))].map((token) => {
+      let id = ids.get(token);
+      if (id === undefined) {
+        id = vocabulary.length;
+        ids.set(token, id);
+        vocabulary.push(token);
+      }
+      return id;
+    }),
+  );
+  return { vocabulary, tokenIds };
 }
 
 /**
