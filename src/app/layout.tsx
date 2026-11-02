@@ -22,18 +22,23 @@ import "./globals.css";
 
 const monocraft = localFont({
   src: [
-    { path: "./fonts/Monocraft-ExtraLight.ttf", weight: "200", style: "normal" },
-    { path: "./fonts/Monocraft-Light.ttf", weight: "300", style: "normal" },
-    { path: "./fonts/Monocraft.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/Monocraft-SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/Monocraft-Bold.ttf", weight: "700", style: "normal" },
-    { path: "./fonts/Monocraft-Black.ttf", weight: "900", style: "normal" },
+    { path: "./fonts/Monocraft-ExtraLight.woff2", weight: "200", style: "normal" },
+    { path: "./fonts/Monocraft-Light.woff2", weight: "300", style: "normal" },
+    { path: "./fonts/Monocraft.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Monocraft-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Monocraft-Bold.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/Monocraft-Black.woff2", weight: "900", style: "normal" },
   ],
   variable: "--font-minecraft",
   display: "swap",
+  preload: false,
 });
 
 /*
+ * Only Inter, the default, is preloaded. Every other face (Monocraft for the
+ * Minecraft-styled text, and the alternatives below) is fetched when something
+ * on screen is drawn in it, so a first visit does not download fonts it never shows.
+ *
  * The alternative fonts the settings dialog offers (src/lib/app-font.ts).
  * next/font downloads the Google ones at build time and serves everything
  * from our own origin, so offering them costs no runtime request to Google.
@@ -48,12 +53,14 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
   display: "swap",
+  preload: false,
 });
 
 const lexend = Lexend({
   subsets: ["latin"],
   variable: "--font-lexend",
   display: "swap",
+  preload: false,
 });
 
 const atkinson = Atkinson_Hyperlegible({
@@ -61,6 +68,7 @@ const atkinson = Atkinson_Hyperlegible({
   weight: ["400", "700"],
   variable: "--font-atkinson",
   display: "swap",
+  preload: false,
 });
 
 const andika = Andika({
@@ -68,6 +76,7 @@ const andika = Andika({
   weight: ["400", "700"],
   variable: "--font-andika",
   display: "swap",
+  preload: false,
 });
 
 const comicNeue = Comic_Neue({
@@ -75,16 +84,18 @@ const comicNeue = Comic_Neue({
   weight: ["400", "700"],
   variable: "--font-comic-neue",
   display: "swap",
+  preload: false,
 });
 
 /* Not on Google Fonts; vendored under its SIL OFL (OpenDyslexic-LICENSE). */
 const openDyslexic = localFont({
   src: [
-    { path: "./fonts/OpenDyslexic-Regular.otf", weight: "400", style: "normal" },
-    { path: "./fonts/OpenDyslexic-Bold.otf", weight: "700", style: "normal" },
+    { path: "./fonts/OpenDyslexic-Regular.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/OpenDyslexic-Bold.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-open-dyslexic",
   display: "swap",
+  preload: false,
   // OpenDyslexic's x-height is far larger than the other faces' and overflows
   // fixed-height chrome; size-adjust scales the glyphs back down.
   declarations: [{ prop: "size-adjust", value: "82%" }],

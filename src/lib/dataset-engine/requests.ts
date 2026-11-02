@@ -48,20 +48,18 @@ export async function answerDatasetApi(request: DatasetApiRequest): Promise<Data
   const endpoint = match[2]!;
   const tail = match[3] === undefined ? undefined : decodeURIComponent(match[3]);
   const params = new URLSearchParams(request.search);
+  if (endpoint !== "catalog") {
+    // The page's first questions (the item list) are answered first; the
+    // recipe side's download and index build follow, in a later task.
+    schedulePrewarm(versionId, PREWARM_AFTER_REQUEST_MS);
+  }
 
   try {
     switch (endpoint) {
       case "catalog": {
         const catalog = await getDatasetCatalog(versionId);
-        // The app asks for the catalog first, on load: build the search
-        // indexes next, while the player is still looking at the page, so the
-        // first search does not pay for them. A task, not a microtask, so this
-        // answer is posted before the work starts.
-        setTimeout(() => {
-          void prewarmDatasetVersion(versionId).catch((error) => {
-            console.error(`Dataset ${versionId} prewarm failed.`, error);
-          });
-        }, 0);
+        // If nothing else is asked for soon, warm up anyway.
+        schedulePrewarm(versionId, PREWARM_IDLE_MS);
         return ok(catalog);
       }
       case "recipes": {
@@ -95,6 +93,40 @@ export async function answerDatasetApi(request: DatasetApiRequest): Promise<Data
   } catch (error) {
     return { ok: false, status: 500, error: error instanceof Error ? error.message : failureText(endpoint) };
   }
+}
+
+/**
+ * The recipe side of a dataset (the lookup index download and its search
+ * index) is built ahead of the first recipe search, but never ahead of the
+ * item list: it starts once requests have been quiet for a moment, or a while
+ * after the catalog if nothing else is asked. A recipe search asked sooner
+ * loads what it needs itself.
+ */
+const PREWARM_IDLE_MS = 4000;
+const PREWARM_AFTER_REQUEST_MS = 1500;
+const prewarmStarted = new Set<string>();
+const prewarmTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function schedulePrewarm(versionId: string, delayMs: number) {
+  if (prewarmStarted.has(versionId)) return;
+  // Each request pushes the start back: the page's opening burst (the list
+  // sizing itself, the backdrop) settles before a 9 MiB download begins.
+  const pending = prewarmTimers.get(versionId);
+  if (pending !== undefined) {
+    clearTimeout(pending);
+  }
+  prewarmTimers.set(
+    versionId,
+    setTimeout(() => {
+      prewarmTimers.delete(versionId);
+      if (prewarmStarted.has(versionId)) return;
+      prewarmStarted.add(versionId);
+      void prewarmDatasetVersion(versionId).catch((error) => {
+        prewarmStarted.delete(versionId);
+        console.error(`Dataset ${versionId} prewarm failed.`, error);
+      });
+    }, delayMs),
+  );
 }
 
 function ok(json: unknown): DatasetApiResponse {
