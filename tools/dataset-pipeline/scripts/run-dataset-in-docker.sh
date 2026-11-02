@@ -9,6 +9,8 @@ timeout_seconds="${GTNH_EXPORT_TIMEOUT_SECONDS:-21600}"
 docker_memory_limit="${GTNH_DATASET_DOCKER_MEMORY_LIMIT:-10g}"
 docker_memory_swap="${GTNH_DATASET_DOCKER_MEMORY_SWAP:-12g}"
 docker_cpus="${GTNH_DATASET_DOCKER_CPUS:-8}"
+# The normalizer holds the whole raw export (about 330 MB of JSON for 2.9.0) in memory.
+node_heap_mb="${GTNH_DATASET_NODE_HEAP_MB:-7168}"
 dataset_root="${GTNH_DATASETS_ROOT:-public/datasets/gtnh}"
 
 case "$dataset_root" in
@@ -58,6 +60,7 @@ for line in "${versions[@]}"; do
     -e "GTNH_SOURCE_REF=${source_ref}" \
     -e "GTNH_SOURCE_URL=${source_url}" \
     -e "GTNH_EXPORT_MAX_MEMORY=${memory}" \
+    -e "NODE_OPTIONS=--max-old-space-size=${node_heap_mb}" \
     -e "GTNH_EXPORT_TIMEOUT_SECONDS=${timeout_seconds}" \
     -e "GTNH_EXPORT_PACK_KIND=client" \
     -e "GTNH_RENDER_STACK_ICONS=true" \
