@@ -520,7 +520,7 @@ async function hydrateImportedProjectRecipes(
   const importRecipesToResolve = project.recipes.filter(
     // Power cards own locally synthesized recipes (src/lib/power) that the
     // dataset can never answer for - and must never replace by name-match.
-    (recipe) => !availableRecipeIds.has(recipe.id) && !isPowerRecipe(recipe),
+    (recipe) => !availableRecipeIds.has(recipe.id) && !isPowerRecipe(recipe) && !recipe.isDemo,
   );
   const resolvedRecipeIds = new Map(
     importRecipesToResolve.length
@@ -540,6 +540,10 @@ async function hydrateImportedProjectRecipes(
 
   const hydratedRecipes = await Promise.all(
     project.recipes.map(async (recipe) => {
+      // A demo recipe is embedded in the plan and never in the dataset: it stays as it is.
+      if (recipe.isDemo) {
+        return recipe;
+      }
       if (isPowerRecipe(recipe)) {
         // Survives verbatim; normalizeLoadedProject resynthesizes it from
         // the node's settings on the way in.
