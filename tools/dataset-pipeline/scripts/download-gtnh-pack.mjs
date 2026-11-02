@@ -40,15 +40,19 @@ async function resolveDownload() {
     return resolveDailyArtifact();
   }
 
-  const stableUrl = stableDownloadUrl(versionLabel, packKind);
-  if (await canHead(stableUrl)) {
-    return { url: stableUrl, headers: {} };
+  for (const stableUrl of stableDownloadUrls(versionLabel, packKind)) {
+    if (await canHead(stableUrl)) {
+      return { url: stableUrl, headers: {} };
+    }
   }
 
+  // GTNH_SOURCE_URL is usually the release's web page, not an archive: only a zip link is downloadable.
+  const sourceUrl = process.env.GTNH_SOURCE_URL;
   return {
     url:
-      process.env.GTNH_SOURCE_URL ||
-      `https://github.com/GTNewHorizons/GT-New-Horizons-Modpack/releases/download/${sourceRef}/${versionLabel}.zip`,
+      sourceUrl && /\.zip(?:$|\?)/i.test(sourceUrl)
+        ? sourceUrl
+        : `https://github.com/GTNewHorizons/GT-New-Horizons-Modpack/releases/download/${sourceRef}/${versionLabel}.zip`,
     headers: {},
   };
 }
@@ -71,12 +75,14 @@ async function resolveDailyArtifact() {
   };
 }
 
-function stableDownloadUrl(version, kind) {
+function stableDownloadUrls(version, kind) {
   const encoded = encodeURIComponent(version);
-  if (kind === "client") {
-    return `https://downloads.gtnewhorizons.com/Multi_mc_downloads/GT_New_Horizons_${encoded}_Java_17-25.zip`;
-  }
-  return `https://downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_${encoded}_Server_Java_17-25.zip`;
+  // Java ranges in the pack's file name, newest first: 2.9.0 ships as 17-26, 2.8.x as 17-25.
+  return ["17-26", "17-25"].map((range) =>
+    kind === "client"
+      ? `https://downloads.gtnewhorizons.com/Multi_mc_downloads/GT_New_Horizons_${encoded}_Java_${range}.zip`
+      : `https://downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_${encoded}_Server_Java_${range}.zip`,
+  );
 }
 
 async function canHead(url) {
