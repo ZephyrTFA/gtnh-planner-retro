@@ -30,7 +30,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const args = process.argv.slice(2);
   const outIndex = args.indexOf("--out");
-  const sourceDir = args.find((arg, index) => !arg.startsWith("--") && index !== outIndex + 1);
+  // A flag's value is skipped only when the flag is there: indexOf is -1 otherwise, and -1 + 1 is the first argument.
+  const sourceDir = args.find((arg, index) => !arg.startsWith("--") && (outIndex < 0 || index !== outIndex + 1));
   const outDir = outIndex >= 0 ? args[outIndex + 1] : undefined;
   if (!sourceDir || !fs.existsSync(path.join(sourceDir, "recipe-lookup-index.json.gz"))) {
     throw new Error("Usage: build-browser-indexes.mjs <dataset-version-dir> [--out <new-dir>]");

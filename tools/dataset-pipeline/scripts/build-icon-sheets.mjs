@@ -55,7 +55,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const outIndex = args.indexOf("--out");
   const assetsIndex = args.indexOf("--assets");
   const sourceDir = args.find(
-    (arg, index) => !arg.startsWith("--") && index !== outIndex + 1 && index !== assetsIndex + 1,
+    (arg, index) =>
+      !arg.startsWith("--") && (outIndex < 0 || index !== outIndex + 1) && (assetsIndex < 0 || index !== assetsIndex + 1),
   );
   const outDir = outIndex >= 0 ? args[outIndex + 1] : undefined;
   const assetsDir = assetsIndex >= 0 ? args[assetsIndex + 1] : undefined;
