@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_URL } from "@/lib/site";
 import {
   Andika,
   Atkinson_Hyperlegible,
@@ -111,12 +112,12 @@ const uiScaleBoot = uiScaleBootScript({
   snugMaxWidth: SNUG_MAX_WIDTH,
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gtnhplanner.com";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  applicationName: "GTNH Planner",
-  title: "GTNH Planner | GregTech New Horizons Factory Calculator",
+  applicationName: "GTNH Planner Retro",
+  title: "GTNH Planner Retro | GregTech New Horizons Factory Calculator",
   description:
     "Plan and optimize GregTech: New Horizons factories on an interactive flowchart. Full recipe data for GTNH 2.9, throughput and power calculation, machine ratios, and community-shared plans.",
   alternates: {
@@ -134,7 +135,7 @@ export const metadata: Metadata = {
     },
   },
   keywords: [
-    "GTNH Planner",
+    "GTNH Planner Retro",
     "GregTech New Horizons planner",
     "GTNH factory planner",
     "GTNH recipe calculator",
@@ -142,16 +143,16 @@ export const metadata: Metadata = {
     "GregTech factory calculator",
   ],
   openGraph: {
-    title: "GTNH Planner | GregTech New Horizons Factory Calculator",
+    title: "GTNH Planner Retro | GregTech New Horizons Factory Calculator",
     description:
       "Free factory planner for GregTech: New Horizons with full recipe data for GTNH 2.9. Draw production chains, balance machine ratios, find bottlenecks, and share plans with the community.",
-    siteName: "GTNH Planner",
+    siteName: "GTNH Planner Retro",
     type: "website",
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GTNH Planner | GregTech New Horizons Factory Calculator",
+    title: "GTNH Planner Retro | GregTech New Horizons Factory Calculator",
     description:
       "Free factory planner for GregTech: New Horizons with full recipe data for GTNH 2.9. Draw production chains, balance machine ratios, find bottlenecks, and share plans with the community.",
   },
@@ -187,13 +188,13 @@ const structuredData = {
       "@type": "WebSite",
       "@id": `${siteUrl}/#website`,
       url: `${siteUrl}/`,
-      name: "GTNH Planner",
+      name: "GTNH Planner Retro",
     },
     {
       "@type": "WebApplication",
       "@id": `${siteUrl}/#app`,
       url: `${siteUrl}/`,
-      name: "GTNH Planner",
+      name: "GTNH Planner Retro",
       alternateName: "GregTech New Horizons Factory Planner",
       description:
         "Free factory planner and recipe calculator for GregTech: New Horizons. Draw production chains on a flowchart, balance machine ratios, compute power and throughput, and share plans.",

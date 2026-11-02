@@ -485,7 +485,7 @@ async function readProjectFile(file: File): Promise<string> {
   if (extension === "svg" || file.type === "image/svg+xml") {
     const projectJson = extractProjectJsonFromSvg(await file.text());
     if (!projectJson) {
-      throw new Error("This SVG does not contain a GTNH Planner plan.");
+      throw new Error("This SVG does not contain a GTNH Planner Retro plan.");
     }
     return projectJson;
   }
@@ -493,7 +493,7 @@ async function readProjectFile(file: File): Promise<string> {
   if (extension === "png" || file.type === "image/png") {
     const projectJson = await extractProjectJsonFromPng(file);
     if (!projectJson) {
-      throw new Error("This PNG does not contain a GTNH Planner plan.");
+      throw new Error("This PNG does not contain a GTNH Planner Retro plan.");
     }
     return projectJson;
   }

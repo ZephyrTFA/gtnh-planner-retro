@@ -7,29 +7,15 @@ import { Bug, ChevronDown, Compass, Heart, Library } from "lucide-react";
 import { leaveLibrary, openLibrary } from "@/lib/library/library-tab";
 import { openWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { APP_VERSION } from "@/lib/version";
-
-const GITHUB_URL = "https://github.com/jackwrichards/gtnh-factory-flow";
-
-/**
- * The planner's thread in the GTNH Discord. A thread, not a server invite,
- * so it only opens for people already in the server.
- */
-const DISCORD_THREAD_URL = "https://discord.com/channels/181078474394566657/1531402304530682036";
-
-/**
- * The tip jar. Clicks are counted through Umami's `data-umami-event`
- * auto-tracking (they land in the dashboard's Events panel, split by the
- * `source` field); the attribute is inert when the analytics script is off.
- */
-const KOFI_URL = "https://ko-fi.com/gtnhplanner";
+import { DISCORD_URL, SITE_NAME, SOURCE_URL, SUPPORT_URL, UPSTREAM_URL } from "@/lib/site";
 
 /**
  * The bug report form with the app version pre-filled, since reporters rarely
- * think to include the build.
+ * think to include the build. Only when this deployment names its repository.
  */
-const BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug_report.yml&version=${encodeURIComponent(
-  APP_VERSION,
-)}`;
+const BUG_REPORT_URL = SOURCE_URL
+  ? `${SOURCE_URL}/issues/new?version=${encodeURIComponent(APP_VERSION)}`
+  : undefined;
 
 /** The header's "Help" dropdown: the auxiliary set of MenuLinks. */
 export function HeaderLinks() {
@@ -52,13 +38,16 @@ export function HeaderLinks() {
 
 /** The donation link: a heart in its own colour, labelled for screen readers. */
 export function SupportButton() {
+  if (!SUPPORT_URL) {
+    return null;
+  }
   return (
     <a
-      href={KOFI_URL}
+      href={SUPPORT_URL}
       target="_blank"
       rel="noreferrer noopener"
-      title="Support on Ko-fi"
-      aria-label="Support GTNH Planner on Ko-fi"
+      title="Support"
+      aria-label={`Support ${SITE_NAME}`}
       data-umami-event="support-kofi"
       data-umami-event-source="header"
       className="inline-flex h-5 shrink-0 items-center gap-1.5 rounded border border-pink-800 bg-pink-950 px-2 text-xs font-semibold text-pink-300 hover:border-pink-600 hover:bg-pink-900 hover:text-pink-200 snug:w-5 snug:justify-center snug:px-0"
@@ -104,22 +93,25 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
         </span>
         <span className="truncate">Library</span>
       </button> : null}
-      <MenuLink href={GITHUB_URL} label="Source on GitHub">
+      {SOURCE_URL ? <MenuLink href={SOURCE_URL} label="Source on GitHub">
         <GithubMark />
-      </MenuLink>
-      <MenuLink href={DISCORD_THREAD_URL} label="Discord thread">
+      </MenuLink> : null}
+      {DISCORD_URL ? <MenuLink href={DISCORD_URL} label="Discord">
         <DiscordMark />
-      </MenuLink>
-      {!auxiliary ? <MenuLink
-        href={KOFI_URL}
-        label="Support GTNH Planner"
+      </MenuLink> : null}
+      {!auxiliary && SUPPORT_URL ? <MenuLink
+        href={SUPPORT_URL}
+        label={`Support ${SITE_NAME}`}
         tone="support"
         umamiEvent="support-kofi"
       >
         <Heart className="h-3.5 w-3.5 fill-current" aria-hidden />
       </MenuLink> : null}
-      <MenuLink href={BUG_REPORT_URL} label="Report a bug">
+      {BUG_REPORT_URL ? <MenuLink href={BUG_REPORT_URL} label="Report a bug">
         <Bug className="h-3.5 w-3.5" aria-hidden />
+      </MenuLink> : null}
+      <MenuLink href={UPSTREAM_URL} label="Based on GTNH Factory Flow">
+        <GithubMark />
       </MenuLink>
     </div>
   );

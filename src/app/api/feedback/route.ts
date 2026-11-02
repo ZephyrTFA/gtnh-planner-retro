@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { SITE_URL } from "@/lib/site";
 import { NextResponse } from "next/server";
 import { encodePlanCode, planCodeLink } from "@/lib/import-export/plan-code";
 import { isCommunityConfigured } from "@/lib/server/community";
@@ -21,7 +22,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Where the issues are opened, and the site the links point at. */
-const SITE = "https://gtnhplanner.com";
+const SITE = SITE_URL;
 
 /** A refusal, counted towards the gate's flood pause. */
 function refuse(status: number, error: string): NextResponse {

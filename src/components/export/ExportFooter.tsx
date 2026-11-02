@@ -1,6 +1,7 @@
 "use client";
 
 import type { CommunityPlanStats, EntryIcon, PlanResourceStat } from "@/lib/community/types";
+import { SITE_HOST } from "@/lib/site";
 import { formatSlotRate } from "@/components/flow/flow-explainers";
 import { TierBadge } from "@/components/shelf-cards";
 import { fluidArtPixels, isSwatchFluid, ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -176,7 +177,7 @@ export function ExportFooter({
             </div>
             <div className="mt-0.5 text-[12px]">
               <span style={{ color: palette.brand }} className="font-semibold">
-                gtnhplanner.com
+                {SITE_HOST}
               </span>
             </div>
           </div>

@@ -66,7 +66,7 @@ export function ChangelogDialog({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="What's new in GTNH Planner"
+        aria-label="What's new in GTNH Planner Retro"
         className="flex max-h-[calc(88*var(--ui-vh))] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl compact:max-h-[calc(92*var(--ui-vh))]"
         onClick={(event) => event.stopPropagation()}
       >

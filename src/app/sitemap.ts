@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 import { getCommunityDb, isCommunityConfigured } from "@/lib/server/community";
 
 /** Re-query the plan list at most hourly, so crawl bursts cost one DB read. */
@@ -12,7 +13,7 @@ export const revalidate = 3600;
  * rule the unfurler uses.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gtnhplanner.com";
+  const base = SITE_URL;
   const entries: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
   ];

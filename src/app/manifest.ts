@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "GTNH Planner",
-    short_name: "GTNH Planner",
+    name: "GTNH Planner Retro",
+    short_name: "GTNH Planner Retro",
     description:
       "Factory planner and recipe calculator for GregTech: New Horizons.",
     start_url: "/",

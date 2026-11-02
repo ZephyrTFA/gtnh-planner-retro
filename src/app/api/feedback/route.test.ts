@@ -75,8 +75,8 @@ describe("the feedback route", () => {
     expect(repo).toBe("jackwrichards/gtnh-planner-mod");
     expect(issue.title).toBe("Idea: Copy a card");
     expect(issue.labels).toEqual(["from game", "enhancement"]);
-    expect(issue.body).toContain("[open in the planner](https://gtnhplanner.com/#p=gtnh1.");
-    expect(issue.body).toMatch(/\[plan file\]\(https:\/\/gtnhplanner\.com\/api\/feedback\/files\/[0-9a-f-]{36}\/plan-1\.json\)/);
+    expect(issue.body).toContain("[open in the planner](http://localhost:3000/#p=gtnh1.");
+    expect(issue.body).toMatch(/\[plan file\]\(http:\/\/localhost:3000\/api\/feedback\/files\/[0-9a-f-]{36}\/plan-1\.json\)/);
   });
 
   it("refuses a bad report and a busy player", async () => {

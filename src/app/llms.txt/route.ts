@@ -5,6 +5,7 @@ import {
   type PlanRow,
 } from "@/lib/server/community";
 import { describePlanRow } from "@/lib/server/plan-preview";
+import { SITE_URL } from "@/lib/site";
 import { APP_VERSION } from "@/lib/version";
 
 /**
@@ -38,11 +39,11 @@ async function topPlans(base: string): Promise<string[]> {
 }
 
 export async function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gtnhplanner.com";
+  const base = SITE_URL;
   const plans = await topPlans(base);
 
   const lines = [
-    "# GTNH Planner",
+    "# GTNH Planner Retro",
     "",
     "> Free browser-based factory planner and recipe calculator for GregTech: New Horizons (GTNH), the Minecraft expert modpack. Draw production chains on an interactive flowchart, balance machine ratios, compute EU/t power draw and throughput, and share plans with the community. No account and no install needed.",
     "",

@@ -1,6 +1,7 @@
 "use client";
 
 import { ClipboardPaste, LoaderCircle, X } from "lucide-react";
+import { SITE_URL } from "@/lib/site";
 import { useState } from "react";
 import { openPlanCode } from "@/lib/open-plan-code";
 
@@ -72,7 +73,7 @@ export function PastePlanDialog({ onClose }: { onClose: () => void }) {
           }}
           rows={5}
           spellCheck={false}
-          placeholder="https://gtnhplanner.com/#p=..."
+          placeholder={`${SITE_URL}/#p=...`}
           className="w-full resize-none break-all rounded border border-line-strong bg-surface-sunken px-2 py-1.5 font-mono text-xs"
         />
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
