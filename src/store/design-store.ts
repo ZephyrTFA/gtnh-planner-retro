@@ -37,6 +37,12 @@ import {
   writeDesignSummary,
 } from "@/lib/designs/design-storage";
 import {
+  beginDesignOpening,
+  isSafeModeAddress,
+  setRecoveryNotice,
+  takeUnfinishedOpening,
+} from "@/lib/designs/open-guard";
+import {
   announceDesignSaved,
   isEditingInThisTab,
   subscribeDesignSaved,
@@ -93,7 +99,8 @@ interface DesignStore {
   switchToDesign: (id: string) => Promise<void>;
   addDesign: () => Promise<void>;
   /** Adds `project` as a new design tab and switches to it (community imports). */
-  importProjectAsDesign: (project: FactoryProject, name: string) => Promise<void>;
+  /** Opens an arriving plan as a new design; false when it was not opened (a large plan declined). */
+  importProjectAsDesign: (project: FactoryProject, name: string) => Promise<boolean>;
   copyDesign: (id: string) => Promise<void>;
   renameDesign: (id: string, name: string) => Promise<void>;
   /**
@@ -234,7 +241,9 @@ function landOnDesign(
   rest?: Partial<DesignStore>,
 ) {
   beginDesignCameraHandover();
-  writeActiveDesignId(record.id);
+  // Remembered (reopened on the next visit) only once it has painted: a plan
+  // that crashes the page while opening must not crash every later visit.
+  beginDesignOpening(record.id, () => writeActiveDesignId(record.id));
   set({ ...rest, activeDesignId: record.id, publicView: undefined });
   showProject(record.project, record.id);
   canvasBase = { designId: record.id, updatedAt: record.updatedAt };
@@ -245,6 +254,32 @@ function landOnDesign(
  * stays where it is, covered by the shelf, and autosave has nothing to file
  * it under so it cannot be written anywhere.
  */
+/** Cards past which an arriving plan asks before it opens: well above real plans, far below a freeze. */
+export const LARGE_ARRIVING_PLAN_CARDS = 400;
+
+export function planCardCount(project: Pick<FactoryProject, "nodes" | "storages" | "annotations" | "pockets">): number {
+  return (
+    project.nodes.length +
+    (project.storages?.length ?? 0) +
+    (project.annotations?.length ?? 0) +
+    (project.pockets?.length ?? 0)
+  );
+}
+
+function confirmLargeArrivingPlan(project: FactoryProject): boolean {
+  const cards = planCardCount(project);
+  if (cards <= LARGE_ARRIVING_PLAN_CARDS || typeof window === "undefined") {
+    return true;
+  }
+  try {
+    return window.confirm(
+      `Open shared plan: ${cards.toLocaleString()} cards? A plan this big can take a long time to draw and may freeze the page.`,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function landOnNothing(set: (partial: Partial<DesignStore>) => void, rest?: Partial<DesignStore>) {
   writeActiveDesignId(undefined);
   set({ ...rest, activeDesignId: undefined });
@@ -469,6 +504,20 @@ export const useDesignStore = create<DesignStore>((set, get) => ({
     // for a plan nothing can open is dead weight.
     keepDesignCameras(summaries.map((design) => design.id));
 
+    // A design that was still opening when the page last went away (it froze
+    // or crashed the tab) stays closed: the library, with a notice. So does
+    // every design in safe mode (#safe or ?safe in the address).
+    const unfinished = takeUnfinishedOpening();
+    if (unfinished || isSafeModeAddress()) {
+      landOnNothing(set, { designs: summaries, folders, isHydrated: true });
+      setRecoveryNotice(
+        unfinished
+          ? { kind: "unfinished", designName: summaries.find((design) => design.id === unfinished)?.name }
+          : { kind: "safe" },
+      );
+      return;
+    }
+
     const remembered = readActiveDesignId();
     const rememberedDesign = summaries.find((design) => design.id === remembered);
     // A remembered design that is somehow closed is reopened rather than
@@ -560,6 +609,12 @@ export const useDesignStore = create<DesignStore>((set, get) => ({
   },
 
   importProjectAsDesign: async (project, name) => {
+    // A plan from outside (a link, a paste, a file, an image) that would take
+    // long to draw is opened only when asked for: a crafted link can carry
+    // thousands of cards and freeze the page.
+    if (!confirmLargeArrivingPlan(project)) {
+      return false;
+    }
     const { activeDesignId, designs } = get();
     await flushCanvasInto(designs.find((design) => design.id === activeDesignId));
 
@@ -573,6 +628,7 @@ export const useDesignStore = create<DesignStore>((set, get) => ({
     leaveWelcomeTab();
     leaveLibrary();
     set(await listLibrary());
+    return true;
   },
 
   copyDesign: async (id) => {

@@ -28,7 +28,8 @@ import { forgetSharedPlanId, readSharedPlanId, syncSharedPlanAddress } from "@/l
 import { useIsCompactViewport } from "@/lib/compact-view";
 import { startLibrarySync } from "@/lib/library/library-sync";
 import { startDesignTabSync } from "@/store/design-store";
-import { useLibraryTab } from "@/lib/library/library-tab";
+import { openLibrary, useLibraryTab } from "@/lib/library/library-tab";
+import { BoardErrorBoundary } from "./BoardErrorBoundary";
 import { useWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { AppHeader } from "./AppHeader";
 import { LibraryPage } from "./library/LibraryPage";
@@ -39,6 +40,7 @@ import { PublicViewBar } from "./community/PublicViewBar";
 import { ViewOnlyNotice } from "./community/ViewOnlyNotice";
 import { TabConflictNotice } from "./TabConflictNotice";
 import { BlueprintSaveDialog } from "./BlueprintSaveDialog";
+import { RecoveryNotice } from "./RecoveryNotice";
 import { PowerSourceOverlay } from "./PowerSourceOverlay";
 import { FactoryFlow } from "./flow/FactoryFlow";
 import { useBoardSoundEffects } from "./flow/use-board-sound-effects";
@@ -317,6 +319,7 @@ export function FactoryPlannerApp() {
       {/* Every pocket-to-shelf path (card save, share-a-pocket,
           overwrite) confirms through this one dialog. */}
       <BlueprintSaveDialog />
+      <RecoveryNotice />
     </div>
   );
 }
@@ -372,6 +375,7 @@ function PlacementRevealer() {
 function BoardColumn() {
   const covering = useCoveringPage();
   const publicView = useDesignStore((state) => state.publicView);
+  const boardDesignKey = useDesignStore((state) => state.activeDesignId ?? state.publicView?.id);
 
   return (
     <div className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]">
@@ -384,7 +388,16 @@ function BoardColumn() {
         would throw away the camera, routed wires and solve.
       */}
       <div className="relative min-h-0">
-        <FactoryFlow />
+        <BoardErrorBoundary
+          resetKey={boardDesignKey}
+          onOpenLibrary={() => {
+            const { activeDesignId, closeDesign } = useDesignStore.getState();
+            if (activeDesignId) void closeDesign(activeDesignId);
+            openLibrary();
+          }}
+        >
+          <FactoryFlow />
+        </BoardErrorBoundary>
         {covering === "welcome" ? (
           <div className="absolute inset-0 z-40">
             <WelcomePage />

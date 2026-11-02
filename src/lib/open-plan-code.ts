@@ -2,6 +2,7 @@
 
 import { decodePlanCode, readPlanCodeFromHash } from "@/lib/import-export/plan-code";
 import { applyPlanView } from "@/lib/plan-view";
+import { isSafeModeAddress } from "@/lib/designs/open-guard";
 import { useDesignStore } from "@/store/design-store";
 
 /**
@@ -11,8 +12,9 @@ import { useDesignStore } from "@/store/design-store";
  */
 export async function openPlanCode(text: string): Promise<void> {
   const project = await decodePlanCode(text);
-  await useDesignStore.getState().importProjectAsDesign(project, project.name);
-  applyPlanView(project.view);
+  if (await useDesignStore.getState().importProjectAsDesign(project, project.name)) {
+    applyPlanView(project.view);
+  }
 }
 
 /**
@@ -41,6 +43,10 @@ export async function openPlanCodeFromAddress(): Promise<void> {
   }
   if (readPlanCodeFromHash(window.location.hash)) {
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  }
+  if (isSafeModeAddress()) {
+    // Safe mode opens nothing by itself, a plan in the address included.
+    return;
   }
   try {
     await openPlanCode(code);
