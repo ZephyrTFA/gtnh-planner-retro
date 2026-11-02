@@ -3,6 +3,7 @@
 import type { MachineTier, Recipe, ResourceAmount } from "@/lib/model/types";
 import type { RecipeContentRef } from "@/lib/import-export/recipe-ref-match";
 import { APP_VERSION } from "@/lib/version";
+import { askDatasetWorker } from "@/lib/dataset-engine/client";
 import {
   serializeRecipeQueryClause,
   type RecipeQueryClause,
@@ -289,43 +290,25 @@ export async function queryRecipeDatasetResources(
   return fetchJson<RecipeDatasetResourceQueryResult>(url.toString(), { signal: options.signal });
 }
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  // No cache mode: every GET here carries the dataset checksum in its URL, so
-  // the browser's HTTP cache can legally reuse responses across reloads and
-  // sessions. The server marks fingerprinted responses immutable to match.
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+/**
+ * The dataset API, answered in the browser: there is no server, so each
+ * request goes to the dataset worker (src/lib/dataset-engine) by the same path
+ * and parameters the routes took, and comes back as the same JSON.
+ */
+async function fetchJson<T>(url: string, init?: { method?: string; body?: string; signal?: AbortSignal }): Promise<T> {
+  const parsed = new URL(url, window.location.origin);
+  const response = await askDatasetWorker(
+    {
+      pathname: parsed.pathname,
+      search: parsed.search.replace(/^\?/, ""),
+      body: init?.body ? JSON.parse(init.body) : undefined,
     },
-    ...init,
-  });
-
-  const contentType = response.headers.get("content-type") ?? "";
-  const body = await response.text();
-  const payload =
-    body && contentType.includes("application/json")
-      ? (JSON.parse(body) as T | { error?: string })
-      : undefined;
-
+    init?.signal,
+  );
   if (!response.ok) {
-    throw new Error(
-      typeof payload === "object" && payload && "error" in payload && payload.error
-        ? payload.error
-        : `Request failed (${response.status} ${response.statusText || "HTTP error"}).`,
-    );
+    throw new Error(response.error);
   }
-
-  if (!payload) {
-    const preview = body.trim().replace(/\s+/g, " ").slice(0, 120);
-    throw new Error(
-      `Expected JSON but received ${contentType || "an unknown content type"}${
-        preview ? `: ${preview}` : "."
-      }`,
-    );
-  }
-
-  return payload as T;
+  return response.json as T;
 }
 
 function addDatasetCacheKey(url: URL, version: DatasetVersion) {

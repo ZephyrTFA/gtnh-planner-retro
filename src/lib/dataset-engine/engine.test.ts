@@ -6,7 +6,7 @@ import {
   getWildcardResource,
   orderByRecipeMap,
   withTankMapFace,
-} from "./dataset-query";
+} from "./engine";
 
 describe("dataset query text search", () => {
   it("matches substrings inside tokens without matching across token boundaries", () => {
