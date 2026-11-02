@@ -71,10 +71,18 @@ describe("library tab", () => {
 
   it("keeps the view when opened without one, and leaves cleanly", async () => {
     const library = await visit(local, session);
-    library.setLibraryView({ kind: "public" });
+    library.setLibraryView({ kind: "favorites" });
     library.openLibrary();
-    expect(library.readLibraryTabState().view).toEqual({ kind: "public" });
+    expect(library.readLibraryTabState().view).toEqual({ kind: "favorites" });
     library.leaveLibrary();
-    expect(library.readLibraryTabState()).toEqual({ active: false, view: { kind: "public" } });
+    expect(library.readLibraryTabState()).toEqual({ active: false, view: { kind: "favorites" } });
+  });
+
+  it("shows the library instead of community views when there is no community", async () => {
+    const library = await visit(local, session);
+    library.openLibrary({ kind: "public", search: "@someone" });
+    expect(library.readLibraryTabState().view).toEqual({ kind: "all" });
+    library.setLibraryView({ kind: "saved" });
+    expect(library.readLibraryTabState().view).toEqual({ kind: "all" });
   });
 });
