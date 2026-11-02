@@ -21,6 +21,7 @@ import {
 import { isProgrammedCircuitResource } from "@/lib/model/programmed-circuit";
 import { MinecraftTooltip } from "./MinecraftTooltip";
 import { getSpriteFitScale, spriteFitStyle } from "./sprite-fit";
+import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
 
 type DisplayResourceAmount = Pick<
   ResourceAmount,
@@ -587,7 +588,8 @@ function SpriteImage({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imageRef}
-          src={iconPath}
+          src={textureUrl(iconPath)}
+          crossOrigin={TEXTURE_CROSS_ORIGIN}
           alt={resourceLabel(resource)}
           draggable={false}
           onLoad={(event) => {
@@ -647,8 +649,8 @@ function AspectIconImage({
       <span
         className="absolute inset-0 bg-black opacity-45"
         style={{
-          WebkitMaskImage: `url('${iconPath}')`,
-          maskImage: `url('${iconPath}')`,
+          WebkitMaskImage: `url('${textureUrl(iconPath)}')`,
+          maskImage: `url('${textureUrl(iconPath)}')`,
           WebkitMaskSize: "100% 100%",
           maskSize: "100% 100%",
           transform: "translate(1px, 1px)",
@@ -658,8 +660,8 @@ function AspectIconImage({
         className="absolute inset-0"
         style={{
           backgroundColor: color,
-          WebkitMaskImage: `url('${iconPath}')`,
-          maskImage: `url('${iconPath}')`,
+          WebkitMaskImage: `url('${textureUrl(iconPath)}')`,
+          maskImage: `url('${textureUrl(iconPath)}')`,
           WebkitMaskSize: "100% 100%",
           maskSize: "100% 100%",
         }}
@@ -881,7 +883,8 @@ function AtlasIconImage({
         void decoded.then(() => { if (active) onReady(); }, () => {});
       }
     };
-    image.src = atlas.imagePath;
+    image.crossOrigin = TEXTURE_CROSS_ORIGIN;
+    image.src = textureUrl(atlas.imagePath);
     return () => {
       active = false;
     };
@@ -905,7 +908,7 @@ function AtlasIconImage({
       <span
         className="block h-full w-full bg-no-repeat"
         style={{
-          backgroundImage: `url('${atlas.imagePath}')`,
+          backgroundImage: `url('${textureUrl(atlas.imagePath)}')`,
           backgroundSize: `${(atlas.atlasWidth / atlas.width) * 100}% ${(atlas.atlasHeight / atlas.height) * 100}%`,
           backgroundPosition: `${positionX} ${positionY}`,
           clipPath: resource.kind === "fluid" ? FLUID_SPRITE_CLIP : undefined,

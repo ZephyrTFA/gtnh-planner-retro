@@ -16,6 +16,16 @@ export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "");
 /** This deployment's source repository (GitHub), for the Source and Report a bug links. */
 export const SOURCE_URL = process.env.NEXT_PUBLIC_SOURCE_URL?.replace(/\/+$/, "") || undefined;
 
+/**
+ * Where rendered item and fluid icons are served from, when not this site
+ * (a bucket on its own hostname: there are more icons than a static host takes
+ * files). The host keeps the dataset's paths, so an icon at
+ * `/datasets/gtnh/<v>/textures/rendered/x.png` lives at `<base>/datasets/gtnh/<v>/textures/rendered/x.png`,
+ * and must answer with CORS headers or image export and sprite fitting cannot
+ * read the pixels. Unset: the site serves its own icons.
+ */
+export const ICON_BASE_URL = process.env.NEXT_PUBLIC_ICON_BASE_URL?.replace(/\/+$/, "") || undefined;
+
 /** A community chat link (Discord invite or thread). */
 export const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL || undefined;
 

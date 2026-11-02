@@ -8,6 +8,7 @@ import { getUiScale } from "@/lib/ui-scale";
 import { Zap } from "lucide-react";
 
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
+import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
 import {
   type EnergyHatchCatalogEntry,
 } from "./use-energy-hatch-catalog";
@@ -33,7 +34,8 @@ export function EnergyHatchArt({
     >
       {entry?.iconPath ? (
         <img
-          src={entry.iconPath}
+          src={textureUrl(entry.iconPath)}
+          crossOrigin={TEXTURE_CROSS_ORIGIN}
           alt={entry.displayName}
           draggable={false}
           className="minecraft-pixel-art h-[220%] w-[220%] shrink-0 max-w-none object-contain"

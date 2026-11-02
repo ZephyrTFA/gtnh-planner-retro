@@ -13,6 +13,10 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const FREE_PLAN_FILES = 20_000;
 const PAID_PLAN_FILES = 100_000;
 const NOT_FOR_BROWSER = new Set(["recipes.json", "recipes.json.gz", "oracle-report.json"]);
+// With NEXT_PUBLIC_ICON_BASE_URL set, rendered icons are served from that host
+// (there are more of them than a static host takes files), so the export
+// leaves them out. Unset, the site serves its own and they stay.
+const iconsElsewhere = Boolean(process.env.NEXT_PUBLIC_ICON_BASE_URL?.trim());
 
 const datasetsDir = path.join(outDir, "datasets", "gtnh");
 let prunedBytes = 0;
@@ -21,13 +25,38 @@ for (const version of await readDirOrEmpty(datasetsDir)) {
   if (!version.isDirectory()) {
     continue;
   }
-  for (const entry of await readDirOrEmpty(path.join(datasetsDir, version.name))) {
+  const versionDir = path.join(datasetsDir, version.name);
+  for (const entry of await readDirOrEmpty(versionDir)) {
     if (entry.isFile() && (NOT_FOR_BROWSER.has(entry.name) || entry.name.endsWith(".log"))) {
-      const file = path.join(datasetsDir, version.name, entry.name);
-      prunedBytes += (await fs.stat(file)).size;
-      prunedFiles += 1;
-      await fs.rm(file);
+      await prune(path.join(versionDir, entry.name));
     }
+  }
+  // The exporter's reports: pipeline output, never read by the app.
+  await prune(path.join(versionDir, "oracle"));
+  for (const entry of await readDirOrEmpty(path.join(versionDir, "textures"))) {
+    if (entry.isFile() && entry.name.endsWith(".json")) {
+      await prune(path.join(versionDir, "textures", entry.name));
+    }
+  }
+  if (iconsElsewhere) {
+    await prune(path.join(versionDir, "textures", "rendered"));
+  }
+}
+
+async function prune(target) {
+  for await (const file of walkOrFile(target)) {
+    prunedBytes += (await fs.stat(file)).size;
+    prunedFiles += 1;
+  }
+  await fs.rm(target, { recursive: true, force: true });
+}
+
+async function* walkOrFile(target) {
+  const stats = await fs.stat(target).catch(() => undefined);
+  if (stats?.isDirectory()) {
+    yield* walk(target);
+  } else if (stats?.isFile()) {
+    yield target;
   }
 }
 
@@ -47,7 +76,10 @@ for await (const file of walk(outDir)) {
   }
 }
 
-console.log(`Pruned ${prunedFiles} dataset files the browser never reads (${mib(prunedBytes)}).`);
+console.log(
+  `Pruned ${prunedFiles} dataset files the browser does not read from this site (${mib(prunedBytes)})` +
+    (iconsElsewhere ? `; rendered icons come from ${process.env.NEXT_PUBLIC_ICON_BASE_URL}.` : "."),
+);
 console.log(`out/: ${fileCount} files, ${mib(totalBytes)}; largest ${path.relative(outDir, largest.file)} (${mib(largest.size)}).`);
 if (fileCount > PAID_PLAN_FILES) {
   console.error(`Too many files for Cloudflare static assets: ${fileCount} > ${PAID_PLAN_FILES}.`);

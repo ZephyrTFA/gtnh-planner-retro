@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { getUiScale } from "@/lib/ui-scale";
+import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
 
 /**
  * The Welcome page's backdrop: the pack's most-used items drifting through
@@ -371,7 +372,8 @@ export function WelcomeBackdrop({ icons }: { icons: string[] }) {
           settle();
         };
         image.onerror = settle;
-        image.src = path;
+        image.crossOrigin = TEXTURE_CROSS_ORIGIN;
+        image.src = textureUrl(path);
       }
       if (paths.length === 0) {
         settle();
