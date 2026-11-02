@@ -119,7 +119,9 @@ The board must stay smooth with 100+ cards on weak PCs.
 - Every dial is in `router-tuning.ts` (`DEFAULT_ROUTER_TUNING`), editable per device in the
   dev menu. Arrange dials are left out of `routerTuningKey` so they never re-route.
 - Past `ASYNC_ROUTE_EDGE_LIMIT` wires, routing runs in a worker (`grid-route-solve.ts`).
-  A worker file must never import the module that spawns it (Turbopack hangs).
+  Workers are bundled by esbuild (`tools/build-workers.mjs`, into `public/workers/`) and
+  started through `src/lib/worker-url.ts`, never `new Worker(new URL(...))`: Turbopack copies
+  that target as raw TypeScript. A worker file must never import the module that spawns it.
 - Crossing hops (`wire-hops.ts`) are measured along the whole wire; arrows avoid hops.
 - Count crossings with `measureWireRoutes` (`src/lib/route-metrics.ts`), which counts them
   at bends and run ends too. Tools: `router-replay.local.test.ts`,

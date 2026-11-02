@@ -1,9 +1,16 @@
-# Server and API (src/lib/server, src/app/api)
+# Dataset engine and dormant server code (src/lib/dataset-engine, src/lib/server)
 
-## Recipe queries (dataset-query.ts)
+The site is a static export with no server. Recipe search runs in the browser: the engine
+(`src/lib/dataset-engine/engine.ts`) runs in a Web Worker (`dataset.worker.ts`), reads
+the dataset files from `/datasets/gtnh/` through `browser-source.ts`, and answers the
+request paths the old `/api/datasets/*` routes did (`requests.ts`).
+`src/lib/server/dataset-query.ts` is a shim that runs the same engine in Node for tests.
+Community, account and Supabase code below is dormant while `ONLINE_FEATURES` is false.
+
+## Recipe queries (dataset-engine/engine.ts)
 
 - A query is clauses (`role:kind:id`, `src/lib/datasets/recipe-query.ts`) plus
-  `takesOp` / `makesOp` (any / all / only) and the map selection. The server does set
+  `takesOp` / `makesOp` (any / all / only) and the map selection. The engine does set
   algebra over the lookup index (`getClauseLookupRecipesByMap`): any = union,
   all = intersection, sides intersect. Every clause gets the concrete-context rewrite
   (`applyClauseResourceContexts`).
@@ -11,14 +18,15 @@
   candidates, then degrades to ALL. Non-consumed inputs never count against takes-ONLY.
 - All-maps answers page through `recipeMaps` in chip order, best match first inside each
   map (`orderByRecipeMap`).
-- The catalog mixes in server output, so its cache key includes `APP_VERSION`. A new
+- The catalog mixes in engine output, so its cache key includes `APP_VERSION`. A new
   catalog field must be added to `getDatasetCatalog`'s explicit field list (and
   `RecipeDataset` in types.ts) or it never reaches the client.
 - Dataset files other than textures may be replaced in place; textures are
   cache-immutable, so a changed icon needs a new name.
-- Every server cache is bounded or index-sized (the Node heap is capped at 3 GB). A slow
-  site: check the heap first.
-- The OG card route reads fonts through `process.cwd()` (non-standalone build).
+- Every engine cache is bounded or index-sized: it lives in each visitor's browser, so
+  check the worker heap (about 300 MB after a first recipe search) before adding one.
+- Search indexes the browser would otherwise build are precomputed by the pipeline
+  (`build-browser-indexes.mjs`); a new index belongs there, not in the worker's startup.
 
 ## Supabase (community.ts, resource-popularity.ts)
 
