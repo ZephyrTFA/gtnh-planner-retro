@@ -267,6 +267,12 @@ function buildTooltipLabel(
     resource.consumed === false && !resource.tooltip?.some(isNotConsumedTooltipLine)
       ? "Not consumed"
       : undefined;
+  // The amount is already the average a run, so the tip says why it is fractional.
+  const consumeChance = (resource as { consumeChance?: number }).consumeChance;
+  const consumeChanceLine =
+    consumeChance !== undefined && consumeChance < 1
+      ? `Used up ${trimAmount(consumeChance * 100)}% of runs`
+      : undefined;
   // Both short enough to sit on one line at the panel's width: a hint that wraps
   // mid-sentence reads worse than no hint at all.
   const cycleLine =
@@ -276,7 +282,7 @@ function buildTooltipLabel(
         ? "Scroll to pick one."
         : undefined;
 
-  return [...baseLines, cycleLine, chanceLine, consumedLine].filter(Boolean).join("\n");
+  return [...baseLines, cycleLine, chanceLine, consumeChanceLine, consumedLine].filter(Boolean).join("\n");
 }
 
 /**
