@@ -15,8 +15,9 @@
     "datasets:manifest": "node tools/dataset-pipeline/scripts/rebuild-manifest.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "predev": "node tools/copy-highs-wasm.mjs",
-    "prebuild": "node tools/copy-highs-wasm.mjs"
+    "predev": "node tools/copy-highs-wasm.mjs && node tools/build-workers.mjs",
+    "prebuild": "node tools/copy-highs-wasm.mjs && node tools/build-workers.mjs",
+    "postbuild": "node tools/prune-static-export.mjs out"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
@@ -39,6 +40,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.8",

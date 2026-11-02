@@ -1,5 +1,6 @@
 "use client";
 
+import { workerUrl } from "@/lib/worker-url";
 import type { DatasetApiRequest, DatasetApiResponse } from "./requests";
 
 /**
@@ -13,7 +14,7 @@ const pending = new Map<number, { resolve: (response: DatasetApiResponse) => voi
 
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(new URL("./dataset.worker.ts", import.meta.url));
+    worker = new Worker(workerUrl("dataset"));
     worker.onmessage = (event: MessageEvent<{ id: number; response: DatasetApiResponse }>) => {
       const entry = pending.get(event.data.id);
       if (entry) {

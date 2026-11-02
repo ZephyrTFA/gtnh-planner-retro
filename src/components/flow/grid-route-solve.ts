@@ -15,6 +15,7 @@
  * times a second. Results carry a sequence number so the board can tell a
  * late answer from a current one.
  */
+import { workerUrl } from "@/lib/worker-url";
 import {
   encodeRouteSolveJob,
   runRouteSolveJob,
@@ -74,7 +75,7 @@ export function scheduleRouteSolve(job: RouteSolveJob) {
 
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(new URL("./grid-route.worker.ts", import.meta.url));
+    worker = new Worker(workerUrl("grid-route"));
     worker.onmessage = (event: MessageEvent<RouteSolveResult | { error: string }>) => {
       inFlight = undefined;
       if ("routes" in event.data) {

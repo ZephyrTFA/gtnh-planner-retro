@@ -1,3 +1,4 @@
+import { workerUrl } from "@/lib/worker-url";
 import { calculateThroughput } from "@/lib/solver";
 import type { FactoryProject, ThroughputResult } from "@/lib/model/types";
 
@@ -214,7 +215,7 @@ function scheduleSolve(request: SolveRequest) {
 
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(new URL("./solve-books.worker.ts", import.meta.url));
+    worker = new Worker(workerUrl("solve-books"));
     worker.onmessage = (
       event: MessageEvent<{
         key: string;

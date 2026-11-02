@@ -7,6 +7,7 @@
  * while one runs. Without a Worker (SSR, tests, a worker that cannot
  * start) the same pure function runs here.
  */
+import { workerUrl } from "@/lib/worker-url";
 import {
   runArrangeJob,
   type ArrangeJob,
@@ -118,7 +119,7 @@ export function arrangeInWorker(
 
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(new URL("./arrange.worker.ts", import.meta.url));
+    worker = new Worker(workerUrl("arrange"));
   }
   return worker;
 }
