@@ -29,6 +29,7 @@ import { Face, InlineName, LibraryTile } from "./LibraryTile";
 import { SetupsGrid } from "./SetupsGrid";
 import { SetupsFilterBar, useSetupFilters } from "./SetupsFilterBar";
 import { parsePlanSearch } from "@/lib/community/search-query";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 /**
  * The Library: your designs and the network's public setups, as one kind of
@@ -419,8 +420,12 @@ export function LibraryPage() {
                 </option>
               ))}
               <option value="new">New collection…</option>
-              <option value="public">Public setups</option>
-              <option value="saved">Saved ({savedIds.length})</option>
+              {ONLINE_FEATURES ? (
+                <>
+                  <option value="public">Public setups</option>
+                  <option value="saved">Saved ({savedIds.length})</option>
+                </>
+              ) : null}
             </select>
           </div>
           <aside className="flex w-[184px] shrink-0 flex-col gap-1 overflow-y-auto bg-[#101215] px-2 py-2 compact:hidden">
@@ -500,21 +505,25 @@ export function LibraryPage() {
               <span className="whitespace-nowrap text-[12px] font-bold">New collection</span>
             </button>
 
-            <div className="mx-1 my-2 border-t-2 border-[#23262d] compact:mx-2 compact:my-0 compact:h-4 compact:border-l compact:border-t-0" />
-            <RailItem
-              icon={Factory}
-              label="Public setups"
-              selected={library.view.kind === "public"}
-              onClick={() => setLibraryView({ kind: "public" })}
-            />
-            <RailItem
-              icon={Bookmark}
-              label="Saved"
-              nested
-              count={savedIds.length}
-              selected={library.view.kind === "saved"}
-              onClick={() => setLibraryView({ kind: "saved" })}
-            />
+            {ONLINE_FEATURES ? (
+              <>
+                <div className="mx-1 my-2 border-t-2 border-[#23262d] compact:mx-2 compact:my-0 compact:h-4 compact:border-l compact:border-t-0" />
+                <RailItem
+                  icon={Factory}
+                  label="Public setups"
+                  selected={library.view.kind === "public"}
+                  onClick={() => setLibraryView({ kind: "public" })}
+                />
+                <RailItem
+                  icon={Bookmark}
+                  label="Saved"
+                  nested
+                  count={savedIds.length}
+                  selected={library.view.kind === "saved"}
+                  onClick={() => setLibraryView({ kind: "saved" })}
+                />
+              </>
+            ) : null}
           </aside>
 
           {/* THE PAGE. */}

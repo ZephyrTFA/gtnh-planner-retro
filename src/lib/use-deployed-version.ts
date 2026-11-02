@@ -8,7 +8,7 @@ import { APP_VERSION } from "@/lib/version";
 const POLL_MS = 15 * 60 * 1000;
 
 /**
- * The version the server is on, when it is NEWER than the one this page is
+ * The version the site is serving, when it is NEWER than the one this page is
  * running. Undefined the rest of the time, which is almost always.
  *
  * A tab left open across a deploy keeps running the bundle it loaded; when
@@ -28,7 +28,7 @@ export function useDeployedVersion(): string | undefined {
         return;
       }
       try {
-        const response = await fetch("/api/version", { cache: "no-store" });
+        const response = await fetch("/version.json", { cache: "no-store" });
         if (!response.ok) {
           return;
         }

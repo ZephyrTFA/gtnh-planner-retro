@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { fetchCurrentUser, logoutCommunityUser } from "@/lib/community/client";
 import type { CommunityUser } from "@/lib/community/types";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 /**
  * One session, one store: the planner header, the community header, the share
@@ -24,6 +25,11 @@ export const useCommunityAuthStore = create<CommunityAuthStore>((set, get) => ({
   isHydrating: false,
   hydrate: async () => {
     if (get().hasHydrated || get().isHydrating) {
+      return;
+    }
+    if (!ONLINE_FEATURES) {
+      // No accounts here: nobody is signed in, and nothing is asked.
+      set({ hasHydrated: true });
       return;
     }
 

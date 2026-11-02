@@ -1,19 +1,18 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 
+export const dynamic = "force-static";
+
 export default function robots(): MetadataRoute.Robots {
-  const base = SITE_URL;
   return {
     rules: [
       {
         userAgent: "*",
-        // The card route stays crawlable: Twitterbot honours robots.txt, and
-        // blocking it would strip the image off every shared plan's unfurl.
-        allow: ["/", "/api/community/plans/*/card"],
-        // JSON endpoints and dataset shards have no place in an index.
-        disallow: ["/api/", "/datasets/"],
+        allow: ["/"],
+        // Dataset files and shards have no place in an index.
+        disallow: ["/datasets/"],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

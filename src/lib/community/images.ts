@@ -2,6 +2,7 @@
 
 import { BOARD_IMAGE_MAX_BYTES } from "./types";
 import { getDeviceId } from "./client";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 /**
  * Uploading a picture for the board. The file goes to /api/community/images,
@@ -10,6 +11,9 @@ import { getDeviceId } from "./client";
  * not an image) surface here as thrown Errors with player-readable messages.
  */
 export async function uploadBoardImage(file: File | Blob): Promise<string> {
+  if (!ONLINE_FEATURES) {
+    throw new Error("Pictures can't be added here: this site has no image server.");
+  }
   if (file.size > BOARD_IMAGE_MAX_BYTES) {
     throw new Error("That image is too big: the limit is 4 MB.");
   }

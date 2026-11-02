@@ -19,6 +19,7 @@ import { openCommunityPost } from "@/lib/community/open-post";
 import { openLibrary } from "@/lib/library/library-tab";
 import { openSidebarTab } from "@/lib/sidebar-tab";
 import { APP_VERSION } from "@/lib/version";
+import { ONLINE_FEATURES } from "@/lib/site";
 import { leaveWelcomeTab, setWelcomeOnStartup, useWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { writeWorkspaceView } from "@/lib/workspace-view";
 import { useDesignStore } from "@/store/design-store";
@@ -100,7 +101,7 @@ export function WelcomePage() {
           <header className="flex flex-col items-start gap-3">
             <div className="flex items-baseline gap-3">
               <h1 className="text-[32px] font-black leading-none tracking-tight text-white compact:text-[26px]">
-                <span className="text-cyan-300">GTNH</span> Planner
+                <span className="text-cyan-300">GTNH</span> Planner Retro
               </h1>
               <span className="rounded border border-line-strong px-1.5 py-0.5 text-[11px] text-fg-muted">
                 v{APP_VERSION}
@@ -123,12 +124,14 @@ export function WelcomePage() {
               >
                 New design
               </PrimaryButton>
-              <SecondaryButton
-                icon={Factory}
-                onClick={() => openLibrary({ kind: "public" })}
-              >
-                Browse shared setups
-              </SecondaryButton>
+              {ONLINE_FEATURES ? (
+                <SecondaryButton
+                  icon={Factory}
+                  onClick={() => openLibrary({ kind: "public" })}
+                >
+                  Browse shared setups
+                </SecondaryButton>
+              ) : null}
               <SecondaryButton
                 icon={Search}
                 onClick={() => {
@@ -145,7 +148,7 @@ export function WelcomePage() {
             </div>
           </header>
 
-          <CommunityShelf />
+          {ONLINE_FEATURES ? <CommunityShelf /> : null}
 
           <footer className="border-t border-line pt-3">
             <label className="flex w-fit cursor-pointer items-center gap-2 text-[12px] text-fg-muted hover:text-fg">

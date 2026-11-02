@@ -5,6 +5,7 @@ import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 import { ChevronDown, Factory, LogOut, ShieldCheck, User } from "lucide-react";
 import { useRef, useState } from "react";
 import { openLibrary } from "@/lib/library/library-tab";
+import { ONLINE_FEATURES } from "@/lib/site";
 import { AuthForm, useCommunityUser } from "./auth";
 
 /**
@@ -12,6 +13,10 @@ import { AuthForm, useCommunityUser } from "./auth";
  * menu when logged in.
  */
 export function AccountMenu() {
+  return ONLINE_FEATURES ? <OnlineAccountMenu /> : null;
+}
+
+function OnlineAccountMenu() {
   const { user, isLoading, setUser, signOut } = useCommunityUser();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isAuthOpen, setAuthOpen] = useState(false);

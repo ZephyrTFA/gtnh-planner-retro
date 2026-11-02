@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getCommunityPlan, voteCommunityPlan } from "@/lib/community/client";
+import { ONLINE_FEATURES } from "@/lib/site";
 import { computeCommunityPlanStats } from "@/lib/community/plan-stats";
 import { noteSharedPlanGone, sharedPlanLink } from "@/lib/community/shared-link";
 import type { CommunityPlanSummary } from "@/lib/community/types";
@@ -131,7 +132,8 @@ export function PlanIdentityDrawer() {
             {(descriptionDraft ?? project.description)?.trim() || "Add description…"}
           </span>
         </button>
-        {linkedPlanId ? (
+        {/* Posting needs the community; Copy plan beside it shares a link without one. */}
+        {!ONLINE_FEATURES ? null : linkedPlanId ? (
           <LinkedPostStrip key={linkedPlanId} planId={linkedPlanId} />
         ) : (
           <button

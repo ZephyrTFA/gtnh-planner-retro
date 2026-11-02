@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { leaveWelcomeTab } from "@/lib/welcome/welcome-tab";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 /**
  * The Library: everything you have, and everything the network has.
@@ -44,7 +45,12 @@ function isLibraryView(value: unknown): value is LibraryView {
   if (kind === "folder") {
     return typeof (value as { folderId?: unknown }).folderId === "string";
   }
-  return kind === "all" || kind === "favorites" || kind === "public" || kind === "saved";
+  return kind === "all" || kind === "favorites" || ((kind === "public" || kind === "saved") && ONLINE_FEATURES);
+}
+
+/** Public setups and Saved are community views: without the community they show the library. */
+function reachableView(view: LibraryView): LibraryView {
+  return !ONLINE_FEATURES && (view.kind === "public" || view.kind === "saved") ? { kind: "all" } : view;
 }
 
 function readStored(): LibraryTabState {
@@ -109,12 +115,12 @@ export function readLibraryTabState(): LibraryTabState {
  */
 export function openLibrary(view?: LibraryView) {
   leaveWelcomeTab();
-  write({ active: true, ...(view ? { view } : {}) });
+  write({ active: true, ...(view ? { view: reachableView(view) } : {}) });
 }
 
 /** Change what the open library is looking at. */
 export function setLibraryView(view: LibraryView) {
-  write({ view });
+  write({ view: reachableView(view) });
 }
 
 /** Step off the library onto whatever design is active. */

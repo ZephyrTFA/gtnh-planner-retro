@@ -12,6 +12,7 @@ import { ModAnnouncement } from "./ModAnnouncement";
 import { APP_VERSION } from "@/lib/version";
 import { AccountMenu } from "./community/AccountMenu";
 import { SharePlanDialog } from "./community/SharePlanDialog";
+import { ONLINE_FEATURES } from "@/lib/site";
 import { AppIdentity } from "./AppIdentity";
 import { DesignTabs } from "./DesignTabs";
 import { AppMenu } from "./AppMenu";
@@ -130,7 +131,7 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
       {isCompact ? (
         <AppMenu
           onLoadDatasetVersion={onLoadDatasetVersion}
-          onShare={() => setShareOpen(true)}
+          onShare={ONLINE_FEATURES ? () => setShareOpen(true) : undefined}
           onExportImage={() => setExportOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
         />
@@ -139,7 +140,7 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
         // the cluster sets the one size every control in it renders at.
         <div className="app-header-tools flex shrink-0 items-center gap-3 text-xs">
           <BoardActions
-            onShare={() => setShareOpen(true)}
+            onShare={ONLINE_FEATURES ? () => setShareOpen(true) : undefined}
             onExportImage={() => setExportOpen(true)}
           />
           {/* Settings is a plain utility square, not a coloured call to action. */}

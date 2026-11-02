@@ -45,6 +45,7 @@ import { useBoardSoundEffects } from "./flow/use-board-sound-effects";
 import { InspectorPanel } from "./InspectorPanel";
 import { PanelDrawer } from "./PanelDrawer";
 import { RecipeBrowser } from "./RecipeBrowser";
+import { ONLINE_FEATURES } from "@/lib/site";
 
 export function FactoryPlannerApp() {
   const project = useFactoryStore((state) => state.project);
@@ -148,7 +149,8 @@ export function FactoryPlannerApp() {
         .then(async () => {
           try {
             // Own posts open for editing; everyone else's opens for viewing.
-            const sharedPlanId = readSharedPlanId();
+            // Community posts need the community; a static site has none.
+            const sharedPlanId = ONLINE_FEATURES ? readSharedPlanId() : undefined;
             if (sharedPlanId) {
               try {
                 await openCommunityPost({ id: sharedPlanId });

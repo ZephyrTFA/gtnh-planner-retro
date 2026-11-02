@@ -22,5 +22,12 @@ export const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL || undefined;
 /** A tip jar. */
 export const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL || undefined;
 
+/**
+ * Accounts, community posts, comments and votes need a server and a database.
+ * The static site has neither, so every door to them stays shut: no sign-in,
+ * no Public setups, no posting. Plans still share as links, which need nothing.
+ */
+export const ONLINE_FEATURES = false;
+
 /** The project this one is built from; MIT, credited in the menu. */
 export const UPSTREAM_URL = "https://github.com/jackwrichards/gtnh-factory-flow";

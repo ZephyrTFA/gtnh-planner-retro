@@ -13,7 +13,7 @@ import { MenuLinks } from "./HeaderLinks";
 interface AppMenuProps {
   onLoadDatasetVersion: (versionId: string) => void;
   /** Opens the share dialog, which the header owns; see AppHeader. */
-  onShare: () => void;
+  onShare?: () => void;
   /** Opens the export-image dialog, also owned by the header. */
   onExportImage: () => void;
   /** Opens the settings dialog, also owned by the header. */
