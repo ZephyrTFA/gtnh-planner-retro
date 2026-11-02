@@ -345,7 +345,7 @@ function ImageShape({ annotation, look }: { annotation: FactoryAnnotation; look:
             : undefined),
         }}
       >
-        {annotation.imageUrl && !failed ? (
+        {annotation.imageUrl && /^data:image\//.test(annotation.imageUrl) && !failed ? (
           // crossOrigin so the PNG/SVG exporter is allowed to read the pixels
           // back off the canvas; the image bucket serves open CORS.
           // eslint-disable-next-line @next/next/no-img-element

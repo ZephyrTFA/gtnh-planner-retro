@@ -11,6 +11,8 @@ export class FactoryJsonError extends Error {
   }
 }
 
+const MAX_REPORTED_ISSUES = 5;
+
 export function parseFactoryProjectJson(source: string): FactoryProject {
   let raw: unknown;
 
@@ -26,10 +28,16 @@ export function parseFactoryProjectJson(source: string): FactoryProject {
     return normalizeLoadedProject(factoryProjectSchema.parse(raw));
   } catch (error) {
     if (error instanceof ZodError) {
-      const issues = error.issues
-        .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
+      // A few are enough to say what is wrong; a crafted plan can carry
+      // thousands, and joining them all made a message that froze the page.
+      const shown = error.issues
+        .slice(0, MAX_REPORTED_ISSUES)
+        .map((issue) => `${issue.path.slice(0, 6).join(".") || "root"}: ${issue.message.slice(0, 200)}`)
         .join("; ");
-      throw new FactoryJsonError(`Invalid factory project: ${issues}`);
+      const more = error.issues.length - MAX_REPORTED_ISSUES;
+      throw new FactoryJsonError(
+        `Invalid factory project: ${shown}${more > 0 ? ` (and ${more.toLocaleString()} more)` : ""}`,
+      );
     }
 
     throw error;

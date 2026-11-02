@@ -2,8 +2,46 @@ import { z } from "zod";
 import { PROJECT_SCHEMA_VERSION } from "./types";
 
 export const resourceKindSchema = z.enum(["item", "fluid", "aspect", "power"]);
+
+/**
+ * Plan size limits. A plan is data from anyone (a link, a paste, a file), and
+ * a crafted one with thousands of cards froze the page; every list is bounded,
+ * far above the biggest real plans (tens of cards).
+ */
+export const PLAN_LIMITS = {
+  cards: 2000,
+  recipes: 2000,
+  edges: 8000,
+  annotations: 1000,
+  pockets: 500,
+  productionGroups: 500,
+  fuelProfiles: 200,
+  waypoints: 256,
+  slots: 128,
+  alternatives: 512,
+  tooltipLines: 64,
+  extraRecipes: 64,
+  longText: 100_000,
+  shortText: 1000,
+} as const;
+
+/**
+ * Where plan art may come from: this site's own files. A plan naming any other
+ * address would have the browser fetch it (and tell that host who opened the
+ * plan), so anything else is dropped on load, not rejected: the resource's art
+ * comes back from the dataset by its kind and id.
+ */
+const SITE_ASSET_PATH = /^\/(datasets|nei|power-art|mode-art)\/[A-Za-z0-9._~%@+\-/]*$/;
+export const siteAssetPathSchema = z
+  .string()
+  .max(500)
+  .regex(SITE_ASSET_PATH)
+  .refine((path) => !path.includes("..") && !path.includes("//"));
+/** An optional site path that is dropped, not fatal, when it is anything else. */
+const optionalSitePath = siteAssetPathSchema.optional().catch(undefined);
+
 export const resourceIconAtlasRefSchema = z.object({
-  imagePath: z.string().min(1),
+  imagePath: siteAssetPathSchema,
   atlasWidth: z.number().int().positive(),
   atlasHeight: z.number().int().positive(),
   x: z.number().int().min(0),
@@ -15,6 +53,8 @@ export const resourceIconAtlasRefSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .optional(),
 });
+const optionalIconAtlas = resourceIconAtlasRefSchema.optional().catch(undefined);
+
 /**
  * A plan's (or post's) one-item face. Deliberately lenient: it only ever
  * renders as an icon, and a strict field must never sink a whole plan load.
@@ -23,8 +63,8 @@ export const entryIconSchema = z.object({
   kind: z.enum(["item", "fluid"]),
   resourceId: z.string().min(1).max(200),
   displayName: z.string().max(200).optional(),
-  iconPath: z.string().max(500).optional(),
-  iconAtlas: resourceIconAtlasRefSchema.optional(),
+  iconPath: optionalSitePath,
+  iconAtlas: optionalIconAtlas,
   dominantColor: z.string().max(32).optional(),
 });
 
@@ -63,11 +103,11 @@ export const resourceAmountSchema = z.object({
   id: z.string().min(1, "Resource id is required"),
   amount: z.number().positive("Amount must be greater than zero"),
   displayName: z.string().min(1).optional(),
-  iconPath: z.string().min(1).optional(),
-  iconAtlas: resourceIconAtlasRefSchema.optional(),
+  iconPath: optionalSitePath,
+  iconAtlas: optionalIconAtlas,
   dominantColor: dominantColorSchema,
   modId: z.string().min(1).optional(),
-  tooltip: z.array(z.string()).optional(),
+  tooltip: z.array(z.string().max(PLAN_LIMITS.shortText)).max(PLAN_LIMITS.tooltipLines).optional(),
   neiSlot: z
     .object({
       x: z.number().int().min(0),
@@ -80,14 +120,15 @@ export const resourceAmountSchema = z.object({
         kind: resourceKindSchema,
         id: z.string().min(1),
         displayName: z.string().min(1).optional(),
-        iconPath: z.string().min(1).optional(),
-        iconAtlas: resourceIconAtlasRefSchema.optional(),
+        iconPath: optionalSitePath,
+        iconAtlas: optionalIconAtlas,
         dominantColor: dominantColorSchema,
         modId: z.string().min(1).optional(),
-        tooltip: z.array(z.string()).optional(),
+        tooltip: z.array(z.string().max(PLAN_LIMITS.shortText)).max(PLAN_LIMITS.tooltipLines).optional(),
         amount: z.number().positive().optional(),
       }),
     )
+    .max(PLAN_LIMITS.alternatives)
     .optional(),
 });
 
@@ -219,11 +260,11 @@ export const recipeSchema = z.object({
   availableTiers: z.array(z.string().min(1)).optional(),
   durationTicks: z.number().int().positive("Duration must be at least 1 tick"),
   eut: z.number().min(0, "EU/t must be zero or positive"),
-  inputs: z.array(recipeInputSchema),
+  inputs: z.array(recipeInputSchema).max(PLAN_LIMITS.slots),
   // Zero outputs is legal: the crop-farm placeholder recipe
   // (factoryflow:crop-farm:empty) has none until a crop is picked, and it
   // stays in project.recipes.
-  outputs: z.array(recipeOutputSchema),
+  outputs: z.array(recipeOutputSchema).max(PLAN_LIMITS.slots),
   programmedCircuit: z.string().optional(),
   specialValue: z.number().optional(),
   notes: z.string().optional(),
@@ -254,11 +295,11 @@ export const recipeSchema = z.object({
   metadata: z.record(z.string().min(1), z.unknown()).optional(),
   nei: z
     .object({
-      iconPath: z.string().optional(),
+      iconPath: optionalSitePath,
       source: z.string().optional(),
       handlerClass: z.string().optional(),
       canvas: z.object({ width: z.number(), height: z.number() }).optional(),
-      backgroundImage: z.string().optional(),
+      backgroundImage: optionalSitePath,
       itemInputGrid: z.object({ width: z.number(), height: z.number() }).optional(),
       itemOutputGrid: z.object({ width: z.number(), height: z.number() }).optional(),
       fluidInputGrid: z.object({ width: z.number(), height: z.number() }).optional(),
@@ -290,7 +331,7 @@ export const recipeSchema = z.object({
             width: z.number().int().positive(),
             height: z.number().int().positive(),
             direction: z.enum(["right", "up", "circular"]),
-            texture: z.string().optional(),
+            texture: optionalSitePath,
           }),
         )
         .optional(),
@@ -369,6 +410,7 @@ export const factoryNodeSchema = z.object({
         recipeInputOverrides: z.record(z.string().min(1), recipeInputSchema).optional(),
       }),
     )
+    .max(PLAN_LIMITS.extraRecipes)
     .optional(),
   // Solve mode's pin: run exactly this many machines; absent = solver's choice.
   solvePin: z.number().nonnegative().optional(),
@@ -387,9 +429,9 @@ export const factoryStorageSchema = z.object({
   kind: resourceKindSchema,
   resourceId: z.string().min(1),
   colorTag: factoryNodeColorTagSchema.optional(),
-  displayName: z.string().optional(),
-  iconPath: z.string().optional(),
-  iconAtlas: resourceIconAtlasRefSchema.optional(),
+  displayName: z.string().max(PLAN_LIMITS.shortText).optional(),
+  iconPath: optionalSitePath,
+  iconAtlas: optionalIconAtlas,
   dominantColor: dominantColorSchema,
   capacity: z.number().positive().optional(),
   // Absent means `product` (the pulling one), as on legacy plans.
@@ -414,7 +456,7 @@ export const factoryAnnotationSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(["box", "arrow", "text", "zone", "image"]),
   colorTag: factoryNodeColorTagSchema.optional(),
-  text: z.string().optional(),
+  text: z.string().max(PLAN_LIMITS.longText).optional(),
   position: z.object({
     x: z.number(),
     y: z.number(),
@@ -429,13 +471,16 @@ export const factoryAnnotationSchema = z.object({
   points: z.array(z.object({ x: z.number(), y: z.number() })).max(64).optional(),
   // Bounded so an imported plan cannot carry a note that swallows the board.
   fontSize: z.number().min(8).max(96).optional(),
-  // Image annotations: only ever rendered as an <img> src. Bounded, and http
-  // or a data URI only, so a plan cannot smuggle a javascript: URL.
+  // Image annotations: only ever rendered as an <img> src. A picture carried
+  // in the plan itself (a data URI) only: there is no image server, and a URL
+  // would have the browser call whatever host the plan names. Anything else
+  // is dropped, and the note stays.
   imageUrl: z
     .string()
-    .max(2048)
-    .regex(/^(https?:\/\/|data:image\/)/)
-    .optional(),
+    .max(4_000_000)
+    .regex(/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/)
+    .optional()
+    .catch(undefined),
   style: z
     .object({
       border: z.enum(["solid", "dashed", "none"]).optional(),
@@ -487,7 +532,7 @@ export const factoryEdgeSchema = z.object({
   ratePerSecond: z.number().positive().optional(),
   ratioWeight: z.number().nonnegative().optional(),
   ratioInputWeight: z.number().nonnegative().optional(),
-  waypoints: z.array(z.object({ x: z.number(), y: z.number() })).optional(),
+  waypoints: z.array(z.object({ x: z.number(), y: z.number() })).max(PLAN_LIMITS.waypoints).optional(),
   // A loose cell wire's Canner ratio; see FactoryEdge.crossForm.
   crossForm: z.object({ litresPerCell: z.number().positive() }).optional(),
 });
@@ -538,15 +583,19 @@ export const factoryProjectSchema = z.object({
   productionGroups: z.array(z.object({
     id: z.string().min(1), name: z.string().min(1), parentId: z.string().min(1).optional(),
     resourceRules: z.record(z.string(), z.enum(["share", "import"])).optional(),
-  })).optional(),
+  })).max(PLAN_LIMITS.productionGroups).optional(),
   poolResourceRules: z.record(z.string(), z.enum(["share", "import"])).optional(),
-  checklist: z.object({ cards: z.array(z.string()), edges: z.array(z.string()) }).optional(),
+  checklist: z
+    .object({
+      cards: z.array(z.string()).max(PLAN_LIMITS.cards * 2),
+      edges: z.array(z.string()).max(PLAN_LIMITS.edges),
+    })
+    .optional(),
   schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
-  id: z.string().min(1),
-  name: z.string().min(1),
-  // No length cap: the inputs cap at the community limits, and a strict field
-  // here would sink a whole plan load over its blurb.
-  description: z.string().optional(),
+  id: z.string().min(1).max(PLAN_LIMITS.shortText),
+  name: z.string().min(1).max(PLAN_LIMITS.shortText),
+  // Far above any blurb, so it never sinks a real plan load.
+  description: z.string().max(PLAN_LIMITS.longText).optional(),
   icon: entryIconSchema.optional(),
   view: planViewStateSchema.optional(),
   targetRate: targetRateSchema.optional(),
@@ -566,15 +615,15 @@ export const factoryProjectSchema = z.object({
   poolMode: z.boolean().optional(),
   // Pool mode's cell-to-fluid ratios, litres per filled cell by cell id.
   poolCellRatios: z.record(z.string(), z.number().positive()).optional(),
-  recipes: z.array(recipeSchema),
-  nodes: z.array(factoryNodeSchema),
-  storages: z.array(factoryStorageSchema).optional().default([]),
-  annotations: z.array(factoryAnnotationSchema).optional().default([]),
-  pockets: z.array(factoryPocketSchema).optional().default([]),
-  edges: z.array(factoryEdgeSchema),
-  fuelProfiles: z.array(fuelProfileSchema),
+  recipes: z.array(recipeSchema).max(PLAN_LIMITS.recipes),
+  nodes: z.array(factoryNodeSchema).max(PLAN_LIMITS.cards),
+  storages: z.array(factoryStorageSchema).max(PLAN_LIMITS.cards).optional().default([]),
+  annotations: z.array(factoryAnnotationSchema).max(PLAN_LIMITS.annotations).optional().default([]),
+  pockets: z.array(factoryPocketSchema).max(PLAN_LIMITS.pockets).optional().default([]),
+  edges: z.array(factoryEdgeSchema).max(PLAN_LIMITS.edges),
+  fuelProfiles: z.array(fuelProfileSchema).max(PLAN_LIMITS.fuelProfiles),
   selectedFuelProfileId: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(PLAN_LIMITS.longText).optional(),
   metadata: z
     .object({
       isDemo: z.boolean().optional(),
