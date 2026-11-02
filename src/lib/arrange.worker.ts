@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { runArrangeJob, type ArrangeJob } from "./arrange-job";
 
 /**

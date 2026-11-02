@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { createBrowserDatasetSource } from "./browser-source";
 import { answerDatasetApi, type DatasetApiRequest } from "./requests";
 import { setDatasetFileSource } from "./source";

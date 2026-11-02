@@ -14,7 +14,7 @@ import { solveLp, type LinearProgram, type LpSolution } from "./simplex";
  * falls back to the homegrown engine, never to a missing answer.
  */
 
-interface HighsInstance {
+export interface HighsInstance {
   solve: (lpText: string) => {
     Status: string;
     Columns: Record<string, { Primal: number }>;
@@ -24,14 +24,16 @@ interface HighsInstance {
 let highs: HighsInstance | undefined;
 let loading: Promise<boolean> | undefined;
 
-export function initLpEngine(
-  options: { wasmUrl?: string; glueUrl?: string } = {},
-): Promise<boolean> {
+/**
+ * Switches to HiGHS once `load` delivers it: `loadWorkerHighs` in the solve
+ * worker, `loadNodeHighs` (lp-engine-node.ts) in tests. The Node loader lives
+ * in its own module so the browser bundle never carries the package's Node
+ * build.
+ */
+export function initLpEngine(load: () => Promise<HighsInstance>): Promise<boolean> {
   loading ??= (async () => {
     try {
-      highs = options.glueUrl
-        ? await loadBrowserHighs(options.glueUrl, options.wasmUrl)
-        : await loadNodeHighs(options.wasmUrl);
+      highs = await load();
       return true;
     } catch (error) {
       console.error("HiGHS failed to load; the homegrown simplex stays on.", error);
@@ -41,30 +43,25 @@ export function initLpEngine(
   return loading;
 }
 
-/** Tests and any node-side solve: the package loads its own wasm from disk. */
-async function loadNodeHighs(wasmUrl?: string): Promise<HighsInstance> {
-  const factory = (await import("highs")).default;
-  return (await factory(
-    wasmUrl ? { locateFile: () => wasmUrl } : undefined,
-  )) as unknown as HighsInstance;
-}
+type HighsFactory = (options?: { locateFile?: (file: string) => string }) => Promise<HighsInstance>;
 
 /**
- * The browser path fetches the emscripten glue from public/ and evaluates it
- * outside the bundler, so the glue stays byte-identical to the package's
- * build and the worker chunk stays small. The glue is UMD: with no module
- * system in scope it leaves its factory in a top-level `Module` var, which
- * the wrapper returns.
+ * The worker loads the emscripten glue from public/ as a classic script
+ * (importScripts), so the glue stays byte-identical to the package's build
+ * and nothing is evaluated from a string: the page's CSP allows no eval. The
+ * glue is UMD: with no module system in scope it leaves its factory in a
+ * global `Module`.
  */
-async function loadBrowserHighs(glueUrl: string, wasmUrl?: string): Promise<HighsInstance> {
-  const response = await fetch(glueUrl);
-  if (!response.ok) {
-    throw new Error(`Could not fetch ${glueUrl} (${response.status}).`);
+export async function loadWorkerHighs(glueUrl: string, wasmUrl?: string): Promise<HighsInstance> {
+  const scope = globalThis as unknown as { importScripts?: (...urls: string[]) => void; Module?: HighsFactory };
+  if (typeof scope.importScripts !== "function") {
+    throw new Error("HiGHS loads in a worker only.");
   }
-  const source = await response.text();
-  const factory = new Function(`${source}; return Module;`)() as (options?: {
-    locateFile?: (file: string) => string;
-  }) => Promise<HighsInstance>;
+  scope.importScripts(glueUrl);
+  const factory = scope.Module;
+  if (typeof factory !== "function") {
+    throw new Error(`${glueUrl} did not define the HiGHS factory.`);
+  }
   return factory(wasmUrl ? { locateFile: () => wasmUrl } : undefined);
 }
 

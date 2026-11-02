@@ -28,7 +28,8 @@ await build({
   platform: "browser",
   target: "es2022",
   minify: true,
-  sourcemap: "linked",
+  // Maps for development only: a release ships none (npm sets npm_lifecycle_event).
+  sourcemap: process.env.npm_lifecycle_event === "prebuild" ? false : "linked",
   legalComments: "none",
   tsconfig: path.join(root, "tsconfig.json"),
   // The solver's Node-only HiGHS path (a dynamic import of the package) never

@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/zod-config";
+
 import {
   noteRecipesRefreshed,
   noteRecipesRequested,

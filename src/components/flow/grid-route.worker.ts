@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import {
   decodeRouteSolveJob,
   runRouteSolveJob,

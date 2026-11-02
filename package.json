@@ -17,7 +17,7 @@
     "format:check": "prettier --check .",
     "predev": "node tools/copy-highs-wasm.mjs && node tools/build-workers.mjs",
     "prebuild": "node tools/copy-highs-wasm.mjs && node tools/build-workers.mjs",
-    "postbuild": "node tools/prune-static-export.mjs out"
+    "postbuild": "node tools/prune-static-export.mjs out && node tools/security-headers.mjs out"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",

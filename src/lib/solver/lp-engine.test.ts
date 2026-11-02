@@ -5,6 +5,7 @@ import type { FactoryProject } from "@/lib/model/types";
 import { normalizeLoadedProject } from "@/lib/model/project-normalize";
 import { calculateThroughput } from "./throughput";
 import { activeLpEngine, initLpEngine, solveLpAuto } from "./lp-engine";
+import { loadNodeHighs } from "./lp-engine-node";
 import { solveLp } from "./simplex";
 
 /**
@@ -35,7 +36,7 @@ describe("lp-engine", () => {
     for (const name of FIXTURES) {
       homegrownBooks.set(name, calculateThroughput(loadFixture(name)));
     }
-    const loaded = await initLpEngine();
+    const loaded = await initLpEngine(() => loadNodeHighs());
     expect(loaded).toBe(true);
     expect(activeLpEngine()).toBe("highs");
   });

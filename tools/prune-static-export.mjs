@@ -2,11 +2,13 @@
 // After `next build`: take the dataset files the browser never reads out of
 // out/, then check the export against a static host's limits (Cloudflare
 // Workers static assets: 25 MiB per file, 20,000 files on the free plan,
-// 100,000 on paid). The browser reads the manifest, the resource, recipe and
-// lookup indexes, the recipe shards and textures; the full recipes.json(.gz)
-// and the exporter's report are pipeline output only.
+// 100,000 on paid). The browser reads the manifest, the resource and lookup
+// indexes, the recipe shards and textures; the full recipes.json(.gz), the
+// recipe index (only read when a dataset has no lookup index), the exporter's
+// report and the workers' source maps are not shipped.
 import fs from "node:fs/promises";
 import path from "node:path";
+import zlib from "node:zlib";
 
 const outDir = path.resolve(process.argv[2] ?? "out");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -26,10 +28,25 @@ for (const version of await readDirOrEmpty(datasetsDir)) {
     continue;
   }
   const versionDir = path.join(datasetsDir, version.name);
+  const hasLookupIndex = (await readDirOrEmpty(versionDir)).some((entry) => entry.name === "recipe-lookup-index.json.gz");
   for (const entry of await readDirOrEmpty(versionDir)) {
-    if (entry.isFile() && (NOT_FOR_BROWSER.has(entry.name) || entry.name.endsWith(".log"))) {
+    if (
+      entry.isFile() &&
+      (NOT_FOR_BROWSER.has(entry.name) ||
+        entry.name.endsWith(".log") ||
+        (hasLookupIndex && entry.name === "recipe-index.json.gz"))
+    ) {
       await prune(path.join(versionDir, entry.name));
     }
+  }
+  // Every icon must be this site's own file: an asset: path (a mod texture the
+  // pipeline did not resolve) draws nothing and trips the CSP.
+  const resourceIndex = path.join(versionDir, "resource-index.json.gz");
+  const indexText = await fs.readFile(resourceIndex).then((bytes) => zlib.gunzipSync(bytes).toString("utf8"), () => "");
+  const unresolved = indexText.match(/"iconPath":"asset:[^"]*"/g) ?? [];
+  if (unresolved.length > 0) {
+    console.error(`${version.name}: ${unresolved.length} icons are unresolved asset: paths, e.g. ${unresolved[0]}. Rebuild the sheets with --assets.`);
+    process.exitCode = 1;
   }
   // The exporter's reports: pipeline output, never read by the app.
   await prune(path.join(versionDir, "oracle"));
@@ -57,6 +74,13 @@ async function* walkOrFile(target) {
     yield* walk(target);
   } else if (stats?.isFile()) {
     yield target;
+  }
+}
+
+// Source maps of the bundled workers: debugging aid, not part of the site.
+for (const entry of await readDirOrEmpty(path.join(outDir, "workers"))) {
+  if (entry.isFile() && entry.name.endsWith(".map")) {
+    await prune(path.join(outDir, "workers", entry.name));
   }
 }
 
