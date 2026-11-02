@@ -46,6 +46,7 @@ import { sectionNodeView } from "@/lib/model/shared-machine";
 import { isEditableKeyboardTarget } from "./flow/keyboard";
 import {
   extractProjectJsonFromPng,
+  readBoundedText,
   extractProjectJsonFromSvg,
 } from "@/lib/import-export/plan-image";
 import { useWelcomeTab } from "@/lib/welcome/welcome-tab";
@@ -483,7 +484,7 @@ async function readProjectFile(file: File): Promise<string> {
   const extension = file.name.split(".").pop()?.toLowerCase();
 
   if (extension === "svg" || file.type === "image/svg+xml") {
-    const projectJson = extractProjectJsonFromSvg(await file.text());
+    const projectJson = extractProjectJsonFromSvg(await readBoundedText(file));
     if (!projectJson) {
       throw new Error("This SVG does not contain a GTNH Planner Retro plan.");
     }
@@ -498,7 +499,7 @@ async function readProjectFile(file: File): Promise<string> {
     return projectJson;
   }
 
-  return file.text();
+  return readBoundedText(file);
 }
 
 async function hydrateImportedProjectRecipes(

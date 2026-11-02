@@ -2,6 +2,7 @@ import { ZodError } from "zod";
 import { normalizeProjectFuelProfiles } from "../model/fuels";
 import { normalizeLoadedProject } from "../model/project-normalize";
 import { factoryProjectSchema } from "../model/schemas";
+import { MAX_PLAN_JSON_BYTES } from "./bounded-inflate";
 import type { FactoryProject } from "../model/types";
 
 export class FactoryJsonError extends Error {
@@ -14,6 +15,9 @@ export class FactoryJsonError extends Error {
 const MAX_REPORTED_ISSUES = 5;
 
 export function parseFactoryProjectJson(source: string): FactoryProject {
+  if (source.length > MAX_PLAN_JSON_BYTES) {
+    throw new FactoryJsonError("That plan is too big to open.");
+  }
   let raw: unknown;
 
   try {

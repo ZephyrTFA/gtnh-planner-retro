@@ -3,6 +3,7 @@ import { factoryProjectSchema } from "../model/schemas";
 import type { FactoryProject } from "../model/types";
 import { isPowerRecipe } from "../power/power-recipe";
 import { isRestorableRecipe } from "../datasets/restorable-recipes";
+import { inflateBounded, MAX_PLAN_CODE_CHARS, PlanTooLargeError } from "./bounded-inflate";
 import { FactoryJsonError, parseFactoryProjectJson } from "./factory-json";
 
 /**
@@ -87,7 +88,13 @@ export function readPlanCodeFromHash(hash: string): string | undefined {
  * player can act on.
  */
 export async function decodePlanCode(text: string): Promise<FactoryProject> {
+  if (text.length > MAX_PLAN_CODE_CHARS * 2) {
+    throw new PlanTooLargeError();
+  }
   const compact = text.replace(/\s+/g, "");
+  if (compact.length > MAX_PLAN_CODE_CHARS) {
+    throw new PlanTooLargeError();
+  }
   const hashAt = compact.indexOf("#");
   const code = (hashAt >= 0 ? readPlanCodeFromHash(compact.slice(hashAt)) : undefined) ?? compact;
   if (!code.startsWith(CODE_PREFIX)) {
@@ -98,9 +105,13 @@ export async function decodePlanCode(text: string): Promise<FactoryProject> {
   let json: string;
   try {
     const bytes = fromBase64Url(code.slice(CODE_PREFIX.length));
-    const unpacked = await pipeThrough(bytes, new DecompressionStream("deflate-raw"));
+    // Unpacked in chunks and stopped at the limit: a short code can inflate to gigabytes.
+    const unpacked = await inflateBounded(bytes, "deflate-raw");
     json = new TextDecoder().decode(unpacked);
-  } catch {
+  } catch (error) {
+    if (error instanceof PlanTooLargeError) {
+      throw error;
+    }
     throw new FactoryJsonError(
       "That copied plan is cut short or damaged. Copy it again, all of it.",
     );

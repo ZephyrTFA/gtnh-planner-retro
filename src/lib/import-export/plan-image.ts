@@ -133,8 +133,13 @@ export async function embedProjectJsonInPng(
 }
 
 export async function extractProjectJsonFromPng(file: Blob): Promise<string | undefined> {
+  if (file.size > MAX_PLAN_FILE_BYTES) {
+    throw new PlanTooLargeError("That picture is too big to read a plan from.");
+  }
   const bytes = new Uint8Array(await file.arrayBuffer());
   validatePng(bytes);
+  // Before anything decodes the pixels: the canvas is sized to the PNG's claim.
+  assertPlanPngSize(bytes);
 
   let offset = PNG_SIGNATURE.length;
   while (offset < bytes.length) {
@@ -329,10 +334,7 @@ async function gunzipBytes(bytes: Uint8Array): Promise<Uint8Array> {
     throw new Error("This browser cannot decompress the embedded PNG plan.");
   }
 
-  const stream = new Blob([toArrayBuffer(bytes)]).stream().pipeThrough(
-    new DecompressionStream("gzip"),
-  );
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  return inflateBounded(bytes, "gzip");
 }
 
 function rgbBytesFromImageData(data: Uint8ClampedArray): Uint8Array {
@@ -360,6 +362,14 @@ function findByteSequence(bytes: Uint8Array, sequence: Uint8Array): number {
     }
   }
   return -1;
+}
+
+/** A plan file read as text, refused before reading when it is bigger than any plan could be. */
+export async function readBoundedText(file: Blob): Promise<string> {
+  if (file.size > MAX_PLAN_FILE_BYTES) {
+    throw new PlanTooLargeError("That file is too big to be a plan.");
+  }
+  return file.text();
 }
 
 function validatePng(bytes: Uint8Array) {
@@ -446,4 +456,5 @@ function crc32(bytes: Uint8Array): number {
 
 function cssEscape(value: string): string {
   return typeof CSS !== "undefined" && CSS.escape ? CSS.escape(value) : value.replace(/"/g, '\\"');
-}
+}import { assertPlanPngSize, inflateBounded, MAX_PLAN_FILE_BYTES, PlanTooLargeError } from "./bounded-inflate";
+
