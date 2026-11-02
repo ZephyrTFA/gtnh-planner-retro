@@ -64,45 +64,42 @@ export function isSafeModeAddress(location: Pick<Location, "hash" | "search"> | 
   return hash === "safe" || new URLSearchParams(location.search).has("safe");
 }
 
-/** Idle callbacks in a row, each with this much time to spare, before a plan counts as opened. */
-const SETTLED_IDLE_STREAK = 3;
-const SETTLED_IDLE_MS = 20;
-const SETTLED_IDLE_SPACING_MS = 500;
+/** Responsive ticks in a row, each this close to on time, before a plan counts as opened. */
+const SETTLED_TICKS = 3;
+const SETTLED_TICK_MS = 500;
+const SETTLED_MAX_LATENESS_MS = 150;
 
 /**
- * After the first paint, waits until the page is really idle: several idle
- * callbacks in a row, spaced apart, each with time to spare. A plan that keeps
- * the page busy after it paints (routing, solving thousands of cards) does not
- * count as opened until that work is done; if the tab dies first, the marker
- * stays and the next visit recovers. No timeout: a forced callback in a busy
- * page is exactly what must not count.
+ * After the first paint, waits until the page is really responsive: several
+ * timer ticks in a row that each fire close to on time. A plan that keeps the
+ * main thread busy after it paints (routing, solving thousands of cards) makes
+ * every tick late, so it does not count as opened until that work is done; if
+ * the tab dies first, the marker stays and the next visit recovers. Animation
+ * (the Welcome backdrop, moving wires) costs a few milliseconds a frame and
+ * does not hold it up. A hidden tab's timers are throttled, so there only the
+ * ticks count.
  */
-function afterPaintAndIdle(callback: () => void): void {
-  type IdleDeadline = { timeRemaining: () => number };
-  const ric = (globalThis as { requestIdleCallback?: (cb: (deadline: IdleDeadline) => void) => number })
-    .requestIdleCallback;
-  const idle = () => {
-    if (!ric) {
-      setTimeout(callback, SETTLED_IDLE_SPACING_MS);
-      return;
-    }
-    let streak = 0;
-    const check = (deadline: IdleDeadline) => {
-      streak = deadline.timeRemaining() >= SETTLED_IDLE_MS ? streak + 1 : 0;
-      if (streak >= SETTLED_IDLE_STREAK) {
+export function afterPaintAndIdle(callback: () => void): void {
+  let streak = 0;
+  const tick = () => {
+    const due = Date.now() + SETTLED_TICK_MS;
+    setTimeout(() => {
+      const late = Date.now() - due;
+      const hidden = typeof document !== "undefined" && document.hidden;
+      streak = hidden || late <= SETTLED_MAX_LATENESS_MS ? streak + 1 : 0;
+      if (streak >= SETTLED_TICKS) {
         callback();
         return;
       }
-      setTimeout(() => ric(check), SETTLED_IDLE_SPACING_MS);
-    };
-    ric(check);
+      tick();
+    }, SETTLED_TICK_MS);
   };
   // A hidden tab never runs animation frames; it still renders.
   if (typeof requestAnimationFrame !== "function" || (typeof document !== "undefined" && document.hidden)) {
-    setTimeout(idle, 0);
+    tick();
     return;
   }
-  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(idle, 0)));
+  requestAnimationFrame(() => requestAnimationFrame(tick));
 }
 
 // --- The notice the library shows after a recovery or in safe mode. ---
