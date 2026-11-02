@@ -1,8 +1,10 @@
 # AGENTS.md
 
-GTNH Factory Flow: a production-chain planner for GregTech: New Horizons, live at
-https://gtnhplanner.com. Next.js App Router, TypeScript strict, Tailwind, React Flow,
-Zustand, Zod, Vitest. The repo is public.
+GTNH Planner Retro: a production-chain planner for GregTech: New Horizons, kept on the
+3.x board (Build, Solve and Pool) with its own recipe data, at
+https://gtnhplanretro.tfaluc.com. Forked from GTNH Factory Flow 3.11.1
+(jackwrichards/gtnh-factory-flow, MIT). Next.js App Router, TypeScript strict, Tailwind,
+React Flow, Zustand, Zod, Vitest.
 
 This file is the always-loaded core. Each area keeps its own rules in a `CLAUDE.md`
 beside its code, which Claude Code loads when you open files there. Read the area file
@@ -37,20 +39,21 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 
 ## Working rules
 
-- `main` is the only working branch; never start another. Commit and push finished work
-  unless told otherwise. Never reset or revert changes you did not make. Unmerged
-  experiments survive as `archive/*` tags.
-- Push only to `origin` (`jackwrichards/gtnh-factory-flow`). `upstream` (Samiracle64, the
-  original fork, long diverged) and `kewaii` are not push targets.
+- Push only to `origin` (`ZephyrTFA/gtnh-planner-retro`). `upstream`
+  (`jackwrichards/gtnh-factory-flow`) is read-only: fixes come over by cherry-pick with
+  `-x`, and only when the bug exists in this codebase.
+- Commit finished work unless told otherwise. Never reset or revert changes you did not make.
 - CI runs typecheck, the full suite and a Chromium/Firefox icon-sizing check on every PR
   and push to main. No tolerated failures. A test that pins player-facing copy changes in
   the same commit as the copy.
 - Nothing generated goes in the repo root. Screenshots, probe scripts, captures and logs go
-  in the session scratchpad or `scratch/` (gitignored). Old Playwright probes live in
-  `scratch/probes/`. Delete screenshots once you have looked at them.
+  in the session scratchpad or `scratch/` (gitignored). Delete screenshots once you have
+  looked at them.
 - Check UI changes in the real app with Playwright; unit tests cannot see routing,
   layering or hover. Board performance changes need a before/after profile.
 - Comments state the rule and why. No dates, names or "used to" stories; git has those.
+- Nothing may depend on gtnhplanner.com at runtime. The site's name, address and links
+  live in `src/lib/site.ts` and the environment.
 
 ## Player-facing copy
 
@@ -60,27 +63,12 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 
 ## Releases and deploys
 
-- Deploy only when explicitly told to, once per instruction. Pushing `main` deploys
-  nothing. The GitHub deploy and dataset workflows are decoys (no runner); never dispatch
-  them. The deploy command lives outside the repo (the origin IP is not public).
-- `APP_VERSION` in `src/lib/version.ts` is bumped once per deploy: minor if the release
-  carries features, patch if only fixes. First check https://gtnhplanner.com/api/version:
-  behind `version.ts` means the last bump has not shipped, so fold new work into the top
-  changelog entry; equal means bump and open a new entry.
-- Every release has an entry in `src/lib/changelog.ts`: concrete bullets about what
-  changed for players. Players open it from the header's version chip (unread dot, stamp
-  `changelog-read.v1`); nothing opens by itself. Shift-click the chip for the dev menu.
-- After a deploy, check `/api/version`; after a dataset publish, check the live manifest
-  and the published gzip, not just local output.
-
-## Production
-
-- One DigitalOcean droplet: Caddy -> Next.js :3000, systemd unit `gtnh-flow`, releases in
-  `/opt/releases`, datasets in `/opt/shared/gtnh-datasets`, behind Cloudflare. Diagnose with
-  `journalctl -u gtnh-flow` and Caddy's JSON log `/var/lib/caddy/access.log`.
-- The server prewarms datasets on start when `GTNH_PREWARM_ON_STARTUP=1`
-  (`src/instrumentation.ts`). A slow first API call means prewarm or deploy regressed;
-  don't make the client wait longer.
+- Deploy only when explicitly told to. `APP_VERSION` in `src/lib/version.ts` is bumped
+  once per release, with an entry in `src/lib/changelog.ts`: concrete bullets about what
+  changed for players.
+- The recipe dataset is built here from the official GTNH pack:
+  `bash tools/dataset-pipeline/scripts/run-dataset-in-docker.sh stable` (Docker, a headless
+  client, about 30 min). Output lands in `public/datasets/gtnh/` (gitignored).
 - Only GTNH 2.9 datasets are supported.
 
 ## Invariants across the app
