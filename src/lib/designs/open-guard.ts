@@ -64,12 +64,38 @@ export function isSafeModeAddress(location: Pick<Location, "hash" | "search"> | 
   return hash === "safe" || new URLSearchParams(location.search).has("safe");
 }
 
+/** Idle callbacks in a row, each with this much time to spare, before a plan counts as opened. */
+const SETTLED_IDLE_STREAK = 3;
+const SETTLED_IDLE_MS = 20;
+const SETTLED_IDLE_SPACING_MS = 500;
+
+/**
+ * After the first paint, waits until the page is really idle: several idle
+ * callbacks in a row, spaced apart, each with time to spare. A plan that keeps
+ * the page busy after it paints (routing, solving thousands of cards) does not
+ * count as opened until that work is done; if the tab dies first, the marker
+ * stays and the next visit recovers. No timeout: a forced callback in a busy
+ * page is exactly what must not count.
+ */
 function afterPaintAndIdle(callback: () => void): void {
+  type IdleDeadline = { timeRemaining: () => number };
+  const ric = (globalThis as { requestIdleCallback?: (cb: (deadline: IdleDeadline) => void) => number })
+    .requestIdleCallback;
   const idle = () => {
-    const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
-      .requestIdleCallback;
-    if (ric) ric(callback, { timeout: 2000 });
-    else setTimeout(callback, 50);
+    if (!ric) {
+      setTimeout(callback, SETTLED_IDLE_SPACING_MS);
+      return;
+    }
+    let streak = 0;
+    const check = (deadline: IdleDeadline) => {
+      streak = deadline.timeRemaining() >= SETTLED_IDLE_MS ? streak + 1 : 0;
+      if (streak >= SETTLED_IDLE_STREAK) {
+        callback();
+        return;
+      }
+      setTimeout(() => ric(check), SETTLED_IDLE_SPACING_MS);
+    };
+    ric(check);
   };
   // A hidden tab never runs animation frames; it still renders.
   if (typeof requestAnimationFrame !== "function" || (typeof document !== "undefined" && document.hidden)) {
