@@ -12,6 +12,8 @@ const server = await createServer({
   publicDir: false,
   resolve: { alias: { "@": path.resolve("src") } },
   esbuild: { jsx: "automatic" },
+  // Next inlines NEXT_PUBLIC_* at build time; under Vite, `process` does not exist in the page.
+  define: { "process.env": "{}" },
   server: { host: "127.0.0.1", port: 0, watch: null, fs: { allow: [process.cwd()] } },
 });
 await server.listen();
@@ -19,8 +21,13 @@ await mkdir(output, { recursive: true });
 const port = server.httpServer.address().port;
 const report = {};
 try {
-  for (const [name, engine] of Object.entries({ chromium, firefox })) {
-    const browser = await engine.launch({ headless: true });
+  // ICON_TEST_BROWSERS limits the engines and CHROMIUM_PATH points at a system Chromium
+  // (on NixOS Playwright's downloaded browsers cannot run).
+  const only = process.env.ICON_TEST_BROWSERS?.split(",");
+  const engines = Object.entries({ chromium, firefox }).filter(([name]) => !only || only.includes(name));
+  for (const [name, engine] of engines) {
+    const executablePath = name === "chromium" ? process.env.CHROMIUM_PATH : undefined;
+    const browser = await engine.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
     report[name] = { version: browser.version(), runs: [] };
     try {
       for (const dpr of [1, 2]) {
@@ -130,19 +137,23 @@ try {
       await browser.close();
     }
   }
-  for (let i = 0; i < report.chromium.runs.length; i++) {
-    const a = report.chromium.runs[i],
-      b = report.firefox.runs[i];
-    for (let j = 0; j < a.dimensions.length; j++)
-      for (const axis of ["box", "width", "height"]) {
-        assert.ok(
-          Math.abs(a.dimensions[j][axis] - b.dimensions[j][axis]) < 0.16,
-          `Engine mismatch: ${a.dimensions[j].id} ${axis}`,
-        );
-      }
+  // The engines must agree; with one engine (ICON_TEST_BROWSERS) only its own checks run.
+  if (report.chromium && report.firefox) {
+    for (let i = 0; i < report.chromium.runs.length; i++) {
+      const a = report.chromium.runs[i],
+        b = report.firefox.runs[i];
+      for (let j = 0; j < a.dimensions.length; j++)
+        for (const axis of ["box", "width", "height"]) {
+          assert.ok(
+            Math.abs(a.dimensions[j][axis] - b.dimensions[j][axis]) < 0.16,
+            `Engine mismatch: ${a.dimensions[j].id} ${axis}`,
+          );
+        }
+    }
   }
+  const ran = Object.entries(report);
   console.log(
-    `PASS: ${report.chromium.runs.length * report.chromium.runs[0].dimensions.length} icon cases per engine; Chromium ${report.chromium.version}, Firefox ${report.firefox.version}.`,
+    `PASS: ${ran[0][1].runs.length * ran[0][1].runs[0].dimensions.length} icon cases per engine; ${ran.map(([name, entry]) => `${name} ${entry.version}`).join(", ")}.`,
   );
 } finally {
   await writeFile(path.join(output, "measurements.json"), JSON.stringify(report, null, 2));

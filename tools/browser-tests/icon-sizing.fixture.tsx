@@ -2,18 +2,27 @@ import { createRoot } from "react-dom/client";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
 import { EnergyHatchArt } from "@/components/flow/EnergyHatchMenu";
 import "./icon-sizing.css";
-const oilBerry = new URL("./fixtures/oil-berry.png", import.meta.url).href;
-const aluminaDust = new URL("./fixtures/alumina-dust.png", import.meta.url).href;
-const sand = new URL("./fixtures/sand.png", import.meta.url).href;
-const water = new URL("./fixtures/water.png", import.meta.url).href;
+const oilBerry = new URL("./fixtures/oil-berry.png", import.meta.url).pathname;
+const aluminaDust = new URL("./fixtures/alumina-dust.png", import.meta.url).pathname;
+const sand = new URL("./fixtures/sand.png", import.meta.url).pathname;
+const water = new URL("./fixtures/water.png", import.meta.url).pathname;
 
+// Art loads only from this site's own paths or a raster data URL (textureUrl), so the
+// fixtures are site-relative and the test sprite is a PNG, not an SVG.
 // A sprite with the same 50% transparent margin as dataset renders. The atlas
 // and standalone image deliberately carry identical art, isolating layout.
-const image =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect x="64" y="64" width="128" height="128" fill="#ff0080"/></svg>',
-  );
+const image = squareSprite(64);
+
+/** A 256 px sprite with a pink square inset `inset` px from every edge. */
+function squareSprite(inset: number): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d")!;
+  context.fillStyle = "#ff0080";
+  context.fillRect(inset, inset, 256 - 2 * inset, 256 - 2 * inset);
+  return canvas.toDataURL("image/png");
+}
 const item = {
   kind: "item" as const,
   id: "fixture",
@@ -40,11 +49,7 @@ const sizes = [
   { box: 44, css: "!h-11 !w-11" },
   { box: 48, css: "!h-12 !w-12" },
 ];
-const wideImage =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect x="48" y="48" width="160" height="160" fill="#ff0080"/></svg>',
-  );
+const wideImage = squareSprite(48);
 const variants = [
   { name: "sprite", resource: item, fit: 2 },
   { name: "atlas", resource: atlas, fit: 2 },
