@@ -7,7 +7,7 @@ const { compareVersions, markVersionSeen, readLastSeenVersion } = await import(
   "@/lib/whats-new"
 );
 
-const KEY = "gtnh-factory-flow.last-seen-version.v1";
+const KEY = "gtnh-planner-retro.last-seen-version.v1";
 
 describe("compareVersions", () => {
   it("orders by number, not by string", () => {

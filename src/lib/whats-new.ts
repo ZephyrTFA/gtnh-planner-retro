@@ -6,7 +6,9 @@ import { APP_VERSION } from "@/lib/version";
 /** Release notes open only from the version chip; unread notes get a dot
  * (see NOTES_READ_KEY). This last-seen stamp stays readable for compatibility
  * but opens no UI. */
-const LAST_SEEN_KEY = "gtnh-factory-flow.last-seen-version.v1";
+// Retro numbers from 1.0.0, below the 3.x stamps this key held before, so it keeps
+// its own key: an old 3.11.1 stamp would read as newer than every Retro release.
+const LAST_SEEN_KEY = "gtnh-planner-retro.last-seen-version.v1";
 
 /**
  * The version this browser last stamped, or nothing if it never has.

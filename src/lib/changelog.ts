@@ -40,6 +40,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.0",
+    date: "2026-11-02",
+    headline: "GTNH Planner Retro: the 3.x planner with GTNH 2.9.0 recipes",
+    notes: [
+      "Build, Solve and Pool, the Raw/Net switch and the classic cards work as they did before version 4.",
+      "Every recipe, machine and icon comes from the GTNH 2.9.0 release, and the planner runs entirely in your browser.",
+      "Fixed: bee outputs and Industrial Apiary power, the Mega Distillation Tower's distillery mode, Distilled Water recipes, Boldarnator leaves, and adding HTGR fuel.",
+      "Shared plan links ask before opening a very large plan, and a plan that fails to open no longer reopens on your next visit.",
+    ],
+  },
+  {
     version: "3.11.1",
     date: "2026-10-12",
     headline: "Reports from the mod are checked",
