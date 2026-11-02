@@ -9,6 +9,7 @@ import {
   getDatasetCatalog,
   getDatasetRecipe,
   getDatasetRecipeIds,
+  getDatasetResourceArt,
   listDatasetCropFarmRecipes,
   listDatasetEecMobs,
   prewarmDatasetVersion,
@@ -75,6 +76,12 @@ export async function answerDatasetApi(request: DatasetApiRequest): Promise<Data
       case "resolve-recipes": {
         const body = (request.body ?? {}) as { recipes?: DatasetRecipeRef[] };
         return ok({ matches: await resolveDatasetRecipeRefs(versionId, body.recipes ?? []) });
+      }
+      case "resource-art": {
+        // Worker-only: plans and baked tables drawn with this dataset's art.
+        const body = (request.body ?? {}) as { keys?: unknown };
+        const keys = Array.isArray(body.keys) ? body.keys.filter((key): key is string => typeof key === "string") : [];
+        return ok({ art: await getDatasetResourceArt(versionId, keys.slice(0, 20_000)) });
       }
       case "crops":
         return ok(await listDatasetCropFarmRecipes(versionId));

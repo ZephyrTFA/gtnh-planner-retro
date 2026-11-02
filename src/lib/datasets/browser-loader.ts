@@ -233,6 +233,22 @@ export async function queryRecipeDatasetRecipes(
   return fetchJson<RecipeDatasetQueryResult>(url.toString(), { signal: options.signal });
 }
 
+/** The current dataset's art for each `kind:id`; null where it has no such resource. */
+export async function getRecipeDatasetResourceArt(
+  _manifestUrl: string,
+  version: DatasetVersion,
+  keys: string[],
+): Promise<Record<string, Pick<ResourceAmount, "iconPath" | "iconAtlas" | "dominantColor"> | null>> {
+  const url = new URL(
+    `/api/datasets/${encodeURIComponent(version.id)}/resource-art`,
+    window.location.origin,
+  );
+  const result = await fetchJson<{
+    art: Record<string, Pick<ResourceAmount, "iconPath" | "iconAtlas" | "dominantColor"> | null>;
+  }>(url.toString(), { method: "POST", body: JSON.stringify({ keys }) });
+  return result.art;
+}
+
 export async function listRecipeDatasetCrops(
   _manifestUrl: string,
   version: DatasetVersion,

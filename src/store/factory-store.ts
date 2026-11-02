@@ -116,6 +116,7 @@ import { edgeRatioWeight, setStorageRatioPercentage, equalizeStorageRatioPercent
 import { collectPocketMembers, expandPocketSelection } from "@/lib/model/pocket-connections";
 import { paperForBoardId, pickBoardPaper } from "@/lib/model/board-paper";
 import type { BoardCamera } from "@/lib/designs/design-camera";
+import { applyResourceArt, type ResourceArtLookup } from "@/lib/datasets/resource-art";
 
 export const LOCAL_STORAGE_KEY = "gtnh-factory-flow.project.v2";
 export const RESOURCE_HISTORY_STORAGE_KEY = "gtnh-factory-flow.resource-history.v1";
@@ -263,6 +264,11 @@ interface FactoryStore {
   redo: () => void;
   setDatasetManifest: (manifest: DatasetManifest, manifestUrl: string) => void;
   setDataset: (dataset: RecipeDataset) => void;
+  /**
+   * Draw the plan's resources with the current dataset's art (by kind and id),
+   * whatever art the plan was saved with. Presentation, not an edit: no undo.
+   */
+  applyProjectResourceArt: (art: ResourceArtLookup) => void;
   /**
    * Swap the plan's stored recipe bodies for the dataset's. `migration`
    * maps a stored id the dataset no longer has to the id of the recipe
@@ -1195,6 +1201,12 @@ export const useFactoryStore = create<FactoryStore>(withViewerGuard((set, get, w
       datasetError: undefined,
       isDatasetLoading: false,
     }));
+  },
+  applyProjectResourceArt: (art) => {
+    setPresentation((state) => {
+      const project = applyResourceArt(state.project, art);
+      return project === state.project ? state : { project };
+    });
   },
   refreshProjectRecipes: (recipes, migration = {}) => {
     setPresentation((state) => {

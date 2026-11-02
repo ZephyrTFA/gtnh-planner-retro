@@ -46,6 +46,7 @@ import { InspectorPanel } from "./InspectorPanel";
 import { PanelDrawer } from "./PanelDrawer";
 import { RecipeBrowser } from "./RecipeBrowser";
 import { ONLINE_FEATURES } from "@/lib/site";
+import { useProjectResourceArt } from "@/lib/datasets/use-resource-art";
 
 export function FactoryPlannerApp() {
   const project = useFactoryStore((state) => state.project);
@@ -200,6 +201,10 @@ export function FactoryPlannerApp() {
   // Other browser tabs of the planner share this library: keep the open
   // design current with their saves (design-store.ts, canvasBase).
   useEffect(() => startDesignTabSync(), []);
+
+  // A plan saved with another dataset's art (another site, an older build) is
+  // drawn with this dataset's, looked up by each resource's kind and id.
+  useProjectResourceArt();
 
   // Recorded here rather than in the resource panel: the charts must not lose
   // their history because the right column happened to be closed, and every

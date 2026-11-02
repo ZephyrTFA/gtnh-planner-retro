@@ -148,7 +148,7 @@ function Masthead({
       </button>
 
       <p className="relative text-sm font-black tracking-tight">
-        GTNH <span className="text-cyan-400">Planner</span>
+        GTNH <span className="text-cyan-400">Planner</span> Retro
       </p>
 
       {/* No version number up here. The entry below leads with its own, the

@@ -39,6 +39,7 @@ import {
   ViewportPortal,
 } from "@xyflow/react";
 import { toBlob, toSvg } from "html-to-image";
+import { inlineAtlasCells } from "@/lib/import-export/export-atlas-cells";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import {
   Activity,
@@ -4634,7 +4635,9 @@ export function FactoryFlow() {
 
       let capture: FlowExportCapture | undefined;
       let failure: string | undefined;
+      let restoreAtlasCells: (() => void) | undefined;
       try {
+        restoreAtlasCells = await inlineAtlasCells(viewportElement);
         if (format === "svg") {
           const svgText = dataUrlToText(await toSvg(viewportElement, options));
           if (request.capture) {
@@ -4671,6 +4674,7 @@ export function FactoryFlow() {
         failure = error instanceof Error ? error.message : "Plan image export failed.";
         console.error(failure);
       } finally {
+        restoreAtlasCells?.();
         writeBoardMotion(savedMotion);
         writeBoardView({
           calmMode: savedBoardView.calmMode,

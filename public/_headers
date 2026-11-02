@@ -1,0 +1,35 @@
+# Cache rules for a static host that reads _headers (Cloudflare Workers static
+# assets, Cloudflare Pages, Netlify). Rules must not overlap: a header set by
+# two rules is joined with a comma.
+
+# Content-hashed names: never change under the same URL.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/datasets/gtnh/:version/textures/sheets/:sheet
+  Cache-Control: public, max-age=31536000, immutable
+
+# Indexes and shards keep their names across a rebuild, but the dataset worker
+# always asks for them with the version's checksum (?h=), so each URL means
+# one set of bytes.
+/datasets/gtnh/:version/recipes-shards/:shard
+  Cache-Control: public, max-age=31536000, immutable
+
+/datasets/gtnh/:version/:index
+  Cache-Control: public, max-age=31536000, immutable
+
+# Names that stay put while their content changes: check every time or soon.
+/datasets/gtnh/datasets.manifest.json
+  Cache-Control: public, max-age=60, must-revalidate
+
+/workers/:worker
+  Cache-Control: public, max-age=300, must-revalidate
+
+/version.json
+  Cache-Control: no-cache
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

@@ -10,20 +10,31 @@ import type { DatasetFileSource } from "./source";
 export function createBrowserDatasetSource(origin: string): DatasetFileSource {
   let manifest: Promise<DatasetManifest> | undefined;
 
+  const loadManifest = () => {
+    // One read per worker: a page that outlives a dataset publish keeps the
+    // dataset it started with, as the page's own catalog does.
+    manifest ??= fetchBytes(new URL("/datasets/gtnh/datasets.manifest.json", origin), "no-cache")
+      .then((bytes) => parseJson<DatasetManifest>(bytes))
+      .catch((error) => {
+        manifest = undefined;
+        throw error;
+      });
+    return manifest;
+  };
+
   return {
-    loadManifest() {
-      // One read per worker: a page that outlives a dataset publish keeps the
-      // dataset it started with, as the page's own catalog does.
-      manifest ??= fetchBytes(new URL("/datasets/gtnh/datasets.manifest.json", origin), "no-cache")
-        .then((bytes) => parseJson<DatasetManifest>(bytes))
-        .catch((error) => {
-          manifest = undefined;
-          throw error;
-        });
-      return manifest;
-    },
+    loadManifest,
     async readGzipJson<T>(publicPath: string) {
-      const bytes = await fetchBytes(new URL(publicPath, origin), "default");
+      // Index and shard names do not change when a version is rebuilt, so the
+      // version's checksum rides along: the host can cache them for good
+      // (public/_headers) and a rebuild still reaches every browser.
+      const url = new URL(publicPath, origin);
+      const version = (await loadManifest()).versions.find((entry) =>
+        publicPath.startsWith(`/datasets/gtnh/${entry.id}/`),
+      );
+      const stamp = version?.checksumSha256 ?? version?.publishedAt;
+      if (stamp) url.searchParams.set("h", stamp.slice(0, 16));
+      const bytes = await fetchBytes(url, "default");
       return parseJson<T>(isGzip(bytes) ? await gunzip(bytes) : bytes);
     },
   };

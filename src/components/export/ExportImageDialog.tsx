@@ -3,6 +3,7 @@
 import { Check, Eye, EyeOff, ImageDown, LoaderCircle, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toBlob, toSvg } from "html-to-image";
+import { withInlinedAtlasCells } from "@/lib/import-export/export-atlas-cells";
 import { computeCommunityPlanStats } from "@/lib/community/plan-stats";
 import type { PlanResourceStat } from "@/lib/community/types";
 import { serializeFactoryProject } from "@/lib/import-export";
@@ -323,12 +324,14 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         const footerSvg =
           wantFooter && footerElement
             ? dataUrlToText(
-                await toSvg(footerElement, {
-                  width: layout.footerWidth,
-                  height: layout.footerHeight,
-                  skipFonts: true,
-                  fontEmbedCSS,
-                }),
+                await withInlinedAtlasCells(footerElement, () =>
+                  toSvg(footerElement, {
+                    width: layout.footerWidth,
+                    height: layout.footerHeight,
+                    skipFonts: true,
+                    fontEmbedCSS,
+                  }),
+                ),
               )
             : undefined;
         const composed = composeExportSvg({
@@ -349,13 +352,15 @@ export function ExportImageDialog({ onClose }: { onClose: () => void }) {
         setBusy("Composing the image");
         const footerBlob =
           wantFooter && footerElement
-            ? ((await toBlob(footerElement, {
-                width: layout.footerWidth,
-                height: layout.footerHeight,
-                pixelRatio: layout.footerScale * capture.pixelRatio,
-                skipFonts: true,
-                fontEmbedCSS,
-              })) ?? undefined)
+            ? ((await withInlinedAtlasCells(footerElement, () =>
+                toBlob(footerElement, {
+                  width: layout.footerWidth,
+                  height: layout.footerHeight,
+                  pixelRatio: layout.footerScale * capture.pixelRatio,
+                  skipFonts: true,
+                  fontEmbedCSS,
+                }),
+              )) ?? undefined)
             : undefined;
 
         if (format === "png") {

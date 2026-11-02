@@ -2313,6 +2313,33 @@ function hydrateMachineConfigControls<T extends Recipe["machineConfigControls"]>
   })) as T;
 }
 
+/** A resource's art as the current dataset draws it. */
+export type DatasetResourceArt = Pick<ResourceAmount, "iconPath" | "iconAtlas" | "dominantColor">;
+
+/**
+ * The current art for each `kind:id` (null where the dataset has no such
+ * resource). Plans and baked tables store the art they were made with, which
+ * may name another dataset's textures; this is how they are drawn with this one's.
+ */
+export async function getDatasetResourceArt(
+  versionId: string,
+  keys: string[],
+): Promise<Record<string, DatasetResourceArt | null>> {
+  const byKey = getCatalogResourcesByKey(await loadCatalog(versionId));
+  const art: Record<string, DatasetResourceArt | null> = {};
+  for (const key of keys) {
+    const resource = byKey.get(key);
+    art[key] = resource
+      ? {
+          ...(resource.iconPath ? { iconPath: resource.iconPath } : {}),
+          ...(resource.iconAtlas ? { iconAtlas: resource.iconAtlas } : {}),
+          ...(resource.dominantColor ? { dominantColor: resource.dominantColor } : {}),
+        }
+      : null;
+  }
+  return art;
+}
+
 function getCatalogResourcesByKey(
   catalog: LoadedRecipeIndex,
 ): Map<string, DatasetResource | DatasetResourceIndexEntry> {

@@ -74,7 +74,7 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
     <header className="app-header relative flex h-[30px] shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-3 compact:h-auto compact:flex-wrap compact:gap-y-0">
       <h1 className="flex min-w-0 items-center gap-2 text-sm font-bold tracking-tight">
         <span className="shrink-0">
-          GTNH <span className="text-cyan-500">Planner</span>
+          GTNH <span className="text-cyan-500">Planner</span> Retro
         </span>
         {/* Release notes open only on request. Shift-click opens the dev menu. */}
         <button

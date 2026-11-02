@@ -6,6 +6,7 @@
 import rawData from "./data/power-planner-data.json";
 import rawResourceMap from "./data/resource-map.json";
 import rawMachineIcons from "./data/machine-icons.json";
+import type { ResourceIconAtlasRef } from "@/lib/model/types";
 
 export interface PowerFuelEntry {
   name: string;
@@ -127,6 +128,7 @@ export interface PowerMachineIcon {
   id: string;
   displayName: string;
   iconPath?: string;
+  iconAtlas?: ResourceIconAtlasRef;
   dominantColor?: string;
 }
 

@@ -363,7 +363,7 @@ function buildResourceIconLookup(project: FactoryProject): Map<string, ResourceI
   const add = (resource: Pick<ResourceAmount, "kind" | "id"> & ResourceIconMeta) => {
     const key = `${resource.kind}:${resource.id}`;
     const existing = icons.get(key);
-    if (!existing || (!existing.iconPath && resource.iconPath)) {
+    if (!existing || (!existing.iconPath && !existing.iconAtlas && (resource.iconPath || resource.iconAtlas))) {
       icons.set(key, resource);
     }
   };

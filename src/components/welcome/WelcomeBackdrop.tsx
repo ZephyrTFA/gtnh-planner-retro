@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { getUiScale } from "@/lib/ui-scale";
 import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
+import type { ResourceAmount } from "@/lib/model/types";
 
 /**
  * The Welcome page's backdrop: the pack's most-used items drifting through
@@ -38,8 +39,11 @@ interface Cell {
   weight: number;
 }
 
+/** An icon as the dataset gives it: a picture of its own, or a cell of a sprite sheet. */
+export type BackdropIcon = Pick<ResourceAmount, "iconPath" | "iconAtlas">;
+
 interface Sprite {
-  image: HTMLImageElement;
+  image: HTMLImageElement | HTMLCanvasElement;
   /** The tinted silhouette, one per tint, made on demand. */
   tinted: Map<string, HTMLCanvasElement>;
 }
@@ -138,7 +142,7 @@ function makeDrifter(sprites: Sprite[], width: number, height: number, fresh: bo
   };
 }
 
-export function WelcomeBackdrop({ icons }: { icons: string[] }) {
+export function WelcomeBackdrop({ icons }: { icons: BackdropIcon[] }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const iconsRef = useRef(icons);
   iconsRef.current = icons;
@@ -344,9 +348,9 @@ export function WelcomeBackdrop({ icons }: { icons: string[] }) {
 
     // The sprites arrive whenever the popular list does; until then the
     // field runs on its own.
-    const loadSprites = (paths: string[]) => {
+    const loadSprites = (icons: BackdropIcon[]) => {
       const loaded: Sprite[] = [];
-      let pending = paths.length;
+      let pending = icons.length;
       const settle = () => {
         pending -= 1;
         if (pending > 0 || disposed) {
@@ -362,20 +366,45 @@ export function WelcomeBackdrop({ icons }: { icons: string[] }) {
           }
         }
       };
-      for (const path of paths) {
-        const image = new Image();
-        image.decoding = "async";
-        image.onload = () => {
-          if (image.naturalWidth > 0) {
+      // One load per picture: a sheet holds many of the icons.
+      const pictures = new Map<string, Promise<HTMLImageElement | undefined>>();
+      const picture = (path: string) => {
+        let promise = pictures.get(path);
+        if (!promise) {
+          promise = new Promise((resolve) => {
+            const image = new Image();
+            image.decoding = "async";
+            image.onload = () => resolve(image.naturalWidth > 0 ? image : undefined);
+            image.onerror = () => resolve(undefined);
+            image.crossOrigin = TEXTURE_CROSS_ORIGIN;
+            image.src = textureUrl(path);
+          });
+          pictures.set(path, promise);
+        }
+        return promise;
+      };
+      for (const icon of icons) {
+        const atlas = icon.iconAtlas;
+        const path = atlas?.imagePath ?? icon.iconPath;
+        if (!path) {
+          settle();
+          continue;
+        }
+        void picture(path).then((image) => {
+          if (image && atlas) {
+            // The sprite is its own cell, cut out once, so drawing stays one call.
+            const cell = document.createElement("canvas");
+            cell.width = atlas.width;
+            cell.height = atlas.height;
+            cell.getContext("2d")?.drawImage(image, atlas.x, atlas.y, atlas.width, atlas.height, 0, 0, atlas.width, atlas.height);
+            loaded.push({ image: cell, tinted: new Map() });
+          } else if (image) {
             loaded.push({ image, tinted: new Map() });
           }
           settle();
-        };
-        image.onerror = settle;
-        image.crossOrigin = TEXTURE_CROSS_ORIGIN;
-        image.src = textureUrl(path);
+        });
       }
-      if (paths.length === 0) {
+      if (icons.length === 0) {
         settle();
       }
     };

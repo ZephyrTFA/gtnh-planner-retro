@@ -2273,7 +2273,7 @@ function PowerHitCard({
           }}
           className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden hover:shadow-[0_0_0_2px_#22d3ee_inset]"
         >
-          {icon?.iconPath ? (
+          {icon?.iconPath || icon?.iconAtlas ? (
             <ResourceIcon
               resource={{
                 kind: "item",
@@ -2281,6 +2281,7 @@ function PowerHitCard({
                 amount: 1,
                 displayName: icon.displayName,
                 iconPath: icon.iconPath,
+                iconAtlas: icon.iconAtlas,
                 dominantColor: icon.dominantColor,
               }}
               size="sm"

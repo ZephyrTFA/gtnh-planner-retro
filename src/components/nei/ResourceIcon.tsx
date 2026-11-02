@@ -22,6 +22,7 @@ import { isProgrammedCircuitResource } from "@/lib/model/programmed-circuit";
 import { MinecraftTooltip } from "./MinecraftTooltip";
 import { getSpriteFitScale, spriteFitStyle } from "./sprite-fit";
 import { TEXTURE_CROSS_ORIGIN, textureUrl } from "@/lib/texture-url";
+import { useCurrentResourceArt } from "@/lib/datasets/use-resource-art";
 
 type DisplayResourceAmount = Pick<
   ResourceAmount,
@@ -463,6 +464,8 @@ function IconImage({
   iconPixelSize?: number;
   onReady?: () => void;
 }) {
+  // Art saved with another dataset (old plans, the power tables) is drawn with this one's.
+  resource = useCurrentResourceArt(resource);
   if (!resource) {
     return null;
   }
@@ -907,6 +910,8 @@ function AtlasIconImage({
     >
       <span
         className="block h-full w-full bg-no-repeat"
+        // Read by the image export, which swaps in the cell alone (export-atlas-cells.ts).
+        data-atlas-cell={`${atlas.imagePath}#${atlas.x},${atlas.y},${atlas.width},${atlas.height}`}
         style={{
           backgroundImage: `url('${textureUrl(atlas.imagePath)}')`,
           backgroundSize: `${(atlas.atlasWidth / atlas.width) * 100}% ${(atlas.atlasHeight / atlas.height) * 100}%`,

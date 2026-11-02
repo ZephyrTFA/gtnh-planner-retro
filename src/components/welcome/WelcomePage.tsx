@@ -24,7 +24,7 @@ import { leaveWelcomeTab, setWelcomeOnStartup, useWelcomeTab } from "@/lib/welco
 import { writeWorkspaceView } from "@/lib/workspace-view";
 import { useDesignStore } from "@/store/design-store";
 import { useFactoryStore } from "@/store/factory-store";
-import { WelcomeBackdrop } from "./WelcomeBackdrop";
+import { WelcomeBackdrop, type BackdropIcon } from "./WelcomeBackdrop";
 
 /**
  * The Welcome tab. It COVERS the board (see FactoryPlannerApp) rather than
@@ -43,7 +43,7 @@ const BACKDROP_ICON_COUNT = 60;
  * The most-used items in the loaded pack, as sprite URLs for the backdrop.
  * Empty until the dataset is known; the backdrop runs without them.
  */
-function useBackdropIcons(): string[] {
+function useBackdropIcons(): BackdropIcon[] {
   const manifest = useFactoryStore((state) => state.datasetManifest);
   const manifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const versionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -51,7 +51,7 @@ function useBackdropIcons(): string[] {
     () => manifest?.versions.find((entry) => entry.id === versionId),
     [manifest?.versions, versionId],
   );
-  const [icons, setIcons] = useState<string[]>([]);
+  const [icons, setIcons] = useState<BackdropIcon[]>([]);
   useEffect(() => {
     if (!version) {
       return;
@@ -64,10 +64,11 @@ function useBackdropIcons(): string[] {
       { signal: controller.signal },
     )
       .then((result) => {
-        const paths = result.resources
-          .map((entry) => entry.iconPath)
-          .filter((path): path is string => Boolean(path));
-        setIcons(paths);
+        setIcons(
+          result.resources
+            .filter((entry) => entry.iconPath || entry.iconAtlas)
+            .map((entry) => ({ iconPath: entry.iconPath, iconAtlas: entry.iconAtlas })),
+        );
       })
       .catch(() => {
         // The backdrop is decoration; a failed list leaves it as glyphs.

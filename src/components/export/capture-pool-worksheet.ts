@@ -1,6 +1,7 @@
 "use client";
 
 import { toBlob, toSvg } from "html-to-image";
+import { withInlinedAtlasCells } from "@/lib/import-export/export-atlas-cells";
 import { resolveExportFontCss } from "@/lib/import-export/export-fonts";
 import {
   dataUrlToText,
@@ -112,9 +113,9 @@ export async function capturePoolWorksheet(
       pulses: [],
     };
     if (request.format === "svg") {
-      capture.svgText = dataUrlToText(await toSvg(worksheet, options));
+      capture.svgText = dataUrlToText(await withInlinedAtlasCells(worksheet, () => toSvg(worksheet, options)));
     } else {
-      capture.blob = (await toBlob(worksheet, options)) ?? undefined;
+      capture.blob = (await withInlinedAtlasCells(worksheet, () => toBlob(worksheet, options))) ?? undefined;
       if (!capture.blob) throw new Error("The worksheet render came back empty.");
     }
     return capture;

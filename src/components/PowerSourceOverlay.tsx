@@ -333,7 +333,7 @@ function PowerSourceCard({
             draggable={false}
             className="max-h-full max-w-full object-contain [image-rendering:pixelated]"
           />
-        ) : icon?.iconPath ? (
+        ) : icon?.iconPath || icon?.iconAtlas ? (
           <span className="relative flex h-28 w-28 items-center justify-center overflow-hidden">
             <ResourceIcon
               resource={{
@@ -342,6 +342,7 @@ function PowerSourceCard({
                 amount: 1,
                 displayName: icon.displayName,
                 iconPath: icon.iconPath,
+                iconAtlas: icon.iconAtlas,
                 dominantColor: icon.dominantColor,
               }}
               bare

@@ -1683,7 +1683,7 @@ function buildProjectResourceLookup(project: FactoryProject): Map<string, FlowRe
   const addResource = (resource: FlowResourceDisplay) => {
     const key = `${resource.kind}:${resource.id}`;
     const existing = resources.get(key);
-    if (!existing || (!existing.iconPath && resource.iconPath)) {
+    if (!existing || (!existing.iconPath && !existing.iconAtlas && (resource.iconPath || resource.iconAtlas))) {
       resources.set(key, resource);
     }
   };
