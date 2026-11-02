@@ -18,6 +18,7 @@ vi.mock("./engine", () => ({
   getDatasetRecipeIds: vi.fn(),
   listDatasetCropFarmRecipes: vi.fn(),
   listDatasetEecMobs: vi.fn(),
+  prewarmDatasetVersion: vi.fn(async () => undefined),
   resolveDatasetRecipeRefs: vi.fn(),
 }));
 

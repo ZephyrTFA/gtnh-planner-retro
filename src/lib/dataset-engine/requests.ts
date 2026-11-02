@@ -11,6 +11,7 @@ import {
   getDatasetRecipeIds,
   listDatasetCropFarmRecipes,
   listDatasetEecMobs,
+  prewarmDatasetVersion,
   queryDatasetRecipes,
   queryDatasetResources,
   resolveDatasetRecipeRefs,
@@ -49,8 +50,19 @@ export async function answerDatasetApi(request: DatasetApiRequest): Promise<Data
 
   try {
     switch (endpoint) {
-      case "catalog":
-        return ok(await getDatasetCatalog(versionId));
+      case "catalog": {
+        const catalog = await getDatasetCatalog(versionId);
+        // The app asks for the catalog first, on load: build the search
+        // indexes next, while the player is still looking at the page, so the
+        // first search does not pay for them. A task, not a microtask, so this
+        // answer is posted before the work starts.
+        setTimeout(() => {
+          void prewarmDatasetVersion(versionId).catch((error) => {
+            console.error(`Dataset ${versionId} prewarm failed.`, error);
+          });
+        }, 0);
+        return ok(catalog);
+      }
       case "recipes": {
         if (tail !== undefined) {
           const recipe = await getDatasetRecipe(versionId, tail);
