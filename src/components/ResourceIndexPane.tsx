@@ -905,6 +905,7 @@ function VirtualResourceResultList({
         />
       )}
       <ResourcePager
+        label={resourcePagerLabel({ currentPage, pageCount, isLoading, shown: resources.length })}
         currentPage={currentPage}
         pageCount={pageCount}
         onPreviousPage={handlePreviousPage}
@@ -935,9 +936,9 @@ function ResourceResultSkeleton({
           className="flex shrink-0 flex-col items-center gap-1 pt-1"
           style={{ height: RESOURCE_TILE_HEIGHT }}
         >
-          <div className="h-11 w-11 shrink-0 animate-pulse rounded-[4px] bg-neutral-800/70" />
+          <div className="h-11 w-11 shrink-0 animate-pulse rounded-[4px] bg-neutral-700/60" />
           <div
-            className="h-2.5 animate-pulse rounded bg-neutral-800/70"
+            className="h-2.5 animate-pulse rounded bg-neutral-700/60"
             style={{ width: `${45 + ((index * 17) % 40)}%` }}
           />
         </div>
@@ -946,12 +947,35 @@ function ResourceResultSkeleton({
   );
 }
 
+/**
+ * The pager's words. While the first answer is on its way there are no pages
+ * to count, and "Page 1 of 1" over an empty list reads as "there is nothing".
+ */
+export function resourcePagerLabel({
+  currentPage,
+  pageCount,
+  isLoading,
+  shown,
+}: {
+  currentPage: number;
+  pageCount: number;
+  isLoading: boolean;
+  shown: number;
+}): string {
+  if (isLoading && shown === 0) {
+    return "Loading items…";
+  }
+  return `Page ${Math.min(currentPage + 1, pageCount)} of ${pageCount}`;
+}
+
 function ResourcePager({
+  label,
   currentPage,
   pageCount,
   onPreviousPage,
   onNextPage,
 }: {
+  label: string;
   currentPage: number;
   pageCount: number;
   onPreviousPage: () => void;
@@ -970,7 +994,7 @@ function ResourcePager({
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
       <div className="min-w-0 flex-1 truncate text-center text-[11px] text-neutral-400">
-        Page {Math.min(currentPage + 1, pageCount)} of {pageCount}
+        {label}
       </div>
       <button
         type="button"
