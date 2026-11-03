@@ -5,7 +5,7 @@
 #
 # The site only ever goes up from a clean tree whose HEAD is on origin/main, so
 # what is live is always something GitHub has. Secrets come from the
-# maintainer's files in ~/.config/gtnh-retro (cloudflare.env, github.env,
+# maintainer's files in ~/.config/gtnh-retro (cloudflare-deploy.env, github.env,
 # turnstile.env; mode 600) and go up with the version from a temporary 600 file
 # that is shredded on exit. Nothing secret is printed.
 set -euo pipefail
@@ -39,7 +39,7 @@ trap 'shred -u "$secrets" 2>/dev/null || rm -f "$secrets"' EXIT
     '{GITHUB_ACCESS_TOKEN: $g, TURNSTILE_SECRET: $t}' > "$secrets"
 )
 set -a
-. ~/.config/gtnh-retro/cloudflare.env
+. ~/.config/gtnh-retro/cloudflare-deploy.env
 set +a
 WRANGLER_SEND_METRICS=false npx wrangler deploy --secrets-file "$secrets" 2>&1 | grep -vE '^\s*$|^\+ ' | tail -20
 echo "Deployed $(git rev-parse --short HEAD) as $(node -p 'require("./out/version.json").version')."
