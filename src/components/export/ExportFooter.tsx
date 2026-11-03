@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import type { CommunityPlanStats, EntryIcon, PlanResourceStat } from "@/lib/community/types";
 import { SITE_HOST } from "@/lib/site";
 import { formatSlotRate } from "@/components/flow/flow-explainers";
@@ -272,7 +273,7 @@ function IoColumn({
                 />
               </span>
               <span className="min-w-0 flex-1 truncate text-[14px]">
-                {stat.displayName ?? stat.resourceId}
+                {displayNameFor(stat.resourceId, stat.displayName ?? stat.resourceId)}
               </span>
               <span
                 style={{ color: palette.subtle }}

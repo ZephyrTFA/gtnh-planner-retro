@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import {
   ArrowBigUp,
   ArrowLeft,
@@ -564,7 +565,7 @@ function StatColumns({ label, stats }: { label: string; stats: PlanResourceStat[
                 />
               </span>
               <span className="min-w-0 flex-1 truncate text-[11px] text-neutral-300">
-                {stat.displayName ?? stat.resourceId}
+                {displayNameFor(stat.resourceId, stat.displayName ?? stat.resourceId)}
               </span>
               <span className="shrink-0 tabular-nums text-[11px] text-[var(--mc-ink-muted)]">
                 {formatSlotRate(stat.ratePerSecond, stat.kind)}

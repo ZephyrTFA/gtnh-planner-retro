@@ -1,5 +1,7 @@
 "use client";
 
+import { useItemNamesVersion } from "@/lib/item-names";
+import { displayNameFor } from "@/lib/model/resources";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useState, type CSSProperties } from "react";
 import { Copy, Maximize2, PackageOpen } from "lucide-react";
@@ -76,6 +78,7 @@ const INERT_HANDLE =
   "nodrag !pointer-events-none !h-0 !w-0 !min-h-0 !min-w-0 !border-0 !bg-transparent !opacity-0";
 
 function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
+  useItemNamesVersion();
   const { pocket, summary } = data;
   // A folded board is the SAME board: it wears the paper the window wore,
   // so you can tell which one it is at a glance instead of meeting an
@@ -547,7 +550,7 @@ function CrossingRow({
         className="truncate text-[11px] font-bold leading-[14px]"
         style={{ color: chrome.ink }}
       >
-        {crossing.displayName ?? crossing.resourceId}
+        {displayNameFor(crossing.resourceId, crossing.displayName ?? crossing.resourceId)}
       </span>
       <span
         className={`truncate text-[10px] leading-[12px] tabular-nums ${tone ?? ""}`}
@@ -561,7 +564,7 @@ function CrossingRow({
   return (
     <span
       className="flex h-[40px] min-w-0 items-center gap-1"
-      title={`${crossing.displayName ?? crossing.resourceId}: ${rate ?? "nothing moving"}`}
+      title={`${displayNameFor(crossing.resourceId, crossing.displayName ?? crossing.resourceId)}: ${rate ?? "nothing moving"}`}
     >
       {side === "in" ? (
         <>
@@ -705,7 +708,7 @@ function PocketGlanceIoRow({
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[14px] font-bold leading-[17px]">
-          {crossing.displayName ?? crossing.resourceId}
+          {displayNameFor(crossing.resourceId, crossing.displayName ?? crossing.resourceId)}
         </span>
         {rate ? (
           <span className={`truncate text-[13px] leading-4 tabular-nums ${tone}`}>{rate}</span>

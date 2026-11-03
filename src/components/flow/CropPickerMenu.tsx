@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { listRecipeDatasetCrops } from "@/lib/datasets/browser-loader";
 import type { RecipeSummary } from "@/lib/datasets/types";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -44,7 +45,7 @@ function CropHover({ crop }: { crop: RecipeSummary }) {
               />
             </span>
             <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-slate-100">
-              {output.displayName ?? output.id}
+              {displayNameFor(output.id, output.displayName ?? output.id)}
             </span>
             {output.chance !== undefined && output.chance < 1 ? (
               <span className="shrink-0 text-[12px] tabular-nums text-slate-400">

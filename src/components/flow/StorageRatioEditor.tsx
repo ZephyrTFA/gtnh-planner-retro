@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpRight, ChevronDown, ChevronUp, Factory, Split, X } from "lucide-react";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -193,7 +194,7 @@ function RatioPanel({ request, onClose }: { request: RatioEditorRequest; onClose
               className="!h-7 !w-7 shrink-0"
             />
           )}
-          <span className="truncate">{storage?.displayName ?? storage?.resourceId}</span>
+          <span className="truncate">{displayNameFor(storage?.resourceId ?? "", storage?.displayName ?? storage?.resourceId ?? "")}</span>
           <Split aria-hidden className="h-4 w-4 shrink-0 text-[var(--mc-ink-muted)]" />
         </h2>
         <button

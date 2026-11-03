@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { useMemo } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
@@ -106,7 +107,7 @@ export function RatioSplitPreview({
           iconPixelSize={24}
           className="!h-3.5 !w-3.5 shrink-0"
         />
-        <span className="truncate">{view.storage.displayName ?? view.storage.resourceId}</span>
+        <span className="truncate">{displayNameFor(view.storage.resourceId, view.storage.displayName ?? view.storage.resourceId)}</span>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {view.sections.map((section) => (

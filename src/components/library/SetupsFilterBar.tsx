@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useIsCompactViewport } from "@/lib/compact-view";
@@ -368,7 +369,7 @@ export function SetupsFilterBar({
                 >
                   <Face icon={resource} size={18} />
                   <span className="max-w-[120px] truncate">
-                    {resource.displayName ?? resource.resourceId}
+                    {displayNameFor(resource.resourceId, resource.displayName ?? resource.resourceId)}
                   </span>
                   <button
                     type="button"
@@ -378,7 +379,7 @@ export function SetupsFilterBar({
                         list.filter((entry) => entry.resourceId !== resource.resourceId),
                       );
                     }}
-                    aria-label={`Stop filtering by ${resource.displayName ?? resource.resourceId}`}
+                    aria-label={`Stop filtering by ${displayNameFor(resource.resourceId, resource.displayName ?? resource.resourceId)}`}
                     title="Remove"
                     className="text-[var(--mc-ink-muted)] hover:text-[var(--mc-ink)]"
                   >

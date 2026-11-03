@@ -1,5 +1,6 @@
 "use client";
 
+import { useItemNames } from "@/lib/item-names";
 import type { MachineTier, Recipe, ResourceAmount } from "@/lib/model/types";
 import type { RecipeContentRef } from "@/lib/import-export/recipe-ref-match";
 import { APP_VERSION } from "@/lib/version";
@@ -67,7 +68,10 @@ export interface RecipeDatasetResourceQuery {
   sort?: "relevance" | "name" | "mod" | "recipes" | "made" | "uses" | "common" | "popular";
   /** Narrow to what a crop can grow or a bee can make. */
   source?: "plants" | "bees";
-  /** Also match names in this item language (ru_RU, zh_CN), where the dataset has them. */
+  /**
+   * Also match names in this item language (ru_RU, zh_CN), where the dataset has
+   * them. Defaults to the Item names setting.
+   */
   language?: string;
 }
 
@@ -303,8 +307,10 @@ export async function queryRecipeDatasetResources(
   if (query.source) {
     url.searchParams.set("source", query.source);
   }
-  if (query.language) {
-    url.searchParams.set("lang", query.language);
+  // Every item search answers in the player's item language unless told otherwise.
+  const language = query.language ?? itemLanguageForSearch();
+  if (language) {
+    url.searchParams.set("lang", language);
   }
   addDatasetCacheKey(url, version);
 
@@ -334,4 +340,9 @@ async function fetchJson<T>(url: string, init?: { method?: string; body?: string
 
 function addDatasetCacheKey(url: URL, version: DatasetVersion) {
   url.searchParams.set("datasetHash", version.checksumSha256 ?? version.publishedAt ?? version.id);
+}
+
+function itemLanguageForSearch(): string | undefined {
+  const language = useItemNames.getState().language;
+  return language === "en_US" ? undefined : language;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DEFAULT_DATASET_MANIFEST_URL } from "@/lib/datasets";
@@ -153,7 +154,7 @@ export function IconPicker({
                   key={`${suggestion.kind}:${suggestion.resourceId}`}
                   type="button"
                   onClick={() => onPick(suggestion)}
-                  title={suggestion.displayName ?? suggestion.resourceId}
+                  title={displayNameFor(suggestion.resourceId, suggestion.displayName ?? suggestion.resourceId)}
                   className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[4px] border border-neutral-600 bg-[#17191d] hover:border-cyan-500"
                 >
                   <ResourceIcon
@@ -199,7 +200,7 @@ export function IconPicker({
                       dominantColor: entry.dominantColor,
                     })
                   }
-                  title={entry.displayName ?? entry.id}
+                  title={displayNameFor(entry.id, entry.displayName ?? entry.id)}
                   className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[4px] border border-neutral-700 bg-[#17191d] hover:border-cyan-500"
                 >
                   <ResourceIcon

@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import type { ReactNode } from "react";
 import type { PlanResourceStat } from "@/lib/community/types";
 import type { MachineTier } from "@/lib/model/types";
@@ -100,7 +101,7 @@ function IoSection({
             />
           </span>
           <span className="min-w-0 flex-1 truncate text-[12px] text-slate-200">
-            {stat.displayName ?? stat.resourceId}
+            {displayNameFor(stat.resourceId, stat.displayName ?? stat.resourceId)}
           </span>
           <span className="shrink-0 tabular-nums text-[12px] text-slate-400">
             {formatSlotRate(stat.ratePerSecond, stat.kind)}

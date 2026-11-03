@@ -1,3 +1,4 @@
+import { displayNameFor } from "@/lib/model/resources";
 import type { FactoryProject, FactoryStorage, StorageThroughputResult } from "@/lib/model/types";
 import { storageTargetMode, TARGET_MODE_LABELS } from "@/lib/model/storage-target";
 import { formatPoolRate, isPoolDisplayZero } from "./worksheet-format";
@@ -14,7 +15,7 @@ export function TargetRateHelp({ storage, input, result, project }: {
   const stopped = actual !== undefined && isPoolDisplayZero(actual);
   const hasRecipes = project.nodes.some(node => node.enabled);
   return <div className="pool-target-explanation">
-    <strong className="pool-target-help-name">{storage.displayName ?? storage.resourceId}</strong>
+    <strong className="pool-target-help-name">{displayNameFor(storage.resourceId, storage.displayName ?? storage.resourceId)}</strong>
     <div className="pool-target-help-rates">
       <span>{input ? "Use" : "Make"} {TARGET_MODE_LABELS[mode].toLowerCase()} <strong className="pool-help-goal">{formatPoolRate(Math.abs(storage.targetPerSecond ?? 0), storage.kind)}</strong></span>
       <span>Currently {input ? "using" : "making"} <strong className="pool-help-actual">{formatPoolRate(Math.abs(actual ?? 0), storage.kind)}</strong></span>

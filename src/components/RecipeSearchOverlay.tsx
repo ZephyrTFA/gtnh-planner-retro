@@ -35,7 +35,7 @@ import { AUTO_WORKBENCH_HANDLER_ID, GT_VOLTAGE_TIERS, formatRate, getRecipeMachi
 import type { MachineTier, ResourceAmount } from "@/lib/model/types";
 import { getVoltageTierIndex } from "@/lib/model/tiers";
 import { energyPerUnitSuffix, type TimeRateUnit } from "@/lib/model/rate-unit";
-import { formatCompact } from "@/lib/model/resources";
+import { displayNameFor, formatCompact } from "@/lib/model/resources";
 import { playBoardSound } from "@/lib/board-sounds";
 import { ENERGY_READING_TEXT } from "./flow/flow-explainers";
 import { GT_TIER_COLORS } from "./flow/tier-colors";
@@ -277,6 +277,7 @@ export function RecipeSearchOverlay({
   /** SHARED MACHINES: the search is pinned to one card's machine; only its recipes show and the add joins that card. */
   machinePin?: RecipeBrowserMachinePin;
 }) {
+  useItemNamesVersion();
   const machineIconEntries = useMachineHandlerIconEntries();
   const recipeMapIcons = useRecipeMapIcons();
   const machinePinIcon = machinePin
@@ -1407,7 +1408,7 @@ export function RecipeSearchOverlay({
                   )}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-[var(--mc-ink)]">
-                  {liftedClause.displayName ?? liftedClause.id}
+                  {displayNameFor(liftedClause.id, liftedClause.displayName ?? liftedClause.id)}
                 </span>
               </span>
             </div>
@@ -1532,7 +1533,7 @@ export function RecipeSearchOverlay({
                           />
                         </span>
                         <span className="min-w-0 flex-1 truncate">
-                          {face.displayName ?? face.id}
+                          {displayNameFor(face.id, face.displayName ?? face.id)}
                         </span>
                         {/* Three faces all called "Iron Nugget" are three
                             mods' nuggets: say which, or the list is useless. */}
@@ -1586,6 +1587,7 @@ function StencilSide({
   registerListRef: (role: RecipeQueryRole, element: HTMLDivElement | null) => void;
   onOpenPicker: () => void;
 }) {
+  useItemNamesVersion();
   const dragActive = drag?.active ?? false;
   const layoutClauses = dragActive
     ? sideClauses.filter((clause) => clauses.indexOf(clause) !== drag?.index)
@@ -1656,13 +1658,13 @@ function StencilSide({
                 )}
               </span>
               <span className="min-w-0 flex-1 truncate text-[14px] font-bold compact:line-clamp-2 compact:whitespace-normal compact:text-[12px] compact:leading-tight">
-                {clause.displayName ?? clause.id}
+                {displayNameFor(clause.id, clause.displayName ?? clause.id)}
               </span>
               <button
                 type="button"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onRemove(index)}
-                aria-label={`Remove ${clause.displayName ?? clause.id} from the search`}
+                aria-label={`Remove ${displayNameFor(clause.id, clause.displayName ?? clause.id)} from the search`}
                 className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--mc-ink-muted)] hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />

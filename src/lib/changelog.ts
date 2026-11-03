@@ -40,6 +40,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.1",
+    date: "2026-11-03",
+    headline: "More of the planner uses your item language",
+    notes: [
+      "Recipe search's Takes and Makes chips, minimized boards, ratio splits, the crop and mob pickers, and the Library and export stats now show item names in the chosen language.",
+      "Every item picker searches translated names, not only the item list.",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-11-03",
     headline: "Item names in Russian and Chinese",

@@ -1,4 +1,5 @@
 "use client";
+import { displayNameFor } from "@/lib/model/resources";
 import { useItemNamesVersion } from "@/lib/item-names";
 import { targetStatus } from "./target-status";
 import { TargetRateHelp } from "./TargetRateHelp";
@@ -1113,7 +1114,7 @@ function Product({ storage, role, onExplain, helpOpen }: { storage: FactoryStora
   const stale = useFactoryStore(state => state.lastResult.stale);
   const held = useFactoryStore(state => state.lastResult.held);
   const status = targetStatus(storage, role, result, stale, held);
-  const rule = useTableRule({ storage, role, name: storage.displayName ?? storage.resourceId });
+  const rule = useTableRule({ storage, role, name: displayNameFor(storage.resourceId, storage.displayName ?? storage.resourceId) });
   return (
     <tr {...orderTarget} className="pool-product" data-worksheet-product={storage.id} data-target-ignored={ignored || undefined}>
       <td>
@@ -1121,7 +1122,7 @@ function Product({ storage, role, onExplain, helpOpen }: { storage: FactoryStora
           <OrderHandle
             kind="products"
             id={storage.id}
-            label={`product ${storage.displayName ?? storage.resourceId}`}
+            label={`product ${displayNameFor(storage.resourceId, storage.displayName ?? storage.resourceId)}`}
           />
           <ResourceLink
             compact
@@ -1172,7 +1173,7 @@ function Product({ storage, role, onExplain, helpOpen }: { storage: FactoryStora
         </span>
       </td>
       <td className="pool-product-status" data-tone={status.tone}>
-        {status.explain ? <button type="button" aria-expanded={helpOpen} onClick={(event) => onExplain(event.currentTarget)} aria-label={status.label + ": explain target for " + (storage.displayName ?? storage.resourceId)}>
+        {status.explain ? <button type="button" aria-expanded={helpOpen} onClick={(event) => onExplain(event.currentTarget)} aria-label={status.label + ": explain target for " + (displayNameFor(storage.resourceId, storage.displayName ?? storage.resourceId))}>
           <span className="pool-state-dot" aria-hidden /><span className="pool-rate-label-full">{status.label}</span><span className="pool-rate-label-compact">{status.compact ?? status.label}</span><span className="pool-status-why">Why?</span>
         </button> : <span className="pool-rate-state"><span className="pool-state-dot" aria-hidden /><span className="pool-rate-label-full">{status.label}</span><span className="pool-rate-label-compact">{status.compact ?? status.label}</span></span>}
       </td>
@@ -1181,7 +1182,7 @@ function Product({ storage, role, onExplain, helpOpen }: { storage: FactoryStora
           <button
             type="button"
             className="pool-sheet-icon-button"
-            aria-label={`Remove rate ${storage.displayName ?? storage.resourceId}`}
+            aria-label={`Remove rate ${displayNameFor(storage.resourceId, storage.displayName ?? storage.resourceId)}`}
             onClick={() => useFactoryStore.getState().deleteStorage(storage.id)}
           >
             <X />

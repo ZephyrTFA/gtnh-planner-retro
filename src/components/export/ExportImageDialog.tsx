@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { Check, Eye, EyeOff, ImageDown, LoaderCircle, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toBlob, toSvg } from "html-to-image";
@@ -758,7 +759,7 @@ function ResourceChipRow({
                 <Eye className="h-3 w-3 shrink-0 text-cyan-500" />
               )}
               <span className={isExcluded ? "truncate line-through" : "truncate"}>
-                {stat.displayName ?? stat.resourceId}
+                {displayNameFor(stat.resourceId, stat.displayName ?? stat.resourceId)}
               </span>
             </button>
           );

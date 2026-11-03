@@ -1,5 +1,6 @@
 "use client";
 
+import { displayNameFor } from "@/lib/model/resources";
 import { listRecipeDatasetMobs } from "@/lib/datasets/browser-loader";
 import type { RecipeSummary } from "@/lib/datasets/types";
 import type { EecMetadata } from "@/lib/machines/extreme-entity-crusher";
@@ -52,7 +53,7 @@ function MobHover({ mob }: { mob: RecipeSummary }) {
               />
             </span>
             <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-slate-100">
-              {output.displayName ?? output.id}
+              {displayNameFor(output.id, output.displayName ?? output.id)}
             </span>
             <span className="shrink-0 text-[12px] tabular-nums text-slate-400">{dropFigure(output)}</span>
           </div>
