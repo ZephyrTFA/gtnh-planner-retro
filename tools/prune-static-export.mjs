@@ -9,6 +9,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import zlib from "node:zlib";
+import nextEnv from "@next/env";
+
+// Postbuild runs outside `next build`, which is what reads .env.production: load the
+// env files the same way, or these steps would not see the values the pages were built with.
+nextEnv.loadEnvConfig(process.cwd());
 
 const outDir = path.resolve(process.argv[2] ?? "out");
 const MAX_FILE_BYTES = 25 * 1024 * 1024;

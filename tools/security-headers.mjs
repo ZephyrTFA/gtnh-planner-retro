@@ -18,6 +18,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import nextEnv from "@next/env";
+
+// Postbuild runs outside `next build`, which is what reads .env.production: load the
+// env files the same way, or these steps would not see the values the pages were built with.
+nextEnv.loadEnvConfig(process.cwd());
 
 const outDir = path.resolve(process.argv[2] ?? "out");
 const MAX_HEADER_LINE = 2000;
