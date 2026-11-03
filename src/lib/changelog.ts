@@ -40,6 +40,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.2",
+    date: "2026-11-03",
+    headline: "Twist Space recipes that were missing",
+    notes: [
+      "The Twist Space pack now has the recipes the mod adds when a world loads: the Twist Token, the Miracle Top's flasks and Liquid Stargate, and most Stellar Forge recipes, about 2,800 in all.",
+      "Plans saved on the Twist Space pack keep their recipes.",
+    ],
+  },
+  {
     version: "1.3.1",
     date: "2026-11-03",
     headline: "What's new lists each release once",
