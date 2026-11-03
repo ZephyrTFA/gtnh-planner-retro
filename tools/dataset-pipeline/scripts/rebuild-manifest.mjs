@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { computeDatasetChecksum } from "./dataset-checksum.mjs";
+import { latestStableVersionId, orderManifestVersions } from "./manifest-order.mjs";
 import readline from "node:readline";
 import { createGunzip } from "node:zlib";
 
@@ -38,6 +39,7 @@ for (const entry of entries) {
     recipeLookupIndexPath: `/datasets/gtnh/${dataset.datasetVersionId}/${path.basename(recipeLookupIndexPath)}`,
     checksumSha256,
     sourceInfo: dataset.sourceInfo,
+    ...(dataset.addonSet ? { addonSet: dataset.addonSet } : {}),
   });
 }
 
@@ -49,20 +51,11 @@ for (const version of discoveredVersions) {
   }
 }
 
-const versions = discoveredVersions.filter(
-  (version) => version.channel !== "daily" || version.id === latestDailyVersion,
+const versions = orderManifestVersions(
+  discoveredVersions.filter((version) => version.channel !== "daily" || version.id === latestDailyVersion),
 );
 
-// Newest PACK first, not newest publish: the app defaults to versions[0], and
-// sorting by publishedAt once handed everyone 2.8.4 because it happened to be
-// re-normalized a few minutes after 2.9.
-versions.sort(
-  (a, b) =>
-    b.gtnhVersion.localeCompare(a.gtnhVersion, undefined, { numeric: true }) ||
-    b.publishedAt.localeCompare(a.publishedAt),
-);
-
-const latestStableVersion = versions.find((version) => version.channel === "stable")?.id;
+const latestStableVersion = latestStableVersionId(versions);
 const manifest = {
   schemaVersion: 1,
   ...(latestStableVersion ? { latestStableVersion } : {}),
@@ -114,6 +107,8 @@ async function readRecipeDatasetMetadata(filePath) {
   const input = filePath.endsWith(".gz") ? fileStream.pipe(createGunzip()) : fileStream;
   const lines = readline.createInterface({ input, crlfDelay: Infinity });
   const wantedKeys = new Set(["datasetVersionId", "gtnhVersion", "generatedAt", "sourceInfo"]);
+  // Present only on addon-set datasets; written before the required keys finish.
+  const optionalKeys = new Set(["addonSet"]);
 
   try {
     for await (const rawLine of lines) {
@@ -124,7 +119,7 @@ async function readRecipeDatasetMetadata(filePath) {
       }
 
       const key = JSON.parse(match[1]);
-      if (!wantedKeys.has(key)) {
+      if (!wantedKeys.has(key) && !optionalKeys.has(key)) {
         continue;
       }
 

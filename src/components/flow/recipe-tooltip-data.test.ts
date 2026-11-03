@@ -121,4 +121,20 @@ describe("machine tooltip counts and effective statistics", () => {
     expect(view.rows.find(r => r.label === "Draw per machine")?.value).toContain(String(power.drawEuT));
     expect(JSON.stringify(view)).not.toMatch(/Exact|Estimated|9999/);
   });
+  it("flags an addon machine without a curated entry as unchecked, and says where it is from", () => {
+    const tst: Recipe = { ...recipe, machineType: "Industrial Alchemy Tower",
+      machineHandlers: [{ id: "industrial-alchemy-tower", label: "Industrial Alchemy Tower", machineType: "Industrial Alchemy Tower", minimumTier: "LV", kind: "multiblock" }] };
+    const handler = tst.machineHandlers![0]!;
+    const view = buildMachineTooltip(tst, handler, { ...node, machineHandlerId: handler.id }, "build", undefined, undefined, "Twist Space Technology");
+    expect(view.status).toEqual({ label: "Unchecked", tone: "warning" });
+    expect(view.bullets).toEqual([
+      "From Twist Space Technology.",
+      "Speed, power and parallels are read from its tooltip, not checked against the mod.",
+    ]);
+    // A pack machine, or an addon machine the table already covers, says nothing of the kind.
+    expect(buildMachineTooltip(tst, handler, node, "build").status).toBeUndefined();
+    const volcanus = { id: "volcanus", label: "Volcanus", machineType: "Volcanus", minimumTier: "LV", kind: "multiblock" as const };
+    const curated: Recipe = { ...tst, machineType: "Volcanus", machineHandlers: [volcanus] };
+    expect(buildMachineTooltip(curated, volcanus, { ...node, machineHandlerId: "volcanus" }, "build", undefined, undefined, "Twist Space Technology").status).toBeUndefined();
+  });
 });

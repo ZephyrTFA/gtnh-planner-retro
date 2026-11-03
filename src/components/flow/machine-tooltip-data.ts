@@ -10,7 +10,12 @@ import type { RecipeTooltipView, TooltipMode } from "./recipe-tooltip-data";
 
 const number = (value: number) => value > 0 && value < 0.001 ? "<0.001" : value.toLocaleString(undefined, { maximumFractionDigits: 3 });
 
-export function buildMachineTooltip(recipe: Recipe, handler: MachineHandler, node: FactoryNode, mode: TooltipMode, result?: NodeThroughputResult, title?: string): RecipeTooltipView {
+/**
+ * `addon` names the mod an addon machine comes from (machineAddon). Without a
+ * curated machine-table entry its speed, power and parallels are only what its
+ * tooltip claims, so the hover says so.
+ */
+export function buildMachineTooltip(recipe: Recipe, handler: MachineHandler, node: FactoryNode, mode: TooltipMode, result?: NodeThroughputResult, title?: string, addon?: string): RecipeTooltipView {
   const selectedNode = { ...node, machineHandlerId: handler.id };
   const effective = applyMachineHandlerToRecipe(recipe, selectedNode);
   const stats = getOverclockedRecipeStats(recipe, selectedNode);
@@ -26,9 +31,15 @@ export function buildMachineTooltip(recipe: Recipe, handler: MachineHandler, nod
       : power ? [{ label: "Draw per machine", value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
     ...(parallels > 1 ? [{ label: "Parallel operations", value: number(parallels) }] : []),
   ];
+  const curated = getMachineBehaviour(effective.machineType);
+  const unchecked = addon && !curated;
   return {
     title: title ?? handler.label, subtitle: isMultiblockRecipe(effective) ? "Multiblock" : "Machine", mode, rows,
-    requirement: getMachineBehaviour(effective.machineType)?.note,
+    ...(unchecked ? {
+      status: { label: "Unchecked", tone: "warning" as const },
+      bullets: [`From ${addon}.`, "Speed, power and parallels are read from its tooltip, not checked against the mod."],
+    } : {}),
+    requirement: curated?.note,
     reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
   };
 }

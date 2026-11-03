@@ -611,6 +611,8 @@ export const factoryProjectSchema = z.object({
   assumeBoundaries: z.boolean().optional(),
   // Solve mode: product amounts are the question, machine counts the answer.
   solveMode: z.boolean().optional(),
+  // The addon set the plan is built on; absent means the plain pack.
+  addonSetId: z.string().min(1).optional(),
   // Pool mode: every resource is shared, no wires needed.
   poolMode: z.boolean().optional(),
   // Pool mode's cell-to-fluid ratios, litres per filled cell by cell id.

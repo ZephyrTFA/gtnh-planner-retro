@@ -14,7 +14,7 @@ import { APP_VERSION } from "@/lib/version";
 import { AccountMenu } from "./community/AccountMenu";
 import { SharePlanDialog } from "./community/SharePlanDialog";
 import { ONLINE_FEATURES, REQUEST_FORM_ENABLED } from "@/lib/site";
-import { AppIdentity } from "./AppIdentity";
+import { AppIdentity, useHasPackChoice } from "./AppIdentity";
 import { DesignTabs } from "./DesignTabs";
 import { AppMenu } from "./AppMenu";
 import { BoardActions } from "./BoardActions";
@@ -22,12 +22,6 @@ import { ExportImageDialog } from "./export/ExportImageDialog";
 import { DevMenu } from "./DevMenu";
 import { SettingsDialog } from "./SettingsDialog";
 import { HeaderLinks, SupportButton } from "./HeaderLinks";
-
-/**
- * The pack picker's switch. See the note where it renders; flip this back to
- * true when there is more than one pack to pick from.
- */
-export const SHOW_PACK_PICKER = false;
 
 interface AppHeaderProps {
   onLoadDatasetVersion: (versionId: string) => void;
@@ -79,6 +73,7 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
   // one menu — see AppMenu for why a bar that overflows costs a phone more than
   // the buttons that fall off the end of it.
   const isCompact = useIsCompactViewport();
+  const hasPackChoice = useHasPackChoice();
 
   return (
     <header className="app-header relative flex h-[30px] shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-3 compact:h-auto compact:flex-wrap compact:gap-y-0">
@@ -114,11 +109,8 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
           ) : null}
         </button>
         {/* The pack picker sits beside the app version (in the menu on a
-            phone). Hidden by SHOW_PACK_PICKER while only one pack is
-            supported; AppIdentity and `onLoadDatasetVersion` stay wired for
-            when a second ships, and AppMenu's Pack section is hidden the same
-            way. */}
-        {isCompact || !SHOW_PACK_PICKER ? null : (
+            phone), shown only when the manifest offers more than one pack. */}
+        {isCompact || !hasPackChoice ? null : (
           <>
             <span className="ml-3 h-3.5 w-px bg-line" aria-hidden />
             <AppIdentity onLoadDatasetVersion={onLoadDatasetVersion} />

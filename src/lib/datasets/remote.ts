@@ -22,7 +22,8 @@ export async function fetchDatasetManifest(
 
 /**
  * Dataset versions never offered in the picker, even if a manifest still
- * lists them. 2.8.4 is no longer supported; only 2.9 is.
+ * lists them. 2.8.4 is no longer supported; only 2.9 is (plain or with an
+ * addon set).
  */
 export const HIDDEN_DATASET_VERSION_IDS = new Set(["local-2.8.4"]);
 
@@ -45,6 +46,29 @@ export function pickDefaultDatasetVersion(manifest: DatasetManifest): DatasetVer
   }
 
   return selectable[0];
+}
+
+/**
+ * The dataset a plan built on `addonSetId` opens with: the newest version
+ * carrying that addon set (the manifest lists newest packs first), or the
+ * default version for a plain-pack plan. Undefined when the manifest has no
+ * dataset for the set; the plan then stays on what is loaded.
+ */
+export function datasetVersionForAddonSet(
+  manifest: DatasetManifest,
+  addonSetId: string | undefined,
+): DatasetVersion | undefined {
+  if (!addonSetId) {
+    const fallback = pickDefaultDatasetVersion(manifest);
+    if (!fallback?.addonSet) return fallback;
+    return listSelectableDatasetVersions(manifest).find((version) => !version.addonSet) ?? fallback;
+  }
+  return listSelectableDatasetVersions(manifest).find((version) => version.addonSet?.id === addonSetId);
+}
+
+/** What the pack picker calls a version: the pack, then its addons. */
+export function datasetVersionLabel(version: DatasetVersion): string {
+  return version.addonSet ? `${version.gtnhVersion} + ${version.addonSet.label}` : version.gtnhVersion;
 }
 
 function withCacheBust(url: string): string {

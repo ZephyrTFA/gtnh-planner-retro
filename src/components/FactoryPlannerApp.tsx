@@ -12,6 +12,7 @@ import type { Recipe } from "@/lib/model/types";
 import { useCallback, useEffect, useRef, type CSSProperties } from "react";
 import {
   DEFAULT_DATASET_MANIFEST_URL,
+  datasetVersionForAddonSet,
   fetchDatasetManifest,
   pickDefaultDatasetVersion,
 } from "@/lib/datasets";
@@ -76,6 +77,11 @@ export function FactoryPlannerApp() {
   const datasetVersionId = useFactoryStore((state) => state.dataset?.datasetVersionId);
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
+  const projectAddonSetId = useFactoryStore((state) => state.project.addonSetId);
+  // The dataset version last asked for. A load that finishes after a newer one
+  // was asked for (boot loads the plain pack, then the hydrated plan wants its
+  // addon set) must not land over it.
+  const requestedDatasetVersionRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!datasetVersionId) {
       return;
@@ -125,13 +131,17 @@ export function FactoryPlannerApp() {
         return;
       }
 
+      requestedDatasetVersionRef.current = versionId;
+      const superseded = () => requestedDatasetVersionRef.current !== versionId;
       try {
         setDatasetLoading(true);
         const dataset = await initRecipeDatasetVersion(manifestUrl, version);
+        if (superseded()) return;
         setDataset(dataset);
         const projectRecipes = useFactoryStore.getState().project.recipes;
         if (projectRecipes.length > 0) {
           const { refreshed, migration } = await resolveProjectRecipes(manifestUrl, version, projectRecipes);
+          if (superseded()) return;
           const checked = new Map<string, boolean>();
           noteRecipesRequested(projectRecipes, version.id, checked, requestedRecipesRef.current);
           noteRecipesRefreshed(refreshed, version.id, checked);
@@ -235,12 +245,10 @@ export function FactoryPlannerApp() {
         }
 
         setDatasetManifest(manifest, DEFAULT_DATASET_MANIFEST_URL);
+        // The open plan's pack decides which version loads (the effect below).
         if (!pickDefaultDatasetVersion(manifest)) {
           setDatasetLoading(false);
-          return;
         }
-
-        void loadDatasetVersion(pickDefaultDatasetVersion(manifest)!.id);
       } catch (error) {
         if (cancelled) {
           return;
@@ -257,6 +265,24 @@ export function FactoryPlannerApp() {
       cancelled = true;
     };
   }, [loadDatasetVersion, setDatasetError, setDatasetLoading, setDatasetManifest]);
+
+  // A plan is built on one pack (FactoryProject.addonSetId): whenever the open
+  // plan's pack and the loaded dataset disagree (boot, a tab switch, an
+  // arriving plan, the pack picker), load the plan's.
+  useEffect(() => {
+    if (!datasetManifest) return;
+    const wanted = datasetVersionForAddonSet(datasetManifest, projectAddonSetId);
+    if (!wanted || wanted.id === requestedDatasetVersionRef.current) return;
+    void loadDatasetVersion(wanted.id);
+  }, [datasetManifest, loadDatasetVersion, projectAddonSetId]);
+
+  // The pack picker sets the open plan's pack; the effect above loads it. A
+  // read-only plan refuses the edit and keeps its own pack.
+  const choosePack = useCallback((versionId: string) => {
+    const state = useFactoryStore.getState();
+    const version = state.datasetManifest?.versions.find((entry) => entry.id === versionId);
+    if (version) state.setProjectAddonSet(version.addonSet?.id);
+  }, []);
 
   useEffect(() => {
     if (!hydratedRef.current) {
@@ -309,11 +335,11 @@ export function FactoryPlannerApp() {
       <RecipeBookOpener />
       <PlacementRevealer />
       <SharedAddressSync />
-      <AppHeader onLoadDatasetVersion={loadDatasetVersion} />
+      <AppHeader onLoadDatasetVersion={choosePack} />
       {isCompact ? (
-        <CompactWorkspace workspace={workspace} onLoadDatasetVersion={loadDatasetVersion} />
+        <CompactWorkspace workspace={workspace} onLoadDatasetVersion={choosePack} />
       ) : (
-        <ColumnWorkspace workspace={workspace} onLoadDatasetVersion={loadDatasetVersion} />
+        <ColumnWorkspace workspace={workspace} onLoadDatasetVersion={choosePack} />
       )}
       {/* The power source picker portals to the body, so it works from either
           layout and outranks the drawers on compact. */}

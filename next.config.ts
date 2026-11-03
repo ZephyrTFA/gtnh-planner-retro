@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  // `next dev` would otherwise append its own block to AGENTS.md on every run;
+  // the project's agent notes are hand-written.
+  agentRules: false,
 };
 
 export default function config(phase: string): NextConfig {

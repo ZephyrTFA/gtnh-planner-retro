@@ -47,6 +47,8 @@ export interface RecipeMapIconEntry {
     "kind" | "id" | "displayName" | "iconPath" | "iconAtlas" | "dominantColor" | "modId" | "tooltip"
   > &
     Partial<Pick<ResourceAmount, "amount">>;
+  /** The addon every machine of this map comes from (addon-set datasets only). */
+  addon?: string;
 }
 
 /**
@@ -58,6 +60,15 @@ export interface MachineHandlerIconEntry {
   familyId: string;
   resource: RecipeMapIconEntry["resource"];
   tiers?: Array<{ tier: string; resource: RecipeMapIconEntry["resource"] }>;
+  /** The addon whose jar ships this family's controllers (addon-set datasets only). */
+  addon?: string;
+}
+
+/** The addon mods a dataset was exported with, on top of the official pack. */
+export interface DatasetAddonSet {
+  id: string;
+  label: string;
+  mods: Array<{ name: string; version: string }>;
 }
 
 export interface DatasetVersion {
@@ -72,6 +83,8 @@ export interface DatasetVersion {
   recipeLookupIndexPath?: string;
   checksumSha256?: string;
   sourceInfo: DatasetSourceInfo;
+  /** Present when the dataset is the pack plus addons. */
+  addonSet?: DatasetAddonSet;
 }
 
 export interface DatasetManifest {

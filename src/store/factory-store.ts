@@ -478,6 +478,11 @@ interface FactoryStore {
   /** Plan mode counts machines and reports flows; solve mode takes the
    * product drawers' typed amounts and reports machine counts. */
   setSolveMode: (solveMode: boolean) => void;
+  /**
+   * Which pack the plan is built on: an addon set id, or undefined for the
+   * plain pack. The app loads the matching dataset when the plan is open.
+   */
+  setProjectAddonSet: (addonSetId: string | undefined) => void;
   /** Pool mode: every resource is one shared pool, no wires needed. */
   setPoolMode: (poolMode: boolean) => void;
   createProductionGroup: (name?: string, parentId?: string) => string | undefined;
@@ -2822,6 +2827,14 @@ export const useFactoryStore = create<FactoryStore>(withViewerGuard((set, get, w
         project: finalProject,
         lastResult: solveBooks(finalProject),
       });
+    });
+  },
+  setProjectAddonSet: (addonSetId) => {
+    set((state) => {
+      if ((state.project.addonSetId ?? undefined) === (addonSetId || undefined)) {
+        return state;
+      }
+      return { project: touchProject({ ...state.project, addonSetId: addonSetId || undefined }) };
     });
   },
   setSolveMode: (solveMode) => {

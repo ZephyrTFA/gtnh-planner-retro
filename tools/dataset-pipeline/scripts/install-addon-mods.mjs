@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -115,14 +116,31 @@ export async function installAddonMods({ set, modsDir, cacheDir, gtnhVersion, fe
   };
 }
 
+/**
+ * Class name -> mod name for every class in the set's jars (`entriesByMod`:
+ * mod name -> the jar's entry names). Multi-release copies under META-INF are
+ * the same classes again and are skipped. Normalization reads this to tell
+ * which machines an addon adds.
+ */
+export function classOwnersFromEntries(entriesByMod) {
+  const owners = {};
+  for (const [mod, entries] of Object.entries(entriesByMod)) {
+    for (const entry of entries) {
+      if (!entry.endsWith(".class") || entry.startsWith("META-INF/")) continue;
+      owners[entry.slice(0, -".class".length).replaceAll("/", ".")] = mod;
+    }
+  }
+  return owners;
+}
+
 function sha256Of(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [setId, modsDir, recordPath] = process.argv.slice(2);
-  if (!setId || !modsDir || !recordPath) {
-    throw new Error("Usage: install-addon-mods.mjs <addon set id> <mods dir> <record.json>");
+  const [setId, modsDir, recordPath, classesPath] = process.argv.slice(2);
+  if (!setId || !modsDir || !recordPath || !classesPath) {
+    throw new Error("Usage: install-addon-mods.mjs <addon set id> <mods dir> <record.json> <classes.json>");
   }
   const set = await loadAddonSet(setId);
   const record = await installAddonMods({
@@ -133,5 +151,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   });
   await fs.mkdir(path.dirname(recordPath), { recursive: true });
   await fs.writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`);
+  const entriesByMod = Object.fromEntries(
+    set.mods.map((mod) => [
+      mod.name,
+      execFileSync("unzip", ["-Z1", path.join(modsDir, mod.fileName)], { encoding: "utf8", maxBuffer: 64 << 20 })
+        .split("\n")
+        .filter(Boolean),
+    ]),
+  );
+  await fs.writeFile(classesPath, JSON.stringify(classOwnersFromEntries(entriesByMod)));
   console.log(`Installed addon set ${set.id}: ${set.mods.map((mod) => `${mod.name} ${mod.version}`).join(", ")}.`);
 }

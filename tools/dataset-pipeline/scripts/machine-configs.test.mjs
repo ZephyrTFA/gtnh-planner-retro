@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMachineHandlerTemplates,
+  familyAddon,
   instantiateRecipeMachineHandlers,
   machineConfigControlsForOracleRecipe,
   primaryMachineHandlerControls,
@@ -647,5 +648,24 @@ describe("machineConfigControlsForOracleRecipe", () => {
       primaryMachineHandlerControls(templates),
     );
     expect(controls.map((control) => control.id).sort()).toEqual(["heatingCoil", "pipeCasing"]);
+  });
+});
+
+describe("addon machine families", () => {
+  const owners = { "com.addon.MachineA": "Addon", "com.addon.MachineB": "Addon", "com.other.MachineC": "Other" };
+  const controller = (name, sourceClass) => ({ sourceClass, multiblock: true, resource: { displayName: name, tooltip: ["Controller Block"] } });
+
+  it("tags a family whose controllers all ship in one addon", () => {
+    const [template] = buildMachineHandlerTemplates("Addon Map", [controller("Addon Forge", "com.addon.MachineA")]);
+    expect(template.sourceClasses).toEqual(["com.addon.MachineA"]);
+    expect(familyAddon(template, owners)).toBe("Addon");
+  });
+
+  it("leaves pack machines, unknown classes and mixed families untagged", () => {
+    const [pack] = buildMachineHandlerTemplates("Map", [controller("Pack Forge", "gregtech.Machine")]);
+    expect(familyAddon(pack, owners)).toBeUndefined();
+    expect(familyAddon(pack, undefined)).toBeUndefined();
+    expect(familyAddon({ sourceClasses: ["com.addon.MachineA", "com.other.MachineC"] }, owners)).toBeUndefined();
+    expect(familyAddon({ sourceClasses: [] }, owners)).toBeUndefined();
   });
 });

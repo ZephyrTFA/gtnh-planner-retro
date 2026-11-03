@@ -44,6 +44,14 @@ Every save goes through `persistCanvas` in design-store.ts:
   re-finds a missing one by CONTENT (`resolve-recipes`, then a name search scored by
   content). Never accept a name match alone.
 
+## A plan's pack
+
+A plan names the addon set it is built on (`FactoryProject.addonSetId`; absent = the plain
+pack). `FactoryPlannerApp` loads the matching dataset whenever the open plan and the loaded
+dataset disagree (boot, tab switch, arriving plan); a load overtaken by a newer one is
+dropped. The pack picker only sets the plan's field, never loads directly. A new design
+inherits the open one's pack. Picking a pack never edits a read-only plan.
+
 ## Public view
 
 - Someone else's community post opens VIEW-ONLY (`design-store.publicView`, transient, no

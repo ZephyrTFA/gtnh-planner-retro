@@ -5,6 +5,7 @@ import { useFactoryStore } from "@/store/factory-store";
 import { RecipeTooltip } from "./RecipeTooltip";
 import { tooltipMode } from "./recipe-tooltip-data";
 import { buildMachineTooltip } from "./machine-tooltip-data";
+import { machineAddon } from "@/lib/datasets/addon-machines";
 import {
   cropsNhCropsPerMachine,
   cropsNhEnvironmentFromTiers,
@@ -103,8 +104,11 @@ export function MachineStatsContent({ recipe, handler, node, result, title }: {
   title?: string;
 }) {
   const mode = useFactoryStore((state) => tooltipMode(state.project));
+  const machineHandlerIcons = useFactoryStore((state) => state.dataset?.machineHandlerIcons);
+  const recipeMapIcons = useFactoryStore((state) => state.dataset?.recipeMapIcons);
   if (getCropsNhStats(recipe)) {
     return <CropSourceStatsContent recipe={recipe} handler={handler} node={node} title={title} />;
   }
-  return <RecipeTooltip view={buildMachineTooltip(recipe, handler, node, mode, result, title)} />;
+  const addon = machineAddon({ machineHandlerIcons, recipeMapIcons }, recipe, handler.id);
+  return <RecipeTooltip view={buildMachineTooltip(recipe, handler, node, mode, result, title, addon)} />;
 }

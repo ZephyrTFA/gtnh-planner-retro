@@ -14,6 +14,7 @@ import {
 } from "./eec-drops.mjs";
 import {
   buildMachineHandlerTemplates,
+  familyAddon,
   heatingCoilTiers,
   instantiateRecipeMachineHandlers,
   machineConfigControlsForOracleRecipe,
@@ -38,6 +39,10 @@ const renderedIconDir = process.env.GTNH_RENDERED_ICON_DIR;
 const oracleStrict = envFlag("GTNH_ORACLE_STRICT", false);
 
 const raw = JSON.parse(stripBom(await fs.readFile(inputPath, "utf8")));
+// An addon-set export: what went into the pack (install-addon-mods.mjs) and
+// which mod each addon class belongs to, so machines can say where they are from.
+const addonSet = await readOptionalJson(process.env.GTNH_ADDON_RECORD);
+const addonClassOwners = await readOptionalJson(process.env.GTNH_ADDON_CLASSES);
 const singleblockFamilyIds = new Set((findDomain("gregtech")?.recipeMaps ?? []).flatMap(map =>
   buildMachineHandlerTemplates(map.name, map.catalysts).filter(handler => handler.kind === "single").map(handler => handler.id)));
 const renderedIcons = await stageRenderedIcons(renderedIconDir, outDir);
@@ -61,10 +66,23 @@ let furnaceCatalysts = [];
 // family appears in.
 const machineHandlerIcons = new Map();
 const machineHandlerTierIcons = new Map();
+// Family id -> addon mod name, for families whose controllers all ship in one
+// addon jar. Maps whose every machine is an addon's are tagged the same way
+// (recipeMapAddons): their cards carry no handler to look up. Map tags are
+// keyed by display name, which two maps can share (gt.recipe.fakecuttingsaw,
+// whose one machine with TST is the Holy Separator, is also "Cutting
+// Machine"); that is safe because the app reads a map tag only for recipes
+// without handlers, and a map with several machine families always has them.
+const machineHandlerAddons = new Map();
+const recipeMapAddons = new Map();
 const VOLTAGE_TIER_ORDER = VOLTAGE_TIER_NAMES;
 
 function registerMachineHandlerIcons(templates) {
   for (const template of templates ?? []) {
+    const addon = familyAddon(template, addonClassOwners);
+    if (addon && !machineHandlerAddons.has(template.id)) {
+      machineHandlerAddons.set(template.id, addon);
+    }
     if (!template.catalystResource) {
       continue;
     }
@@ -120,6 +138,15 @@ const dataset = {
   schemaVersion: 1,
   datasetVersionId,
   gtnhVersion,
+  ...(addonSet
+    ? {
+        addonSet: {
+          id: addonSet.id,
+          label: addonSet.label,
+          mods: addonSet.mods.map(({ name, version }) => ({ name, version })),
+        },
+      }
+    : {}),
   sourceInfo: {
     sourceId: "gtnh-oracle",
     sourceVersion: raw.format ?? "dev.gtnhplanner.oracle.v1",
@@ -132,7 +159,11 @@ const dataset = {
   oreDictionary,
   recipeMaps: [...recipeMaps].sort(),
   recipeMapIcons: [...recipeMapIcons.entries()]
-    .map(([recipeMap, resource]) => ({ recipeMap, resource: compactRecipeResource(resource) }))
+    .map(([recipeMap, resource]) => ({
+      recipeMap,
+      resource: compactRecipeResource(resource),
+      ...(recipeMapAddons.has(recipeMap) ? { addon: recipeMapAddons.get(recipeMap) } : {}),
+    }))
     .sort((left, right) => left.recipeMap.localeCompare(right.recipeMap)),
   machineHandlerIcons: [...machineHandlerIcons.entries()]
     .map(([familyId, resource]) => {
@@ -140,6 +171,7 @@ const dataset = {
       return {
         familyId,
         resource: compactRecipeResource(resource),
+        ...(machineHandlerAddons.has(familyId) ? { addon: machineHandlerAddons.get(familyId) } : {}),
         ...(tiers && tiers.size > 1
           ? {
               tiers: [...tiers.entries()]
@@ -178,6 +210,11 @@ function normalizeGregtech(domain) {
     // used to force 12 parallels onto the plain Distillation Tower).
     const handlerTemplates = buildMachineHandlerTemplates(machineType, recipeMap.catalysts, singleblockFamilyIds);
     registerMachineHandlerIcons(handlerTemplates);
+    const mapAddons = new Set(handlerTemplates.map((template) => familyAddon(template, addonClassOwners)));
+    const [mapAddon] = mapAddons;
+    if (handlerTemplates.length > 0 && mapAddons.size === 1 && mapAddon) {
+      recipeMapAddons.set(machineType, mapAddon);
+    }
     const catalystControls = primaryMachineHandlerControls(handlerTemplates);
     for (const rawRecipe of recipeMap.recipes ?? []) {
       const inputs = [
@@ -2491,4 +2528,9 @@ function envFlag(name, defaultValue) {
 
 function stripBom(value) {
   return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
+}
+
+async function readOptionalJson(filePath) {
+  if (!filePath) return undefined;
+  return JSON.parse(stripBom(await fs.readFile(filePath, "utf8")));
 }

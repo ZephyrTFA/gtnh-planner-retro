@@ -601,7 +601,13 @@ export const useDesignStore = create<DesignStore>((set, get) => ({
     const { activeDesignId, designs } = get();
     await flushCanvasInto(designs.find((design) => design.id === activeDesignId));
 
-    const record = createDesignRecord(createEmptyProject(), UNTITLED_DESIGN_NAME);
+    // A new plan starts on the pack the open one is built on: someone
+    // planning with an addon keeps it without picking it again.
+    const { addonSetId } = useFactoryStore.getState().project;
+    const record = createDesignRecord(
+      { ...createEmptyProject(), ...(addonSetId ? { addonSetId } : {}) },
+      UNTITLED_DESIGN_NAME,
+    );
     await writeDesign(record);
     landOnDesign(set, record);
     leaveLibrary();

@@ -40,6 +40,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.0",
+    date: "2026-11-03",
+    headline: "Twist Space Technology, as a second pack",
+    notes: [
+      "The Game picker in the top bar now offers GTNH 2.9.0 + Twist Space Technology 0.8.0: about 8,000 more recipes and 60 more machines.",
+      "Each plan remembers its pack and opens on it. A new plan starts on the pack of the plan you had open.",
+      "Twist Space machines say Unchecked when you hover them: their speed, power and parallels come from their tooltips, not from the mod's code.",
+    ],
+  },
+  {
     version: "1.0.1",
     date: "2026-11-02",
     headline: "Programmed circuits and casts leave the item list",

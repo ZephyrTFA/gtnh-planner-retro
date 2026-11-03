@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { addonSetsDir, installAddonMods, loadAddonSet, parseAddonSet } from "./install-addon-mods.mjs";
+import { addonSetsDir, classOwnersFromEntries, installAddonMods, loadAddonSet, parseAddonSet } from "./install-addon-mods.mjs";
 
 const folders = [];
 afterEach(() => {
@@ -84,5 +84,19 @@ describe("addon sets", () => {
 
     fs.writeFileSync(path.join(modsDir, "demo-1.0.jar"), "pack copy");
     await expect(installAddonMods({ ...base, fetchImpl: fakeFetch(jar) })).rejects.toThrow(/already ships/);
+  });
+});
+
+describe("addon class owners", () => {
+  it("maps each class in a jar to its mod, skipping multi-release copies and non-classes", () => {
+    expect(
+      classOwnersFromEntries({
+        "Twist Space Technology": [
+          "com/Nxer/TwistSpaceTechnology/common/machine/TST_BallLightning.class",
+          "META-INF/versions/17/com/Nxer/TwistSpaceTechnology/Other.class",
+          "assets/twistspacetechnology/lang/en_US.lang",
+        ],
+      }),
+    ).toEqual({ "com.Nxer.TwistSpaceTechnology.common.machine.TST_BallLightning": "Twist Space Technology" });
   });
 });

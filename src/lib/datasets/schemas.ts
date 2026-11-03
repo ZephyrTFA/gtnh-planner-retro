@@ -61,6 +61,8 @@ export const recipeMapIconEntrySchema = z.object({
     modId: z.string().optional(),
     tooltip: z.array(z.string()).optional(),
   }),
+  // The addon every machine of this map comes from (addon-set datasets only).
+  addon: z.string().min(1).optional(),
 });
 
 export const machineHandlerIconEntrySchema = z.object({
@@ -76,6 +78,8 @@ export const machineHandlerIconEntrySchema = z.object({
       }),
     )
     .optional(),
+  // The addon whose jar ships this family's controllers (addon-set datasets only).
+  addon: z.string().min(1).optional(),
 });
 
 export const recipeDatasetSchema = z.object({
@@ -105,6 +109,13 @@ export const datasetVersionSchema = z.object({
   recipeLookupIndexPath: z.string().optional(),
   checksumSha256: z.string().optional(),
   sourceInfo: datasetSourceInfoSchema,
+  addonSet: z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      mods: z.array(z.object({ name: z.string().min(1), version: z.string().min(1) })),
+    })
+    .optional(),
 });
 
 export const datasetManifestSchema = z.object({

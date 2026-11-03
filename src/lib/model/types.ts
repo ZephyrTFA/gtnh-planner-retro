@@ -745,6 +745,13 @@ export interface FactoryProject {
    */
   solveMode?: boolean;
   /**
+   * The addon set this plan is built on (a dataset's `addonSet.id`, such as
+   * "tst"); absent means the plain pack. Opening the plan loads that dataset,
+   * so its addon recipes and machines are there to search and swap. Part of
+   * the plan JSON, so it travels through export, import and sharing.
+   */
+  addonSetId?: string;
+  /**
    * POOL MODE: machines share resource pools and ignore saved wires.
    * Production groups resolve local materials first; unmatched or shared ports
    * reach the parent. The factory imports materials with no producer; an

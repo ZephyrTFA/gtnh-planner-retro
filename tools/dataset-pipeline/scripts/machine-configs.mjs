@@ -307,6 +307,7 @@ export function buildMachineHandlerTemplates(machineType, catalysts, singleblock
 
     const existing = families.get(familyKey);
     if (existing) {
+      if (catalyst.sourceClass) existing.sourceClasses.add(String(catalyst.sourceClass));
       if (
         minimumTier !== undefined &&
         (existing.minimumTier === undefined ||
@@ -338,6 +339,9 @@ export function buildMachineHandlerTemplates(machineType, catalysts, singleblock
       kind: multiblock || hasWikiStats ? "multiblock" : "single",
       minimumTier,
       catalystResource: catalyst.resource,
+      // Every controller class folded into the family: addon sets use them to
+      // tell which mod a machine comes from (familyAddon).
+      sourceClasses: new Set(catalyst.sourceClass ? [String(catalyst.sourceClass)] : []),
       tierVariants: new Map(
         !multiblock && minimumTier !== undefined ? [[minimumTier, catalyst.resource]] : [],
       ),
@@ -365,6 +369,7 @@ export function buildMachineHandlerTemplates(machineType, catalysts, singleblock
       .sort((left, right) => voltageTierIndex(left[0]) - voltageTierIndex(right[0]))
       .map(([tier, resource]) => ({ tier, resource }));
     delete template.tierVariants;
+    template.sourceClasses = [...template.sourceClasses].sort();
     if (variants.length > 1) {
       template.tierIcons = variants;
     }
@@ -1054,6 +1059,21 @@ function fixedParallelControl(parallels, note = `Parallels: ${parallels}`) {
       },
     ],
   };
+}
+
+/**
+ * The addon a machine family comes from: the mod whose jar ships every one of
+ * its controller classes (`classOwners`: class name -> mod name, from the
+ * addon set). A family with no exported class, or one that mixes the pack's
+ * classes with an addon's, belongs to no addon.
+ */
+export function familyAddon(template, classOwners) {
+  const classes = template?.sourceClasses ?? [];
+  if (!classOwners || classes.length === 0) return undefined;
+  const owners = new Set(classes.map((name) => classOwners[name]));
+  if (owners.size !== 1) return undefined;
+  const [owner] = owners;
+  return owner || undefined;
 }
 
 export function instantiateRecipeMachineHandlers(templates, recipe) {

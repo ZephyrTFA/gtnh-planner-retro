@@ -76,7 +76,8 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 - The recipe dataset is built here from the official GTNH pack:
   `bash tools/dataset-pipeline/scripts/run-dataset-in-docker.sh stable` (Docker, a headless
   client, about 30 min). Output lands in `public/datasets/gtnh/` (gitignored).
-- Only GTNH 2.9 datasets are supported.
+- Only GTNH 2.9 datasets are supported: the plain pack, plus addon sets built on it
+  (`tools/dataset-pipeline/CLAUDE.md`). The plain pack stays the default.
 
 ## Invariants across the app
 

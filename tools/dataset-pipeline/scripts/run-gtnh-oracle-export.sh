@@ -84,7 +84,10 @@ mkdir -p "$instance_root/mods"
 # pass through here, so server and client see the same mods).
 if [[ -n "${GTNH_ADDON_SET:-}" ]]; then
   node tools/dataset-pipeline/scripts/install-addon-mods.mjs \
-    "$GTNH_ADDON_SET" "$instance_root/mods" "$GTNH_RAW_EXPORT_DIR/addon-set.json"
+    "$GTNH_ADDON_SET" "$instance_root/mods" \
+    "$GTNH_RAW_EXPORT_DIR/addon-set.json" "$GTNH_RAW_EXPORT_DIR/addon-classes.json"
+  export GTNH_ADDON_RECORD="$GTNH_RAW_EXPORT_DIR/addon-set.json"
+  export GTNH_ADDON_CLASSES="$GTNH_RAW_EXPORT_DIR/addon-classes.json"
 fi
 
 oracle_project="tools/dataset-pipeline/gtnh-calc-oracle"
