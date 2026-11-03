@@ -3,11 +3,12 @@
 import { useRef, useState } from "react";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 
-import { Bug, ChevronDown, Compass, Heart, Library } from "lucide-react";
+import { Bug, ChevronDown, Compass, Heart, Library, MessageSquarePlus } from "lucide-react";
 import { leaveLibrary, openLibrary } from "@/lib/library/library-tab";
+import { openRequestDialog } from "@/lib/requests/send-request";
 import { openWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { APP_VERSION } from "@/lib/version";
-import { DISCORD_URL, SITE_NAME, SOURCE_URL, SUPPORT_URL, UPSTREAM_URL } from "@/lib/site";
+import { DISCORD_URL, REQUEST_FORM_ENABLED, SITE_NAME, SOURCE_URL, SUPPORT_URL, UPSTREAM_URL } from "@/lib/site";
 
 /**
  * The bug report form with the app version pre-filled, since reporters rarely
@@ -107,6 +108,20 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
       >
         <Heart className="h-3.5 w-3.5 fill-current" aria-hidden />
       </MenuLink> : null}
+      {/* Only in builds with the Worker's bot check (see REQUEST_FORM_ENABLED). */}
+      {REQUEST_FORM_ENABLED ? <button
+        type="button"
+        onClick={() => {
+          openRequestDialog();
+          onAction?.();
+        }}
+        className="flex h-10 items-center gap-2.5 rounded px-2 text-left text-sm text-fg-subtle hover:bg-surface-sunken"
+      >
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+          <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden />
+        </span>
+        <span className="truncate">Send a request</span>
+      </button> : null}
       {BUG_REPORT_URL ? <MenuLink href={BUG_REPORT_URL} label="Report a bug">
         <Bug className="h-3.5 w-3.5" aria-hidden />
       </MenuLink> : null}

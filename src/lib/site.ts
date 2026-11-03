@@ -39,5 +39,19 @@ export const SUPPORT_URL = process.env.NEXT_PUBLIC_SUPPORT_URL || undefined;
  */
 export const ONLINE_FEATURES = false;
 
+/**
+ * The "Send a request" form posts to this deployment's own Worker
+ * (worker/request.ts), which files it as an issue. Off here, or with no
+ * Turnstile site key, the Help menu has no such item: a copy hosted without
+ * the Worker must not show a button that can only fail.
+ */
+export const REQUESTS_ENABLED = true;
+
+/** The Turnstile widget's site key (public). Its secret lives only in the Worker. */
+export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || undefined;
+
+/** Whether this build shows the request form. */
+export const REQUEST_FORM_ENABLED = REQUESTS_ENABLED && Boolean(TURNSTILE_SITE_KEY);
+
 /** The project this one is built from; MIT, credited in the menu. */
 export const UPSTREAM_URL = "https://github.com/jackwrichards/gtnh-factory-flow";

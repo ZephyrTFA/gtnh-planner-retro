@@ -11,7 +11,9 @@
 //   planner never uses.
 //
 // With NEXT_PUBLIC_ICON_BASE_URL set, that origin may serve images and be
-// fetched (icons and their export). Cloudflare refuses header lines over
+// fetched (icons and their export). With NEXT_PUBLIC_TURNSTILE_SITE_KEY set,
+// Turnstile's origin may serve a script and a frame (the request form's bot
+// check) and nothing else. Cloudflare refuses header lines over
 // 2,000 characters, so the build fails before deploying one.
 import fs from "node:fs";
 import path from "node:path";
@@ -56,15 +58,24 @@ const iconOrigin = (() => {
   }
 })();
 
+// With NEXT_PUBLIC_TURNSTILE_SITE_KEY set, the build shows the request form,
+// whose bot check is Cloudflare Turnstile: its script and its challenge
+// iframe come from this one origin, and that is all it needs (Cloudflare's
+// Turnstile CSP reference; its connect-src 'self' is already here). Without a
+// key there is no form, so the policy names no third party at all.
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+const turnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ? [TURNSTILE_ORIGIN] : [];
+
 const directive = (name, values) => `${name} ${values.join(" ")}`;
 const csp = [
   directive("default-src", ["'none'"]),
-  directive("script-src", ["'self'", "'wasm-unsafe-eval'", ...[...hashes].sort()]),
+  directive("script-src", ["'self'", "'wasm-unsafe-eval'", ...turnstile, ...[...hashes].sort()]),
   directive("style-src", ["'self'"]),
   directive("style-src-attr", ["'unsafe-inline'"]),
   directive("img-src", ["'self'", "data:", "blob:", ...iconOrigin]),
   directive("font-src", ["'self'"]),
   directive("connect-src", ["'self'", ...iconOrigin]),
+  ...(turnstile.length ? [directive("frame-src", turnstile)] : []),
   directive("worker-src", ["'self'"]),
   directive("manifest-src", ["'self'"]),
   directive("media-src", ["'self'"]),

@@ -1,15 +1,41 @@
-// Cloudflare Workers static assets: the static export in out/, served as files only.
-// No "main" script, so no request ever runs code: static asset requests are free and
-// unmetered, which leaves nothing for a third party to run up. Keep it that way: a
-// Worker script (or run_worker_first) would make every request a billed invocation.
+// Cloudflare Workers static assets: the static export in out/, plus one small
+// Worker (worker/index.ts, logic in worker/request.ts) for the "Send a request" form.
+//
+// Only /api/* may run code. Static asset requests are free and unmetered, and
+// leave nothing for a third party to run up, so run_worker_first names /api/*
+// and nothing else; never set it to true or widen it. Everything else is a
+// file. (Should Cloudflare hand the script a request for a missing file that
+// is not a page navigation, it answers with the assets' 404 page.)
+//
+// Secrets, set with `wrangler secret put`, never in this file:
+//   GITHUB_ACCESS_TOKEN  fine-grained token, Issues read/write on GITHUB_REPO only
+//   TURNSTILE_SECRET     the Turnstile widget's secret key
+// See worker/CLAUDE.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gtnh-planner-retro",
+  "main": "worker/index.ts",
+  // zod brings every locale along; minified, the script starts faster.
+  "minify": true,
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./out",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   },
+  "vars": {
+    "SITE_ORIGIN": "https://gtnhplanretro.tfaluc.com",
+    "GITHUB_REPO": "ZephyrTFA/gtnh-planner-retro"
+  },
+  // Per sender (CF-Connecting-IP) and for the whole site. Cloudflare's rate
+  // limits are counted per location and settle within seconds, so treat them
+  // as a brake on floods, not an exact count. namespace_id is any number
+  // unique to this account.
+  "ratelimits": [
+    { "name": "REQUEST_LIMIT_PER_IP", "namespace_id": "4101", "simple": { "limit": 3, "period": 60 } },
+    { "name": "REQUEST_LIMIT_GLOBAL", "namespace_id": "4102", "simple": { "limit": 20, "period": 60 } }
+  ],
   "routes": [{ "pattern": "gtnhplanretro.tfaluc.com", "custom_domain": true }],
   "workers_dev": false,
   "preview_urls": false

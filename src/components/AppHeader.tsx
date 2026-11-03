@@ -3,15 +3,17 @@
 import "./app-chrome.css";
 
 import { Settings } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { OPEN_SHARE_DIALOG_EVENT } from "@/lib/setups-tab";
+import { OPEN_REQUEST_DIALOG_EVENT } from "@/lib/requests/send-request";
+import { RequestDialog } from "./RequestDialog";
 import { useIsCompactViewport } from "@/lib/compact-view";
 import { markNotesReadAndNotify, subscribeToNotesRead, unseenEntries } from "@/lib/whats-new";
 import { ChangelogDialog } from "./ChangelogDialog";
 import { APP_VERSION } from "@/lib/version";
 import { AccountMenu } from "./community/AccountMenu";
 import { SharePlanDialog } from "./community/SharePlanDialog";
-import { ONLINE_FEATURES } from "@/lib/site";
+import { ONLINE_FEATURES, REQUEST_FORM_ENABLED } from "@/lib/site";
 import { AppIdentity } from "./AppIdentity";
 import { DesignTabs } from "./DesignTabs";
 import { AppMenu } from "./AppMenu";
@@ -65,6 +67,14 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
   // Settings lives up here for the same reason as the share dialog: the
   // compact menu closes behind it without unmounting it.
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  // The request form too; the Help menu (and the compact menu) open it by event.
+  const [isRequestOpen, setRequestOpen] = useState(false);
+  useEffect(() => {
+    const open = () => setRequestOpen(true);
+    window.addEventListener(OPEN_REQUEST_DIALOG_EVENT, open);
+    return () => window.removeEventListener(OPEN_REQUEST_DIALOG_EVENT, open);
+  }, []);
+  const closeRequest = useCallback(() => setRequestOpen(false), []);
   // Narrow windows keep the name and the version chip and fold the rest into
   // one menu — see AppMenu for why a bar that overflows costs a phone more than
   // the buttons that fall off the end of it.
@@ -126,6 +136,7 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
       {isShareOpen ? <SharePlanDialog onClose={() => setShareOpen(false)} /> : null}
       {isExportOpen ? <ExportImageDialog onClose={() => setExportOpen(false)} /> : null}
       {isSettingsOpen ? <SettingsDialog onClose={() => setSettingsOpen(false)} /> : null}
+      {isRequestOpen && REQUEST_FORM_ENABLED ? <RequestDialog onClose={closeRequest} /> : null}
       {isCompact ? (
         <AppMenu
           onLoadDatasetVersion={onLoadDatasetVersion}

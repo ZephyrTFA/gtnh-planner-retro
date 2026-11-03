@@ -62,6 +62,10 @@ dev-server*.log
 # vercel
 .vercel
 
+# wrangler dev state and local secrets
+/.wrangler/
+.dev.vars*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

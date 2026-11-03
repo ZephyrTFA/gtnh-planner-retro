@@ -21,6 +21,7 @@ before changing that area; it names the tests that pin its behaviour.
 | Power generation | `src/lib/power/CLAUDE.md` |
 | Designs, tabs, saving, account sync, plan import/export, public view | `src/store/CLAUDE.md` |
 | Server, recipe API, Supabase | `src/lib/server/CLAUDE.md` |
+| Request Worker: `/api/request`, Turnstile, GitHub issues, its secrets and labels | `worker/CLAUDE.md` |
 | Dataset pipeline: export, normalize, rebuild, publish | `tools/dataset-pipeline/CLAUDE.md` |
 
 Longer references, read on demand: `docs/solver-equations.md` (solver doctrine),
@@ -54,6 +55,11 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 - Comments state the rule and why. No dates, names or "used to" stories; git has those.
 - Nothing may depend on gtnhplanner.com at runtime. The site's name, address and links
   live in `src/lib/site.ts` and the environment.
+- Only /api/* may run code. The site is static assets plus one Worker
+  (`worker/request.ts`, the request form) that `run_worker_first` reaches for /api/*
+  alone; asset requests stay free and unmetered. Its secrets (`GITHUB_ACCESS_TOKEN`,
+  `TURNSTILE_SECRET`, set with `wrangler secret put`) and the issue labels it needs are
+  in `worker/CLAUDE.md`.
 
 ## Player-facing copy
 
