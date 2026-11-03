@@ -13,10 +13,16 @@ import { fileURLToPath } from "node:url";
  * jar that changed upstream must stop the run instead of landing silently. A set
  * names the GTNH version it was built for; running it against another pack is
  * refused, since addon jars are tied to one GregTech release.
+ *
+ * `recipeHooks` names the static methods a mod saves for a world to load (server
+ * started, player joined). The oracle exports from the main menu, so it calls them
+ * itself before reading the maps; without them those recipes never reach a dataset.
  */
 
 const SET_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA256 = /^[0-9a-f]{64}$/;
+// A public static no-arg method: package.Class.method.
+const HOOK = /^(?:[A-Za-z_$][\w$]*\.)+[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*$/;
 
 export const addonSetsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "addons");
 
@@ -51,7 +57,12 @@ export function parseAddonSet(raw, expectedId) {
     if (!SHA256.test(sha256)) fail(`${where}.sha256 must be 64 hex digits.`);
     return { name: mod.name, version: mod.version, url: url.toString(), sha256, fileName };
   });
-  return { id: raw.id, label: raw.label.trim(), gtnhVersion: raw.gtnhVersion.trim(), mods };
+  const recipeHooks = raw.recipeHooks ?? [];
+  if (!Array.isArray(recipeHooks)) fail("recipeHooks must be a list.");
+  for (const [index, hook] of recipeHooks.entries()) {
+    if (typeof hook !== "string" || !HOOK.test(hook)) fail(`recipeHooks[${index}] must name package.Class.method.`);
+  }
+  return { id: raw.id, label: raw.label.trim(), gtnhVersion: raw.gtnhVersion.trim(), mods, recipeHooks };
 }
 
 export async function loadAddonSet(id, dir = addonSetsDir) {
@@ -113,6 +124,7 @@ export async function installAddonMods({ set, modsDir, cacheDir, gtnhVersion, fe
     label: set.label,
     gtnhVersion: set.gtnhVersion,
     mods: set.mods.map(({ name, version, url, sha256 }) => ({ name, version, url, sha256 })),
+    recipeHooks: set.recipeHooks,
   };
 }
 

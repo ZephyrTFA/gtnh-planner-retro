@@ -187,6 +187,14 @@ if [[ "$GTNH_EXPORT_DISABLE_CLIENT_UI_MODS" == "true" ]]; then
 fi
 
 export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dgtnh.oracle.autorun=true -Dgtnh.oracle.outputDir=$oracle_output_dir -Dgtnh.oracle.datasetVersionId=$GTNH_DATASET_VERSION_ID"
+# The addon set's recipe hooks: loaders its mods run only once a world loads.
+if [[ -n "${GTNH_ADDON_RECORD:-}" ]]; then
+  recipe_hooks="$(node -e 'console.log((JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).recipeHooks ?? []).join(","))' "$GTNH_ADDON_RECORD")"
+  if [[ -n "$recipe_hooks" ]]; then
+    echo "Addon recipe hooks: $recipe_hooks"
+    export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Dgtnh.oracle.recipeHooks=$recipe_hooks"
+  fi
+fi
 if [[ "$GTNH_RENDER_STACK_ICONS" == "true" ]]; then
   export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Dgtnh.oracle.renderIcons=true -Dgtnh.oracle.iconDir=$rendered_icon_dir -Dgtnh.oracle.iconCacheDir=$GTNH_ICON_CACHE_DIR -Dgtnh.oracle.iconSize=$GTNH_ATLAS_ICON_SIZE -Dgtnh.oracle.iconExportBatchSize=$GTNH_ICON_EXPORT_BATCH_SIZE -Dgtnh.oracle.neiLayoutDir=$nei_layout_dir -Djava.awt.headless=false"
 fi

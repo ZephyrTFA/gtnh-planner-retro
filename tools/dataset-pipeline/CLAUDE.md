@@ -41,6 +41,13 @@ reorder, re-minting ~37,000 ids. When an export only ADDS fields, graft them ont
 published export (`~/graft-sparge.js`, matching recipes by content key) and confirm with
 a shard diff (`~/cmp-field.js`). The 2.9 export in WSL is such a graft.
 
+`generate-dataset.mjs` carries recipe ids itself (`carry-recipe-ids.mjs`, right after
+normalize): from the `recipes.json.gz` the run replaces, or from
+`GTNH_PREVIOUS_RECIPES` (repo-relative; `run-dataset-in-docker.sh` passes it through)
+when building into another root. Building a live dataset id into `scratch/`, point it
+at the live copy in `public/datasets/gtnh/`, or every saved plan on it loses its
+recipes. The run's `raw-export/<id>/carry-recipe-ids.json` lists the ids that went.
+
 ## Addon sets
 
 `GTNH_ADDON_SET=<id> bash tools/dataset-pipeline/scripts/run-dataset-in-docker.sh stable`
@@ -61,6 +68,15 @@ client once with the set's jars and look for "Forge Mod Loader has successfully 
 The oracle reads every GregTech map from `RecipeMap.ALL_RECIPE_MAPS`, so addon maps
 come through on their own. Recipes an addon shows only through its own NEI handler do
 not; check a new addon's jar for `registerRecipeHandler` before trusting its coverage.
+
+The export reads the maps from the main menu, before any world loads. Recipes a mod
+adds only on `FMLServerStartedEvent` or player join (TST's
+`RecipeLoader.loadRecipesServerStarted`: the Miracle Top pool with both tokens, Stellar
+Forge, Industrial Magic Matrix) never reach a dataset unless the set lists that static
+loader in `recipeHooks`; the oracle calls each one on the game thread before it
+exports, and a missing or throwing hook stops the run. Grep a new addon for
+`FMLServerStartedEvent`, `FMLServerStartingEvent` and join handlers that add recipes.
+The server pass exports on the first server tick, after every server-started handler.
 Addon multiblocks have no machine-table entries (`src/lib/machines/CLAUDE.md`).
 
 The Docker runner caches the oracle jar in `.pipeline/oracle-build-cache`, keyed by a

@@ -85,6 +85,26 @@ if (!existsSync(recipeDatasetPath)) {
   );
 }
 
+// Saved plans name recipes by id and a fresh export re-mints them, so a rebuild
+// takes the previous build's ids (carry-recipe-ids.mjs). The previous build is the
+// one this run replaces, its recipes.json.gz untouched until the end; set
+// GTNH_PREVIOUS_RECIPES to carry from another file (a live copy, when building
+// elsewhere).
+const previousRecipesPath = process.env.GTNH_PREVIOUS_RECIPES || `${recipeDatasetPath}.gz`;
+if (existsSync(previousRecipesPath)) {
+  console.log(`Carrying recipe ids for ${versionId} from ${previousRecipesPath}.`);
+  await runNodeStep("Recipe id carry", [
+    "tools/dataset-pipeline/scripts/carry-recipe-ids.mjs",
+    previousRecipesPath,
+    recipeDatasetPath,
+    path.join(rawExportDir, "carry-recipe-ids.json"),
+  ]);
+} else if (process.env.GTNH_PREVIOUS_RECIPES) {
+  throw new Error(`GTNH_PREVIOUS_RECIPES names ${previousRecipesPath}, which does not exist.`);
+} else {
+  console.log(`No previous ${versionId} build to carry recipe ids from.`);
+}
+
 console.log(`Validating dataset for ${versionId}.`);
 const datasetStats = await readDatasetStatsAndValidate(recipeDatasetPath);
 const postProcessMaxDatasetBytes = positiveIntEnv(

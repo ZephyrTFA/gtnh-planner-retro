@@ -70,6 +70,7 @@ for line in "${versions[@]}"; do
     -e "GTNH_SOURCE_REF=${source_ref}" \
     -e "GTNH_SOURCE_URL=${source_url}" \
     -e "GTNH_ADDON_SET=${addon_set}" \
+    -e "GTNH_PREVIOUS_RECIPES=${GTNH_PREVIOUS_RECIPES:-}" \
     -e "GTNH_ORACLE_BUILD_CACHE_DIR=/workspace/.pipeline/oracle-build-cache" \
     -e "GTNH_EXPORT_MAX_MEMORY=${memory}" \
     -e "NODE_OPTIONS=--max-old-space-size=${node_heap_mb}" \

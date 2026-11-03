@@ -53,6 +53,15 @@ describe("addon sets", () => {
     expect(() => parseAddonSet(spec(), "other")).toThrow(/file name/);
   });
 
+  it("keeps recipe hooks that name package.Class.method and rejects anything else", () => {
+    expect(parseAddonSet(spec()).recipeHooks).toEqual([]);
+    const hook = "com.example.demo.RecipeLoader.loadLate";
+    expect(parseAddonSet(spec({ recipeHooks: [hook] })).recipeHooks).toEqual([hook]);
+    expect(() => parseAddonSet(spec({ recipeHooks: hook }))).toThrow(/list/);
+    expect(() => parseAddonSet(spec({ recipeHooks: ["loadLate"] }))).toThrow(/package\.Class\.method/);
+    expect(() => parseAddonSet(spec({ recipeHooks: ["RecipeLoader.load Late"] }))).toThrow(/package\.Class\.method/);
+  });
+
   it("installs pinned jars, then reuses the cache", async () => {
     const dir = tempDir();
     const modsDir = path.join(dir, "mods");

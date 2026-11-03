@@ -37,7 +37,13 @@ public final class GtnhCalcOracleMod {
             return;
         }
 
-        requestAutorunExport("server-started");
+        if (!Boolean.getBoolean("gtnh.oracle.autorun")) {
+            return;
+        }
+
+        // Other mods add recipes in their own server-started handlers, which FML may run
+        // after this one; the first server tick comes after all of them.
+        FMLCommonHandler.instance().bus().register(new ServerAutorunHandler());
     }
 
     public static void requestAutorunExport(String trigger) {
@@ -46,6 +52,15 @@ public final class GtnhCalcOracleMod {
         }
 
         if (!AUTORUN_STARTED.compareAndSet(false, true)) {
+            return;
+        }
+
+        // On the game thread, before the export thread reads the maps.
+        try {
+            RecipeHooks.runAll();
+        } catch (Throwable t) {
+            LOG.error("GTNH calculation oracle recipe hook failed.", t);
+            FMLCommonHandler.instance().exitJava(2, false);
             return;
         }
 
