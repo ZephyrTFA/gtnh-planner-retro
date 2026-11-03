@@ -59,6 +59,14 @@ version it was built for: a changed upstream jar or a different pack stops the r
 Pin new versions by downloading the release asset and hashing it; never copy a hash
 from anywhere else. Exam: `scripts/install-addon-mods.test.mjs`.
 
+A jar with no lasting upstream URL (a rolling dev build that deletes its files) is
+mirrored as a prerelease asset on this repo (`mirror-<addon>-<version>`), with the
+addon's sources jar beside it for GPL addons. The repo is private, so the set pins the
+`api.github.com/repos/.../releases/assets/<id>` URL plus a `fileName`, and the download
+needs `GITHUB_TOKEN`; the Docker runners take `gh auth token` when it is unset. GTNL is
+mirrored this way (`mirror-gtnl-dev-290-108317dec969`) until it tags a release built for
+2.9.0; move the set to that release when it ships.
+
 A set must load on the server AND the client: the client pass renders the icons, and
 a client-only crash (a mixin into Angelica, NEI loading) shows up only there. List
 every library the addon needs: read the `dependencies` string in its `@Mod` class
@@ -81,8 +89,27 @@ Addon multiblocks have no machine-table entries (`src/lib/machines/CLAUDE.md`).
 
 The Docker runner caches the oracle jar in `.pipeline/oracle-build-cache`, keyed by a
 hash of the oracle source, so a run needs GTNH's Maven only when the oracle changed.
+Pack archives sit in `.pipeline/pack-cache/<pack id>-<server|client>.zip`, one per pack
+for every addon set, since addon jars go in after the unpack. Rendered icons sit in
+`.pipeline/icon-cache/<dataset id>[-<hash of the addon set file>]`: the cache key is item
+name, meta and NBT only, so an icon-rendering change needs that directory deleted.
 The pack's server script restarts a crashed server forever; the runner treats a
 restart before the export exists as a failure.
+
+Every client pass applies two export-only fixes. `install-log4j-linkage-fix.sh` patches
+the runtime's log4j-core 2.0-beta9 so `ThrowableProxy.loadClass` treats a LinkageError
+as a missing class: printing an exception loads each frame's class through the previous
+frame's loader, after an RFB or Guava frame that is the system loader, which cannot see
+Minecraft, and the client died with
+`NoClassDefFoundError: net/minecraft/inventory/ISidedInventory` whenever a mod logged a
+caught exception during load. `install-gt-null-world-shim.sh` is a coremod that makes GT's
+`GTBlockEventTracker.enqueue` skip a null world, so GTNL's multiblock tooltips (built by
+dry-running structure checks on world-less registry prototypes) keep their structure
+lines; the pipeline reads multiblock stats from tooltips. The ISidedInventory error always
+hides the real exception. To see it, start the JVM with a Flight Recorder repository on disk
+(`-XX:FlightRecorderOptions:repository=<dir>,preserve-repository=true
+-XX:StartFlightRecording:jdk.JavaExceptionThrow#enabled=true,flush-interval=1s`); the
+runner kills the crashed client, so set byte 64 of the last chunk to 0 before `jfr print`.
 
 ## Item names in other languages
 

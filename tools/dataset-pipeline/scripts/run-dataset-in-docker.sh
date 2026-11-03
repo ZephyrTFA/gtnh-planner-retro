@@ -15,6 +15,11 @@ dataset_root="${GTNH_DATASETS_ROOT:-public/datasets/gtnh}"
 # GTNH_ADDON_SET=<id> exports the pack plus tools/dataset-pipeline/addons/<id>.json
 # under its own dataset id (<version id>-<set id>), beside the plain pack's.
 addon_set="${GTNH_ADDON_SET:-}"
+# Addon jars mirrored on this repo's private releases download with a token; gh's login
+# stands in when GITHUB_TOKEN is unset.
+if [[ -z "${GITHUB_TOKEN:-}" ]] && command -v gh >/dev/null 2>&1; then
+  GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
+fi
 if [[ -n "$addon_set" && ! -f "tools/dataset-pipeline/addons/${addon_set}.json" ]]; then
   echo "Unknown addon set ${addon_set}: no tools/dataset-pipeline/addons/${addon_set}.json." >&2
   exit 1
@@ -55,6 +60,12 @@ for line in "${versions[@]}"; do
   if [[ -n "$addon_set" ]]; then
     version_id="${version_id}-${addon_set}"
   fi
+  # Rendered icons are keyed by item name, meta and NBT only, so each dataset (and each
+  # revision of an addon set's jars) keeps its own cache. Delete it to force a re-render.
+  icon_cache_id="$version_id"
+  if [[ -n "$addon_set" ]]; then
+    icon_cache_id="${version_id}-$(sha256sum "tools/dataset-pipeline/addons/${addon_set}.json" | cut -c1-12)"
+  fi
   echo "Running ${version_id} in Docker with GTNH_EXPORT_MAX_MEMORY=${memory}."
   docker run --rm \
     --name "gtnh-export-${version_id}" \
@@ -72,6 +83,8 @@ for line in "${versions[@]}"; do
     -e "GTNH_ADDON_SET=${addon_set}" \
     -e "GTNH_PREVIOUS_RECIPES=${GTNH_PREVIOUS_RECIPES:-}" \
     -e "GTNH_ORACLE_BUILD_CACHE_DIR=/workspace/.pipeline/oracle-build-cache" \
+    -e "GTNH_PACK_CACHE_DIR=/workspace/.pipeline/pack-cache" \
+    -e "GTNH_ICON_CACHE_DIR=/workspace/.pipeline/icon-cache/${icon_cache_id}" \
     -e "GTNH_EXPORT_MAX_MEMORY=${memory}" \
     -e "NODE_OPTIONS=--max-old-space-size=${node_heap_mb}" \
     -e "GTNH_EXPORT_TIMEOUT_SECONDS=${timeout_seconds}" \

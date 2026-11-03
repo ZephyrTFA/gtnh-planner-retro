@@ -14,6 +14,10 @@ import { fileURLToPath } from "node:url";
  * names the GTNH version it was built for; running it against another pack is
  * refused, since addon jars are tied to one GregTech release.
  *
+ * A jar mirrored as a release asset of a private repository is pinned by its
+ * api.github.com asset URL, which needs GITHUB_TOKEN and does not end in the file name,
+ * so such a mod names its `fileName` too.
+ *
  * `recipeHooks` names the static methods a mod saves for a world to load (server
  * started, player joined). The oracle exports from the main menu, so it calls them
  * itself before reading the maps; without them those recipes never reach a dataset.
@@ -49,8 +53,11 @@ export function parseAddonSet(raw, expectedId) {
       fail(`${where}.url is not a URL.`);
     }
     if (url.protocol !== "https:") fail(`${where}.url must be https.`);
-    const fileName = decodeURIComponent(url.pathname.split("/").pop() ?? "");
-    if (!fileName.toLowerCase().endsWith(".jar")) fail(`${where}.url must name a .jar file.`);
+    if (mod.fileName !== undefined && (typeof mod.fileName !== "string" || mod.fileName.includes("/"))) {
+      fail(`${where}.fileName must be a bare file name.`);
+    }
+    const fileName = mod.fileName ?? decodeURIComponent(url.pathname.split("/").pop() ?? "");
+    if (!fileName.toLowerCase().endsWith(".jar")) fail(`${where}.url (or fileName) must name a .jar file.`);
     if (fileNames.has(fileName)) fail(`${fileName} is listed twice.`);
     fileNames.add(fileName);
     const sha256 = mod.sha256.toLowerCase();
@@ -77,7 +84,15 @@ export async function loadAddonSet(id, dir = addonSetsDir) {
  * (keyed by checksum, so a re-run of the same set never downloads twice).
  * Returns the record of what went in.
  */
-export async function installAddonMods({ set, modsDir, cacheDir, gtnhVersion, fetchImpl = fetch, log = console.log }) {
+export async function installAddonMods({
+  set,
+  modsDir,
+  cacheDir,
+  gtnhVersion,
+  githubToken,
+  fetchImpl = fetch,
+  log = console.log,
+}) {
   if (gtnhVersion !== undefined && gtnhVersion !== set.gtnhVersion) {
     throw new Error(
       `Addon set ${set.id} is pinned to GTNH ${set.gtnhVersion}, but this pack is GTNH ${gtnhVersion}.`,
@@ -100,9 +115,16 @@ export async function installAddonMods({ set, modsDir, cacheDir, gtnhVersion, fe
     }
     if (!bytes) {
       log(`Downloading addon ${mod.name} ${mod.version}: ${mod.url}`);
-      const response = await fetchImpl(mod.url, { redirect: "follow" });
+      const githubAsset = new URL(mod.url).hostname === "api.github.com";
+      const headers = {};
+      if (githubAsset) {
+        headers.Accept = "application/octet-stream";
+        if (githubToken) headers.Authorization = `Bearer ${githubToken}`;
+      }
+      const response = await fetchImpl(mod.url, { redirect: "follow", headers });
       if (!response.ok) {
-        throw new Error(`Addon ${mod.name} download failed: ${response.status} ${response.statusText}.`);
+        const hint = githubAsset && !githubToken ? " A private release asset needs GITHUB_TOKEN." : "";
+        throw new Error(`Addon ${mod.name} download failed: ${response.status} ${response.statusText}.${hint}`);
       }
       bytes = Buffer.from(await response.arrayBuffer());
       const actual = sha256Of(bytes);
@@ -160,6 +182,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     modsDir,
     cacheDir: process.env.GTNH_ADDON_CACHE_DIR || path.join(".pipeline", "addon-cache"),
     gtnhVersion: process.env.GTNH_DATASET_VERSION_LABEL || undefined,
+    githubToken: process.env.GITHUB_TOKEN || undefined,
   });
   await fs.mkdir(path.dirname(recordPath), { recursive: true });
   await fs.writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`);

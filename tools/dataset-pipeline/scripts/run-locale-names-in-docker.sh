@@ -11,6 +11,11 @@ set -euo pipefail
 
 locale="${1:?Usage: run-locale-names-in-docker.sh <locale, e.g. ru_RU> [addon set id]}"
 addon_set="${2:-}"
+# Addon jars mirrored on this repo's private releases download with a token; gh's login
+# stands in when GITHUB_TOKEN is unset.
+if [[ -z "${GITHUB_TOKEN:-}" ]] && command -v gh >/dev/null 2>&1; then
+  GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
+fi
 image="${GTNH_DATASET_DOCKER_IMAGE:-gtnh-factory-flow-dataset:java21}"
 dataset_root="${GTNH_DATASETS_ROOT:-public/datasets/gtnh}"
 case "$dataset_root" in

@@ -68,6 +68,12 @@ const MAX_LUMINANCE_GAIN = 10;
 
 /** How a texture reference starts inside every dataset artifact. */
 const RENDERED_PREFIX = Buffer.from("textures/rendered/");
+// An uncompressed recipes.json passes 2 GiB with addon sets, past what one read can
+// return. Replacements keep their length, so the file is patched in place a window at a
+// time; each window reads one reference's length past its end so a reference that starts
+// inside it is always whole.
+const CHUNK_BYTES = Number(process.env.GTNH_FLUID_PATCH_CHUNK_BYTES) || 256 * 1024 * 1024;
+const REFERENCE_BYTES = RENDERED_PREFIX.length + 201;
 
 const renderedDir = path.join(datasetDir, "textures", "rendered");
 const indexFiles = ["resource-index.json.gz", "recipe-index.json.gz"]
@@ -295,19 +301,36 @@ function listShardFiles() {
  * cannot clip a longer name that merely ends with a renamed one (fluids that
  * share a texture share its content-hash suffix, so `latte-<hash>.png` is a
  * real suffix of `sweet_latte-<hash>.png`). Old and new names are the same
- * length, so the patch mutates the decompressed buffer in place; only an
- * artifact that actually changed is recompressed and rewritten.
+ * length, so the patch mutates the bytes in place; only an artifact that
+ * actually changed is rewritten.
  */
 function patchArtifact(filePath) {
   if (!fs.existsSync(filePath)) {
     return;
   }
-  const isGz = filePath.endsWith(".gz");
-  const buffer = isGz ? zlib.gunzipSync(fs.readFileSync(filePath)) : fs.readFileSync(filePath);
+  let replaced;
+  if (filePath.endsWith(".gz")) {
+    const buffer = zlib.gunzipSync(fs.readFileSync(filePath));
+    replaced = patchBuffer(buffer, buffer.length);
+    if (replaced > 0) {
+      fs.writeFileSync(filePath, zlib.gzipSync(buffer, { level: zlib.constants.Z_BEST_COMPRESSION }));
+    }
+  } else {
+    replaced = patchFileInChunks(filePath);
+  }
+  if (replaced > 0) {
+    console.log(`Patched ${replaced} references in ${path.relative(datasetDir, filePath)}.`);
+  }
+}
 
+/**
+ * Swaps the renamed basenames in references that start before `limit`, in place, and
+ * returns how many it swapped. A reference is the prefix plus up to 200 bytes of name.
+ */
+function patchBuffer(buffer, limit) {
   let replaced = 0;
   let position = 0;
-  while ((position = buffer.indexOf(RENDERED_PREFIX, position)) !== -1) {
+  while ((position = buffer.indexOf(RENDERED_PREFIX, position)) !== -1 && position < limit) {
     position += RENDERED_PREFIX.length;
     let end = position;
     while (end < buffer.length && buffer[end] !== 0x22 && end - position < 200) {
@@ -320,13 +343,26 @@ function patchArtifact(filePath) {
     }
     position = end;
   }
-  if (replaced === 0) {
-    return;
-  }
+  return replaced;
+}
 
-  fs.writeFileSync(
-    filePath,
-    isGz ? zlib.gzipSync(buffer, { level: zlib.constants.Z_BEST_COMPRESSION }) : buffer,
-  );
-  console.log(`Patched ${replaced} references in ${path.relative(datasetDir, filePath)}.`);
+function patchFileInChunks(filePath) {
+  const size = fs.statSync(filePath).size;
+  const window = Buffer.alloc(CHUNK_BYTES + REFERENCE_BYTES);
+  const fd = fs.openSync(filePath, "r+");
+  let replaced = 0;
+  try {
+    for (let start = 0; start < size; start += CHUNK_BYTES) {
+      const length = fs.readSync(fd, window, 0, Math.min(window.length, size - start), start);
+      const view = window.subarray(0, length);
+      const count = patchBuffer(view, Math.min(CHUNK_BYTES, length));
+      if (count > 0) {
+        fs.writeSync(fd, view, 0, length, start);
+        replaced += count;
+      }
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+  return replaced;
 }

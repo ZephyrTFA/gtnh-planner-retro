@@ -94,6 +94,40 @@ describe("addon sets", () => {
     fs.writeFileSync(path.join(modsDir, "demo-1.0.jar"), "pack copy");
     await expect(installAddonMods({ ...base, fetchImpl: fakeFetch(jar) })).rejects.toThrow(/already ships/);
   });
+
+  it("fetches a private GitHub release asset with the token and installs it under its fileName", async () => {
+    const assetUrl = "https://api.github.com/repos/owner/repo/releases/assets/123";
+    expect(() => parseAddonSet(spec({ mods: [{ ...spec().mods[0], url: assetUrl }] }))).toThrow(/\.jar/);
+    expect(() => parseAddonSet(spec({ mods: [{ ...spec().mods[0], url: assetUrl, fileName: "a/b.jar" }] }))).toThrow(
+      /bare file name/,
+    );
+    const set = parseAddonSet(spec({ mods: [{ ...spec().mods[0], url: assetUrl, fileName: "demo-1.0.jar" }] }));
+
+    const dir = tempDir();
+    const seen = [];
+    const fetchImpl = async (url, init) => {
+      seen.push(init.headers);
+      return init.headers.Authorization ? new Response(jar) : new Response("", { status: 404, statusText: "Not Found" });
+    };
+    const base = { set, modsDir: path.join(dir, "mods"), cacheDir: path.join(dir, "cache"), fetchImpl, log: () => {} };
+
+    await expect(installAddonMods(base)).rejects.toThrow(/needs GITHUB_TOKEN/);
+    await installAddonMods({ ...base, githubToken: "t0ken" });
+    expect(seen[1]).toEqual({ Accept: "application/octet-stream", Authorization: "Bearer t0ken" });
+    expect(fs.readFileSync(path.join(dir, "mods", "demo-1.0.jar"))).toEqual(jar);
+  });
+
+  it("sends no token to other hosts", async () => {
+    const dir = tempDir();
+    const seen = [];
+    const fetchImpl = async (url, init) => {
+      seen.push(init.headers);
+      return new Response(jar);
+    };
+    const set = parseAddonSet(spec());
+    await installAddonMods({ set, modsDir: path.join(dir, "mods"), cacheDir: path.join(dir, "cache"), githubToken: "t0ken", fetchImpl, log: () => {} });
+    expect(seen).toEqual([{}]);
+  });
 });
 
 describe("addon class owners", () => {

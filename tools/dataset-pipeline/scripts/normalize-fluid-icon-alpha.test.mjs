@@ -52,11 +52,11 @@ function fixture(alpha) {
   }
   return { dir, rendered, original, basename, iconPath, itemPath, otherPath, artifacts };
 }
-function run(dir) {
+function run(dir, env = {}) {
   return execFileSync(
     process.execPath,
     ["tools/dataset-pipeline/scripts/normalize-fluid-icon-alpha.mjs", dir, "--rename"],
-    { encoding: "utf8" },
+    { encoding: "utf8", env: { ...process.env, ...env } },
   );
 }
 function read(dir, file) {
@@ -95,4 +95,19 @@ describe("fluid icon repair for immutable texture URLs", () => {
       );
     },
   );
+
+  it("patches an uncompressed artifact a window at a time, including references across window edges", () => {
+    const f = fixture(17);
+    // Windows far shorter than one reference put every reference across an edge.
+    run(f.dir, { GTNH_FLUID_PATCH_CHUNK_BYTES: "7" });
+    const newPath = read(f.dir, "resource-index.json.gz").resources[0].iconPath;
+    expect(newPath).not.toBe(f.iconPath);
+    for (const file of ["recipes.json", "recipes-shards/00000.json"]) {
+      const data = read(f.dir, file);
+      expect(data.resources[0].iconPath).toBe(newPath);
+      expect(data.recipes[0].outputs[0].iconPath).toBe(newPath);
+      expect(data.resources[1].iconPath).toBe(f.itemPath);
+      expect(data.recipes[0].unrelatedPath).toBe(f.otherPath);
+    }
+  });
 });

@@ -1,0 +1,20 @@
+{
+  "id": "gtnl",
+  "label": "GT Not Leisure",
+  "gtnhVersion": "2.9.0",
+  "mods": [
+    {
+      "name": "GTNLLib",
+      "version": "1.1.4",
+      "url": "https://github.com/GTNotLeisure/GTNLLib/releases/download/1.1.4/gtnllib-1.1.4.jar",
+      "sha256": "46e3735160684cea30ffcfbbcfef270f96a6f5ad74407f2522ea9fe7f86b4b68"
+    },
+    {
+      "name": "GT Not Leisure",
+      "version": "dev-290 108317dec969",
+      "url": "https://api.github.com/repos/ZephyrTFA/gtnh-planner-retro/releases/assets/706360730",
+      "fileName": "sciencenotleisure-dev-290-fde37b9871fd-108317dec969.jar",
+      "sha256": "f24749b441a37e077d33026356d32788443f8c4bf7aa0f5337cd1601ca4b5992"
+    }
+  ]
+}

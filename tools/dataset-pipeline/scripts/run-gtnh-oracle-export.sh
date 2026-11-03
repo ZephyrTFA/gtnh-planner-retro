@@ -26,9 +26,15 @@ mkdir -p "$GTNH_DATASET_OUT_DIR" "$GTNH_RAW_EXPORT_DIR" "$GTNH_INSTANCE_DIR"
 
 safe_dataset_id="$(printf '%s' "$GTNH_DATASET_VERSION_ID" | tr -c 'A-Za-z0-9._-' '_')"
 safe_pack_kind="$(printf '%s' "$GTNH_EXPORT_PACK_KIND" | tr -c 'A-Za-z0-9._-' '_')"
+# Addon jars go in after the pack unpacks, so every addon set shares the plain pack's archive.
+pack_id="$GTNH_DATASET_VERSION_ID"
+if [[ -n "${GTNH_ADDON_SET:-}" ]]; then
+  pack_id="${pack_id%-"$GTNH_ADDON_SET"}"
+fi
+safe_pack_id="$(printf '%s' "$pack_id" | tr -c 'A-Za-z0-9._-' '_')"
 if [[ -n "$GTNH_PACK_CACHE_DIR" ]]; then
   mkdir -p "$GTNH_PACK_CACHE_DIR"
-  pack_archive="$GTNH_PACK_CACHE_DIR/${safe_dataset_id}-${safe_pack_kind}.zip"
+  pack_archive="$GTNH_PACK_CACHE_DIR/${safe_pack_id}-${safe_pack_kind}.zip"
 else
   pack_archive="$GTNH_RAW_EXPORT_DIR/gtnh-pack.zip"
 fi
@@ -208,6 +214,8 @@ if [[ "$GTNH_EXPORT_PACK_KIND" == "client" ]]; then
   fi
   launch_script="$(node tools/dataset-pipeline/scripts/prepare-forge-client-launch.mjs "$instance_root" "$client_runtime_dir")"
   bash tools/dataset-pipeline/scripts/install-ae2fc-nei-compat-shim.sh "$instance_root" "$client_runtime_dir" "$GTNH_RAW_EXPORT_DIR"
+  bash tools/dataset-pipeline/scripts/install-gt-null-world-shim.sh "$instance_root" "$client_runtime_dir" "$GTNH_RAW_EXPORT_DIR"
+  bash tools/dataset-pipeline/scripts/install-log4j-linkage-fix.sh "$client_runtime_dir" "$GTNH_RAW_EXPORT_DIR"
   if command -v xvfb-run >/dev/null 2>&1 && [[ -z "${DISPLAY:-}" ]]; then
     runtime_command="xvfb-run -a bash '$launch_script'"
   else
