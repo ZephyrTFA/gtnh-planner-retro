@@ -1,0 +1,29 @@
+{
+  "id": "tst-gtnl",
+  "label": "Twist Space Technology + GT Not Leisure",
+  "gtnhVersion": "2.9.0",
+  "mods": [
+    {
+      "name": "Twist Space Technology",
+      "version": "0.8.0",
+      "url": "https://github.com/Nxer/Twist-Space-Technology-Mod/releases/download/0.8.0/TwistSpaceTechnology-0.8.0.jar",
+      "sha256": "7c2b217d2bd31123ed7badc30fc94e3ad82f1b42507b17a0ee2effdfd5a723f8"
+    },
+    {
+      "name": "GTNLLib",
+      "version": "1.1.4",
+      "url": "https://github.com/GTNotLeisure/GTNLLib/releases/download/1.1.4/gtnllib-1.1.4.jar",
+      "sha256": "46e3735160684cea30ffcfbbcfef270f96a6f5ad74407f2522ea9fe7f86b4b68"
+    },
+    {
+      "name": "GT Not Leisure",
+      "version": "dev-290 108317dec969",
+      "url": "https://api.github.com/repos/ZephyrTFA/gtnh-planner-retro/releases/assets/706360730",
+      "fileName": "sciencenotleisure-dev-290-fde37b9871fd-108317dec969.jar",
+      "sha256": "f24749b441a37e077d33026356d32788443f8c4bf7aa0f5337cd1601ca4b5992"
+    }
+  ],
+  "recipeHooks": [
+    "com.Nxer.TwistSpaceTechnology.loader.RecipeLoader.loadRecipesServerStarted"
+  ]
+}
