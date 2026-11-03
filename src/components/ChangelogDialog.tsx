@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, History, X } from "lucide-react";
-import { CHANGELOG, type ChangelogEntry } from "@/lib/changelog";
+import { CHANGELOG, FACTORY_FLOW_HISTORY, type ChangelogEntry } from "@/lib/changelog";
 import { APP_VERSION } from "@/lib/version";
 import { tPlural, useT } from "@/lib/i18n";
 
@@ -36,6 +36,7 @@ export function ChangelogDialog({
     return missed.length > 0 ? missed : entries.slice(0, 3);
   }, [entries, unseen]);
   const history = entries.slice(headline.length);
+  const earlierCount = history.length + FACTORY_FLOW_HISTORY.length;
 
   const [showHistory, setShowHistory] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -81,7 +82,7 @@ export function ChangelogDialog({
             ))}
           </ul>
 
-          {history.length > 0 ? (
+          {earlierCount > 0 ? (
             <div className="border-t border-line py-4">
               {showHistory ? (
                 <div ref={historyRef}>
@@ -91,6 +92,16 @@ export function ChangelogDialog({
                   <ul>
                     {history.map((entry) => (
                       <EntryRow key={entry.version} entry={entry} />
+                    ))}
+                  </ul>
+                  {/* Factory Flow numbered its own releases 1.0.0 to 3.11.1, so
+                      they are labelled as its own, never mixed with Retro's. */}
+                  <p className="mb-1 mt-4 text-[11px] font-bold uppercase tracking-wide text-fg-muted">
+                    {t("GTNH Factory Flow, the planner Retro is built on")}
+                  </p>
+                  <ul>
+                    {FACTORY_FLOW_HISTORY.map((entry) => (
+                      <EntryRow key={`factory-flow-${entry.version}`} entry={entry} inherited />
                     ))}
                   </ul>
                 </div>
@@ -112,8 +123,8 @@ export function ChangelogDialog({
                   className="flex w-full items-center justify-center gap-2 rounded border border-line-strong px-3 py-2.5 text-xs font-bold text-fg-subtle hover:border-cyan-700 hover:bg-surface-raised hover:text-cyan-300"
                 >
                   <History className="h-3.5 w-3.5" aria-hidden />
-                  {tPlural(history.length, "Full history ({count} earlier release)", "Full history ({count} earlier releases)", {
-                    count: history.length,
+                  {tPlural(earlierCount, "Full history ({count} earlier release)", "Full history ({count} earlier releases)", {
+                    count: earlierCount,
                   })}
                   <ChevronDown className="h-3.5 w-3.5" aria-hidden />
                 </button>
@@ -189,7 +200,7 @@ function Masthead({
   );
 }
 
-function EntryRow({ entry }: { entry: ChangelogEntry }) {
+function EntryRow({ entry, inherited = false }: { entry: ChangelogEntry; inherited?: boolean }) {
   const t = useT();
   return (
     <li
@@ -202,11 +213,12 @@ function EntryRow({ entry }: { entry: ChangelogEntry }) {
         <p
           className={[
             "text-lg font-black leading-none tabular-nums",
-            entry.version === APP_VERSION ? "text-cyan-300" : "text-fg",
+            !inherited && entry.version === APP_VERSION ? "text-cyan-300" : "text-fg",
           ].join(" ")}
         >
           v{entry.version}
         </p>
+        {inherited ? <p className="mt-0.5 text-[10px] uppercase tracking-wide text-fg-muted">Factory Flow</p> : null}
         <p className="mt-1 text-[11px] tabular-nums text-fg-muted">{formatEntryDate(entry.date)}</p>
         {/* Marks the entry as one to actually stop at, in the rail where the
             eye is already scanning for a version. */}

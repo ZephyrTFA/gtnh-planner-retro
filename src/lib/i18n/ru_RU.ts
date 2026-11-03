@@ -5,6 +5,7 @@ import type { Catalog } from "./index";
  * Item and fluid names are not here: they come from the game (src/lib/item-names.ts).
  */
 const catalog: Catalog = {
+  "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow, планировщик, на котором основан Retro",
   "{site} ran into a problem.": "В {site} произошла ошибка.",
   "Reload in safe mode": "Перезагрузить в безопасном режиме",
   "Your plans are saved in this browser. Reload in safe mode to start without opening any plan, then open the one you want from the library.": "Ваши планы сохранены в этом браузере. Перезагрузите страницу в безопасном режиме, чтобы начать без открытого плана, затем откройте нужный план из библиотеки.",

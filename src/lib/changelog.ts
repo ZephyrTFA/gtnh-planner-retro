@@ -40,6 +40,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.1",
+    date: "2026-11-03",
+    headline: "What's new lists each release once",
+    notes: [
+      "Retro's releases no longer sit beside GTNH Factory Flow's own releases of the same number. Factory Flow's history has its own labelled section under Full history.",
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-11-03",
     headline: "The planner in Russian and Chinese",
@@ -90,6 +98,15 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Help, Send a request goes straight to the maintainer, with no account needed.",
     ],
   },
+];
+
+/**
+ * GTNH Factory Flow's own releases, the planner Retro is built on. Kept as
+ * history, apart from CHANGELOG: Factory Flow numbered 1.0.0 to 3.11.1 and
+ * Retro counts from 1.0.0 again, so the two must never be compared or listed
+ * as one sequence ("What's new" reads CHANGELOG only).
+ */
+export const FACTORY_FLOW_HISTORY: ChangelogEntry[] = [
   {
     version: "3.11.1",
     date: "2026-10-12",
