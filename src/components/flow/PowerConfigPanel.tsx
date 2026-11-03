@@ -9,6 +9,7 @@ import {
   type PowerSourceDefinition,
 } from "@/lib/power/types";
 import { useFactoryStore } from "@/store/factory-store";
+import { td, useT } from "@/lib/i18n";
 import { RecipeTooltip } from "./RecipeTooltip";
 import { FactTile, SettingListMenu, SettingSelectTile, SettingTile, STEPPER_MAX_RUNGS } from "./SettingTile";
 
@@ -33,6 +34,7 @@ export function PowerConfigPanel({
   stats: Array<{ label: string; value: string }>;
   warnings?: string[];
 }) {
+  const t = useT();
   const setPowerSetting = useFactoryStore((state) => state.setPowerSetting);
   const source = getPowerSource(sourceId);
   if (!source) {
@@ -58,8 +60,8 @@ export function PowerConfigPanel({
             return (
               <PowerSelectTile
                 key={setting.id}
-                caption={setting.label}
-                options={setting.options}
+                caption={td(setting.label)}
+                options={setting.options.map((option) => ({ key: option.key, label: td(option.label) }))}
                 value={value}
                 enabled={enabled}
                 onPick={(key) => setPowerSetting(nodeId, setting.id, key)}
@@ -81,13 +83,13 @@ export function PowerConfigPanel({
           return (
             <SettingTile
               key={setting.id}
-              caption={setting.label}
-              value={on ? "On" : "Off"}
+              caption={td(setting.label)}
+              value={on ? t("On") : t("Off")}
               canStepDown={on}
               canStepUp={!on}
               onStep={(direction) => setPowerSetting(nodeId, setting.id, direction > 0 ? "1" : "0")}
               disabled={!enabled}
-              help={() => <RecipeTooltip view={{ title: setting.label, rows: [{ label: "State", value: on ? "On" : "Off" }] }} />}
+              help={() => <RecipeTooltip view={{ title: td(setting.label), rows: [{ label: t("State"), value: on ? t("On") : t("Off") }] }} />}
             />
           );
         })}
@@ -120,6 +122,7 @@ function PowerSelectTile({
   enabled: boolean;
   onPick: (key: string) => void;
 }) {
+  const t = useT();
   const [listAt, setListAt] = useState<DOMRect | undefined>();
   const index = Math.max(0, options.findIndex((option) => option.key === value));
   const current = options[index];
@@ -131,7 +134,7 @@ function PowerSelectTile({
         currentKey={value}
         onPick={onPick}
         disabled={!enabled}
-        help={() => <RecipeTooltip view={{ title: caption, rows: [{ label: "Selected", value: current?.label ?? value }] }} />}
+        help={() => <RecipeTooltip view={{ title: caption, rows: [{ label: t("Selected"), value: current?.label ?? value }] }} />}
       />
     );
   }
@@ -148,7 +151,7 @@ function PowerSelectTile({
         }}
         onList={options.length > 2 ? setListAt : undefined}
         disabled={!enabled || options.length <= 1}
-        help={() => <RecipeTooltip view={{ title: caption, rows: [{ label: "Selected", value: current?.label ?? value }] }} />}
+        help={() => <RecipeTooltip view={{ title: caption, rows: [{ label: t("Selected"), value: current?.label ?? value }] }} />}
       />
       {listAt ? (
         <SettingListMenu
@@ -202,6 +205,7 @@ function PowerNumberTile({
   enabled: boolean;
   onCommit: (next: string) => void;
 }) {
+  const t = useT();
   const shown = Number.parseFloat(value ?? String(setting.defaultValue));
   const [draft, setDraft] = useState<string | undefined>(undefined);
   const clamp = (n: number) => Math.min(setting.max, Math.max(setting.min, n));
@@ -214,7 +218,7 @@ function PowerNumberTile({
     return (
       <div className="nodrag nowheel min-w-0 border border-[var(--mc-47)] bg-[var(--mc-71)] px-1 pb-0.5 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
         <div className="truncate text-[11px] uppercase leading-[13px] text-[var(--mc-ink-muted)]">
-          {setting.label}
+          {td(setting.label)}
           {setting.unit ? ` (${setting.unit})` : ""}
         </div>
         <input
@@ -229,7 +233,7 @@ function PowerNumberTile({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           inputMode="decimal"
-          aria-label={setting.label}
+          aria-label={td(setting.label)}
           className="h-5 w-full min-w-0 border border-[var(--mc-47)] bg-[var(--mc-93)] px-1 text-center text-[11px] leading-[18px] text-[var(--mc-ink)] outline-none"
         />
       </div>
@@ -238,7 +242,7 @@ function PowerNumberTile({
   const unit = setting.unit ? ` ${setting.unit}` : "";
   return (
     <SettingTile
-      caption={setting.label}
+      caption={td(setting.label)}
       value={`${shown.toLocaleString("en-US", { maximumFractionDigits: 2 })}${unit}`}
       canStepDown={shown > setting.min}
       canStepUp={shown < setting.max}
@@ -248,12 +252,12 @@ function PowerNumberTile({
       help={() => (
         <RecipeTooltip
           view={{
-            title: setting.label,
+            title: td(setting.label),
             rows: [
-              { label: "Value", value: `${shown.toLocaleString("en-US")}${unit}` },
-              { label: "Range", value: `${setting.min.toLocaleString("en-US")} to ${setting.max.toLocaleString("en-US")}${unit}` },
+              { label: t("Value"), value: `${shown.toLocaleString("en-US")}${unit}` },
+              { label: t("Range"), value: t("{min} to {max}", { min: setting.min.toLocaleString("en-US"), max: `${setting.max.toLocaleString("en-US")}${unit}` }) },
             ],
-            actions: [{ gesture: "left", label: "Type a value" }, { gesture: "wheel", label: "Step" }],
+            actions: [{ gesture: "left", label: t("Type a value") }, { gesture: "wheel", label: t("Step") }],
           }}
         />
       )}

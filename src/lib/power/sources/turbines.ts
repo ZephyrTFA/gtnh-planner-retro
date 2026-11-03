@@ -10,6 +10,7 @@
  * Steam and gas flows are litres per TICK (the game's own tooltip unit);
  * plasma flows are litres per second.
  */
+import { msg } from "@/lib/i18n";
 import {
   findFuel,
   findRotor,
@@ -22,7 +23,7 @@ import {
   type RotorEntry,
 } from "../planner-data";
 import type { PowerFlowLine, PowerModel, PowerSourceDefinition, PowerSetting } from "../types";
-import { formatAmount, lifespanHours, liters, percent, stat } from "./helpers";
+import { formatAmount, lifespanHours, liters, percent, powerText, stat } from "./helpers";
 
 type TurbineClass = "steam" | "gas" | "plasma";
 
@@ -38,6 +39,14 @@ interface TurbineSpec {
   /** For "select": which grades this XL machine accepts (plain + dense). */
   steamGradeOptions?: string[];
 }
+
+/** Rotor size words as the size select shows them; the keys are stored in plans. */
+const ROTOR_SIZE_LABELS: Record<(typeof ROTOR_SIZE_NAMES)[number], string> = {
+  Small: msg("Small"),
+  Normal: msg("Normal"),
+  Large: msg("Large"),
+  Huge: msg("Huge"),
+};
 
 const STEAM_EXHAUST: Record<string, string | undefined> = {
   "SC Steam": "SH Steam",
@@ -200,7 +209,7 @@ function largeSteamRun(
       return idle(
         Math.floor(opt),
         eff,
-        "Rotor base efficiency is under 100%, so the SC turbine will not run it.",
+        powerText(msg("Rotor base efficiency is under 100%, so the SC turbine will not run it.")),
       );
     }
     const maxFlow = Math.min(INT_CAP, Math.floor(opt * 1.25));
@@ -294,7 +303,12 @@ function gasRun(
       maxFlow: 1,
       euPerTick,
       efficiency: baseEfficiency,
-      warning: `Rotor too weak for this fuel: it burns 1 L/t for ${xl ? "one rotor's " : ""}${formatAmount(euPerTick)} EU/t.`,
+      warning: powerText(
+        xl
+          ? msg("Rotor too weak for this fuel: it burns 1 L/t for one rotor's {euT} EU/t.")
+          : msg("Rotor too weak for this fuel: it burns 1 L/t for {euT} EU/t."),
+        { euT: formatAmount(euPerTick) },
+      ),
     };
   }
   const perRotor = f32(f32(rotorFlow) / fuelEu);
@@ -303,7 +317,7 @@ function gasRun(
     return idle(
       0,
       eff,
-      "Optimal flow rounds down to 0 L/t on this fuel, so the turbine makes no power.",
+      powerText(msg("Optimal flow rounds down to 0 L/t on this fuel, so the turbine makes no power.")),
     );
   }
   const maxFlow = Math.min(
@@ -350,7 +364,7 @@ function plasmaRun(
     return idle(
       0,
       eff * derate,
-      "Optimal flow rounds down to 0 L/s on this plasma, so the turbine makes no power.",
+      powerText(msg("Optimal flow rounds down to 0 L/s on this plasma, so the turbine makes no power.")),
     );
   }
   const maxFlow = Math.min(
@@ -374,7 +388,7 @@ const SPECS: TurbineSpec[] = [
     id: "large-steam-turbine",
     name: "Large Steam Turbine",
     unlock: "HV",
-    blurb: "Steam in, EU out; the rotor decides.",
+    blurb: msg("Steam in, EU out; the rotor decides."),
     turbineClass: "steam",
     xl: false,
     steamGrade: "Steam",
@@ -383,7 +397,7 @@ const SPECS: TurbineSpec[] = [
     id: "large-hp-steam-turbine",
     name: "Large HP Steam Turbine",
     unlock: "EV",
-    blurb: "SH steam in; exhausts plain steam.",
+    blurb: msg("SH steam in; exhausts plain steam."),
     turbineClass: "steam",
     xl: false,
     steamGrade: "SH Steam",
@@ -393,7 +407,7 @@ const SPECS: TurbineSpec[] = [
     name: "Large SC Steam Turbine",
     // GoodGenerator's assembler recipe: IV hull, LuV circuits.
     unlock: "LuV",
-    blurb: "SC steam in; exhausts SH steam.",
+    blurb: msg("SC steam in; exhausts SH steam."),
     turbineClass: "steam",
     xl: false,
     steamGrade: "SC Steam",
@@ -404,7 +418,7 @@ const SPECS: TurbineSpec[] = [
     // The XL unlocks follow their controller's assembler recipe
     // (RecipesMachinesCustom): EV, IV, LuV, ZPM and ZPM circuits and power.
     unlock: "EV",
-    blurb: "Sixteen steam turbines; dense too.",
+    blurb: msg("Sixteen steam turbines; dense too."),
     turbineClass: "steam",
     xl: true,
     steamGrade: "select",
@@ -414,7 +428,7 @@ const SPECS: TurbineSpec[] = [
     id: "xl-turbo-hp-steam-turbine",
     name: "XL Turbo HP Steam Turbine",
     unlock: "IV",
-    blurb: "Sixteen HP turbines; exhausts steam.",
+    blurb: msg("Sixteen HP turbines; exhausts steam."),
     turbineClass: "steam",
     xl: true,
     steamGrade: "select",
@@ -424,7 +438,7 @@ const SPECS: TurbineSpec[] = [
     id: "xl-turbo-sc-steam-turbine",
     name: "XL Turbo SC Steam Turbine",
     unlock: "ZPM",
-    blurb: "Sixteen SC turbines; exhausts SH.",
+    blurb: msg("Sixteen SC turbines; exhausts SH."),
     turbineClass: "steam",
     xl: true,
     steamGrade: "select",
@@ -434,7 +448,7 @@ const SPECS: TurbineSpec[] = [
     id: "large-gas-turbine",
     name: "Large Gas Turbine",
     unlock: "EV",
-    blurb: "Gas fuels at rotor efficiency.",
+    blurb: msg("Gas fuels at rotor efficiency."),
     turbineClass: "gas",
     xl: false,
   },
@@ -442,7 +456,7 @@ const SPECS: TurbineSpec[] = [
     id: "xl-turbo-gas-turbine",
     name: "XL Turbo Gas Turbine",
     unlock: "LuV",
-    blurb: "Sixteen gas turbines in one.",
+    blurb: msg("Sixteen gas turbines in one."),
     turbineClass: "gas",
     xl: true,
   },
@@ -450,7 +464,7 @@ const SPECS: TurbineSpec[] = [
     id: "large-plasma-generator",
     name: "Large Plasma Generator",
     unlock: "LuV",
-    blurb: "Plasma to EU and its cooled gas.",
+    blurb: msg("Plasma to EU and its cooled gas."),
     turbineClass: "plasma",
     xl: false,
   },
@@ -458,7 +472,7 @@ const SPECS: TurbineSpec[] = [
     id: "xl-turbo-plasma-turbine",
     name: "XL Turbo Plasma Turbine",
     unlock: "ZPM",
-    blurb: "Sixteen plasma turbines in one.",
+    blurb: msg("Sixteen plasma turbines in one."),
     turbineClass: "plasma",
     xl: true,
   },
@@ -469,7 +483,7 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     {
       type: "select",
       id: "rotor",
-      label: "Rotor",
+      label: msg("Rotor"),
       options: powerPlannerData.rotors.map((rotor) => ({
         key: rotor.name,
         label: `${rotor.name} (${rotor.unlock})`,
@@ -479,17 +493,17 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     {
       type: "select",
       id: "size",
-      label: "Rotor size",
-      options: ROTOR_SIZE_NAMES.map((name) => ({ key: name, label: name })),
+      label: msg("Rotor size"),
+      options: ROTOR_SIZE_NAMES.map((name) => ({ key: name, label: ROTOR_SIZE_LABELS[name] })),
       defaultKey: spec.xl ? "Huge" : "Normal",
     },
     {
       type: "select",
       id: "fitting",
-      label: "Fitting",
+      label: msg("Fitting"),
       options: [
-        { key: "tight", label: "Tight" },
-        { key: "loose", label: "Loose" },
+        { key: "tight", label: msg("Tight") },
+        { key: "loose", label: msg("Loose") },
       ],
       defaultKey: "tight",
     },
@@ -501,7 +515,7 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     settings.push({
       type: "select",
       id: "grade",
-      label: "Steam type",
+      label: msg("Steam type"),
       options: grades,
       defaultKey: grades[0]?.key ?? "Steam",
     });
@@ -509,7 +523,7 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     settings.push({
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: fuelOptions(spec.xl ? powerPlannerData.gasFuelsXl : powerPlannerData.gasFuels),
       // The XL hard-refuses benzene in the game (and Fox's XL fuel table
       // matches), so its default is the sheet's own pick.
@@ -519,7 +533,7 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     settings.push({
       type: "select",
       id: "fuel",
-      label: "Plasma",
+      label: msg("Plasma"),
       options: fuelOptions(powerPlannerData.plasmas),
       defaultKey: "Helium Plasma",
     });
@@ -528,17 +542,17 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
     {
       type: "select",
       id: "flowMode",
-      label: "Flow",
+      label: msg("Flow"),
       options: [
-        { key: "optimal", label: "Optimal" },
-        { key: "custom", label: "Custom" },
+        { key: "optimal", label: msg("Optimal") },
+        { key: "custom", label: msg("Custom") },
       ],
       defaultKey: "optimal",
     },
     {
       type: "number",
       id: "customFlow",
-      label: "Custom flow",
+      label: msg("Custom flow"),
       min: 1,
       max: 100_000_000,
       step: 1,
@@ -656,7 +670,7 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
         warnings.push(run.warning);
       } else if (wanted !== undefined && wanted > maxFlow) {
         warnings.push(
-          `Flow is capped at ${formatAmount(maxFlow)}; the turbine will not take more.`,
+          powerText(msg("Flow is capped at {max}; the turbine will not take more."), { max: formatAmount(maxFlow) }),
         );
       }
 
@@ -665,12 +679,12 @@ function buildTurbine(spec: TurbineSpec): PowerSourceDefinition {
         inputs,
         outputs,
         stats: [
-          stat("Efficiency", percent(run.efficiency)),
+          stat(msg("Efficiency"), percent(run.efficiency)),
           stat(
-            "Optimal flow",
+            msg("Optimal flow"),
             `${formatAmount(run.optimal)} ${spec.turbineClass === "plasma" ? "L/s" : "L/t"}`,
           ),
-          stat("Rotor lifespan", lifespanHours(lifespanSeconds)),
+          stat(msg("Rotor lifespan"), lifespanHours(lifespanSeconds)),
         ],
         warnings: warnings.length ? warnings : undefined,
       };

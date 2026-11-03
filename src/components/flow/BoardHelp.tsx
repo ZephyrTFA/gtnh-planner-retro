@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Fragment, memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { msg, td, useT } from "@/lib/i18n";
 import { getUiScale } from "@/lib/ui-scale";
 import { BOARD_TOOL_SCALE } from "./toolbar-fold";
 import {
@@ -105,159 +106,159 @@ interface HelpCard {
    and a row that wraps costs a whole line of the column's budget. */
 
 const BUILD: HelpCard = {
-  title: "Units and history",
+  title: msg("Units and history"),
   rows: [
-    { icon: Undo2, text: "*Undo / redo* changes" },
-    { chip: "/s", text: "Change the *rate unit*" },
-    { icon: Zap, text: "Show power as *EU/t or amps of a tier*" },
+    { icon: Undo2, text: msg("*Undo / redo* changes") },
+    { chip: "/s", text: msg("Change the *rate unit*") },
+    { icon: Zap, text: msg("Show power as *EU/t or amps of a tier*") },
   ],
 };
 
 /** The mode switch: one card per key, in the key's colour. */
 const BUILD_MODE: HelpCard = {
-  title: "Build",
+  title: msg("Build"),
   rows: [
-    { text: "Place *recipes* and connect their slots" },
-    { text: "Set *machine counts*; read actual rates" },
-    { text: "Hover a status for *flow limits*" },
+    { text: msg("Place *recipes* and connect their slots") },
+    { text: msg("Set *machine counts*; read actual rates") },
+    { text: msg("Hover a status for *flow limits*") },
   ],
 };
 
 const SOLVE_MODE: HelpCard = {
-  title: "Solve",
+  title: msg("Solve"),
   rows: [
-    { text: "Connect recipes and set a *target*" },
-    { text: "*Machine counts* are calculated" },
-    { text: "Target: *input/output rate* or *pinned count*" },
+    { text: msg("Connect recipes and set a *target*") },
+    { text: msg("*Machine counts* are calculated") },
+    { text: msg("Target: *input/output rate* or *pinned count*") },
   ],
 };
 
 const POOL_MODE: HelpCard = {
-  title: "Pool",
+  title: msg("Pool"),
   rows: [
-    { text: "Choose recipes and set a *target*" },
-    { text: "Counts and resource flow are *automatic*" },
-    { text: "Inputs with no producer are *imported*" },
-    { chip: "+", tone: "pool", text: "Add a rate: *positive output*, *negative input*" },
+    { text: msg("Choose recipes and set a *target*") },
+    { text: msg("Counts and resource flow are *automatic*") },
+    { text: msg("Inputs with no producer are *imported*") },
+    { chip: "+", tone: "pool", text: msg("Add a rate: *positive output*, *negative input*") },
   ],
 };
 
 const TOOLS: HelpCard = {
-  title: "Board tools",
+  title: msg("Board tools"),
   rows: [
-    { icon: Pencil, text: "*Markup*: boards, shapes and notes" },
-    { icon: Paintbrush, text: "*Paint*: apply colour to cards" },
-    { icon: ImagePlus, text: "*Image*: insert or paste" },
-    { icon: Eye, text: "*View*: background and wire display" },
-    { icon: Network, text: "*Arrange*: automatic card layout" },
-    { icon: Trash2, text: "*Bin*: click objects to delete" },
+    { icon: Pencil, text: msg("*Markup*: boards, shapes and notes") },
+    { icon: Paintbrush, text: msg("*Paint*: apply colour to cards") },
+    { icon: ImagePlus, text: msg("*Image*: insert or paste") },
+    { icon: Eye, text: msg("*View*: background and wire display") },
+    { icon: Network, text: msg("*Arrange*: automatic card layout") },
+    { icon: Trash2, text: msg("*Bin*: click objects to delete") },
   ],
 };
 
 const FRAMING: HelpCard = {
-  title: "Viewport",
+  title: msg("Viewport"),
   rows: [
-    { icon: Focus, text: "*Fit* the plan on screen" },
-    { text: "When zoomed out, show:" },
-    { icon: Box, text: "*Machine* icons" },
-    { icon: Gauge, text: "*Utilization*: running capacity" },
-    { icon: TriangleAlert, text: "*Status*: what limits production" },
-    { icon: Zap, text: "*Power* consumption and tier" },
+    { icon: Focus, text: msg("*Fit* the plan on screen") },
+    { text: msg("When zoomed out, show:") },
+    { icon: Box, text: msg("*Machine* icons") },
+    { icon: Gauge, text: msg("*Utilization*: running capacity") },
+    { icon: TriangleAlert, text: msg("*Status*: what limits production") },
+    { icon: Zap, text: msg("*Power* consumption and tier") },
   ],
 };
 
 const ON_A_CARD: HelpCard = {
-  title: "Machine controls",
+  title: msg("Machine controls"),
   rows: [
-    { text: "Click the *name* to change machine" },
-    { chip: "LV", text: "*Tier*: click up, right-click down" },
-    { chip: "2×", text: "Click to edit *hatch count*" },
-    { chip: "8", text: "*Count*: type or scroll" },
-    { icon: RefreshCw, text: "*Refactor*: choose another recipe" },
-    { text: "Hover the name for *machine stats*" },
-    { text: "Config slots: *coils, tools, parallels*" },
+    { text: msg("Click the *name* to change machine") },
+    { chip: "LV", text: msg("*Tier*: click up, right-click down") },
+    { chip: "2×", text: msg("Click to edit *hatch count*") },
+    { chip: "8", text: msg("*Count*: type or scroll") },
+    { icon: RefreshCw, text: msg("*Refactor*: choose another recipe") },
+    { text: msg("Hover the name for *machine stats*") },
+    { text: msg("Config slots: *coils, tools, parallels*") },
   ],
 };
 
 const DRAWERS: HelpCard = {
-  title: "Drawers and tanks",
+  title: msg("Drawers and tanks"),
   rows: [
-    { shape: "source", text: "*Source*: unlimited external supply" },
-    { shape: "product", text: "*Product*: requests full production" },
-    { shape: "byproduct", text: "*Byproduct*: collects only surplus" },
-    { shape: "trash", text: "*Trash*: discards all arrivals" },
-    { shape: "buffer", text: "*Buffer*: pass-through and storage" },
+    { shape: "source", text: msg("*Source*: unlimited external supply") },
+    { shape: "product", text: msg("*Product*: requests full production") },
+    { shape: "byproduct", text: msg("*Byproduct*: collects only surplus") },
+    { shape: "trash", text: msg("*Trash*: discards all arrivals") },
+    { shape: "buffer", text: msg("*Buffer*: pass-through and storage") },
   ],
 };
 
 const BOARDS: HelpCard = {
-  title: "Board windows",
+  title: msg("Board windows"),
   rows: [
-    { chip: "Ctrl+G", text: "Group selection in a *board*" },
-    { text: "Drag *title bar*: move group" },
-    { text: "*Minimize*: show a flow summary" },
-    { text: "*Dump*: remove frame only" },
+    { chip: "Ctrl+G", text: msg("Group selection in a *board*") },
+    { text: msg("Drag *title bar*: move group") },
+    { text: msg("*Minimize*: show a flow summary") },
+    { text: msg("*Dump*: remove frame only") },
   ],
 };
 
 const LEFT_COLUMN: HelpCard = {
-  title: "Resources",
+  title: msg("Resources"),
   rows: [
-    { icon: Zap, text: "Add *generators, custom rates, farms*" },
-    { icon: Search, text: "Find *items and fluids*" },
-    { mouse: "left", text: "Click a resource: *recipes that make it*" },
-    { mouse: "right", text: "Right-click: *recipes that use it*" },
+    { icon: Zap, text: msg("Add *generators, custom rates, farms*") },
+    { icon: Search, text: msg("Find *items and fluids*") },
+    { mouse: "left", text: msg("Click a resource: *recipes that make it*") },
+    { mouse: "right", text: msg("Right-click: *recipes that use it*") },
   ],
 };
 
 /** The Library pill at the head of the tab strip, ringed and arrowed. */
 const LIBRARY: HelpCard = {
-  title: "Library",
+  title: msg("Library"),
   rows: [
-    { icon: Library, text: "Your *designs*, in folders" },
-    { text: "*Community setups*: open in a new tab" },
-    { text: "Favorites, saved and *posted* setups" },
+    { icon: Library, text: msg("Your *designs*, in folders") },
+    { text: msg("*Community setups*: open in a new tab") },
+    { text: msg("Favorites, saved and *posted* setups") },
   ],
 };
 
 const RECIPE_SEARCH: HelpCard = {
-  title: "Recipe search",
+  title: msg("Recipe search"),
   rows: [
-    { text: "*Takes* filters inputs; *Makes* outputs" },
-    { chip: "ANY", text: "Match at least one resource" },
-    { chip: "ALL", text: "Match all; extras allowed" },
-    { chip: "ONLY", text: "Match all; no extras" },
-    { text: "*Machine buttons* filter results" },
-    { mouse: "right", text: "Result menu: *Add to board*" },
+    { text: msg("*Takes* filters inputs; *Makes* outputs") },
+    { chip: msg("ANY"), text: msg("Match at least one resource") },
+    { chip: msg("ALL"), text: msg("Match all; extras allowed") },
+    { chip: msg("ONLY"), text: msg("Match all; no extras") },
+    { text: msg("*Machine buttons* filter results") },
+    { mouse: "right", text: msg("Result menu: *Add to board*") },
   ],
 };
 
 const PLAN_TOTALS: HelpCard = {
-  title: "Inputs and outputs",
+  title: msg("Inputs and outputs"),
   rows: [
-    { chip: "INPUTS", tone: "need", text: "Required external supply" },
-    { chip: "OUTPUTS", tone: "output", text: "Resources leaving the plan" },
-    { chip: "INTERNAL", tone: "internal", text: "Made and used in the plan" },
-    { chip: "RAW/NET", text: "Total flows / net balance" },
+    { chip: msg("INPUTS"), tone: "need", text: msg("Required external supply") },
+    { chip: msg("OUTPUTS"), tone: "output", text: msg("Resources leaving the plan") },
+    { chip: msg("INTERNAL"), tone: "internal", text: msg("Made and used in the plan") },
+    { chip: msg("RAW/NET"), text: msg("Total flows / net balance") },
   ],
 };
 
 const MACHINES: HelpCard = {
-  title: "Machines",
+  title: msg("Machines"),
   rows: [
-    { icon: Store, text: "Required *machines by tier*" },
-    { chip: "PEAK/AVG", text: "Full-load / actual power" },
-    { chip: "USED", text: "Power use and generation" },
-    { mouse: "left", text: "Click a row to *locate machines*" },
+    { icon: Store, text: msg("Required *machines by tier*") },
+    { chip: msg("PEAK/AVG"), text: msg("Full-load / actual power") },
+    { chip: msg("USED"), text: msg("Power use and generation") },
+    { mouse: "left", text: msg("Click a row to *locate machines*") },
   ],
 };
 
 const PLAN_CARD: HelpCard = {
-  title: "Plan details",
+  title: msg("Plan details"),
   rows: [
-    { text: "Edit the *name, icon and description*" },
-    { icon: Share2, text: "*Share* the setup and its details" },
-    { icon: RotateCcw, text: "*Reset* to the opened setup" },
+    { text: msg("Edit the *name, icon and description*") },
+    { icon: Share2, text: msg("*Share* the setup and its details") },
+    { icon: RotateCcw, text: msg("*Reset* to the opened setup") },
   ],
 };
 
@@ -266,42 +267,42 @@ const PLAN_CARD: HelpCard = {
  * their first explanation.
  */
 const NOTICES: HelpCard = {
-  title: "Plan diagnostics",
+  title: msg("Plan diagnostics"),
   rows: [
-    { chip: "NOT WIRED UP", tone: "fine", text: "Slots need connections" },
-    { chip: "DEAD LOOP", tone: "bottleneck", text: "Cycle supply deficit" },
-    { chip: "CLOG LOCK", tone: "clogged", text: "Surplus blocks a cycle" },
-    { chip: "SOLVE MODE", tone: "solve", text: "Set rate / pin count" },
-    { chip: "POOL MODE", tone: "pool", text: "Add a product target" },
+    { chip: msg("NOT WIRED UP"), tone: "fine", text: msg("Slots need connections") },
+    { chip: msg("DEAD LOOP"), tone: "bottleneck", text: msg("Cycle supply deficit") },
+    { chip: msg("CLOG LOCK"), tone: "clogged", text: msg("Surplus blocks a cycle") },
+    { chip: msg("SOLVE MODE"), tone: "solve", text: msg("Set rate / pin count") },
+    { chip: msg("POOL MODE"), tone: "pool", text: msg("Add a product target") },
   ],
 };
 
 /** The gestures no button reveals. */
 const MOVES: HelpCard = {
-  title: "Mouse and keyboard",
+  title: msg("Mouse and keyboard"),
   rows: [
-    { mouse: "left", text: "Drag between slots to *connect*" },
-    { mouse: "left", text: "Drag slot to empty space: *drawer*" },
-    { chip: "R / U", text: "Hover a port: find *makes / uses*" },
-    { chip: "Shift", text: "Drag to *box-select*; click to add" },
-    { chip: "Ctrl+C/V", text: "*Copy / paste* selected cards" },
-    { chip: "Del", text: "*Delete* selection" },
-    { chip: "Esc", text: "*Cancel* the active tool" },
-    { chip: "WASD", text: "*Pan* the canvas" },
-    { mouse: "scroll", text: "Scroll the canvas to *zoom*" },
+    { mouse: "left", text: msg("Drag between slots to *connect*") },
+    { mouse: "left", text: msg("Drag slot to empty space: *drawer*") },
+    { chip: "R / U", text: msg("Hover a port: find *makes / uses*") },
+    { chip: "Shift", text: msg("Drag to *box-select*; click to add") },
+    { chip: "Ctrl+C/V", text: msg("*Copy / paste* selected cards") },
+    { chip: "Del", text: msg("*Delete* selection") },
+    { chip: "Esc", text: msg("*Cancel* the active tool") },
+    { chip: "WASD", text: msg("*Pan* the canvas") },
+    { mouse: "scroll", text: msg("Scroll the canvas to *zoom*") },
   ],
 };
 
 /** The same reminder for a finger: the compact world has no hover and no
  * right button, and telling a phone to right click is worse than nothing. */
 const TOUCH_MOVES: HelpCard = {
-  title: "Touch controls",
+  title: msg("Touch controls"),
   rows: [
-    { text: "Drag between slots to *connect*" },
-    { text: "Hold a resource for *makes / uses*" },
-    { text: "Tap a card, then drag to *move*" },
-    { text: "Double-tap to *zoom*" },
-    { text: "Swipe from an edge to open a *panel*" },
+    { text: msg("Drag between slots to *connect*") },
+    { text: msg("Hold a resource for *makes / uses*") },
+    { text: msg("Tap a card, then drag to *move*") },
+    { text: msg("Double-tap to *zoom*") },
+    { text: msg("Swipe from an edge to open a *panel*") },
   ],
 };
 
@@ -314,14 +315,14 @@ const MODES: HelpCard[] = [BUILD_MODE, SOLVE_MODE, POOL_MODE];
  * for the legends under it.
  */
 const MODES_CARD: HelpCard = {
-  title: "Build, Solve, Pool",
+  title: msg("Build, Solve, Pool"),
   rows: [
-    { text: "*Build*: you set counts and wires" },
-    { text: "The board reports what flows" },
-    { text: "*Solve*: you wire and set a target" },
-    { text: "Machine counts are calculated" },
-    { text: "*Pool*: pick recipes, set a target" },
-    { text: "Counts, wires and imports are automatic" },
+    { text: msg("*Build*: you set counts and wires") },
+    { text: msg("The board reports what flows") },
+    { text: msg("*Solve*: you wire and set a target") },
+    { text: msg("Machine counts are calculated") },
+    { text: msg("*Pool*: pick recipes, set a target") },
+    { text: msg("Counts, wires and imports are automatic") },
   ],
 };
 
@@ -427,11 +428,12 @@ type GlanceLayout = {
 };
 
 /** About how tall a card renders at CARD_W: title, rows, the wrapped ones
- * twice. Only used to keep stacks off each other before anything is drawn. */
+ * twice, in the language shown. Only used to keep stacks off each other
+ * before anything is drawn. */
 function estimateCardHeight(card: HelpCard): number {
   const charsPerLine = 32;
   const rows = card.rows.reduce(
-    (sum, row) => sum + 4 + 15 * Math.max(1, Math.ceil(row.text.length / charsPerLine)),
+    (sum, row) => sum + 4 + 15 * Math.max(1, Math.ceil(td(row.text).length / charsPerLine)),
     0,
   );
   return 48 + rows;
@@ -796,14 +798,22 @@ function GlanceCard({
   className?: string;
   style?: CSSProperties;
 }) {
+  useT();
+  // The cards are module constants marked with msg(); shown in the
+  // interface language here.
+  const rows = card.rows.map((row) => ({
+    ...row,
+    text: td(row.text),
+    chip: row.chip === undefined ? undefined : td(row.chip),
+  }));
   return (
     <div
       className={[GLANCE_CARD_CLASS, "px-3 py-2.5", className].filter(Boolean).join(" ")}
       style={{ border: `2px solid ${GLANCE_LINE}`, ...style }}
     >
-      <GlanceTitle dense>{card.title}</GlanceTitle>
+      <GlanceTitle dense>{td(card.title)}</GlanceTitle>
       <div className="mt-2">
-        <GlanceRows rows={card.rows} accent={ACCENT} dense />
+        <GlanceRows rows={rows} accent={ACCENT} dense />
       </div>
     </div>
   );
@@ -819,6 +829,7 @@ const HELP_BUTTON_CLASS =
  * one way out, and no pointing.
  */
 function HelpSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
     <div className="ui-zoom fixed inset-0 z-[120] flex flex-col bg-[#101419] font-mono text-[#dbe3ec]">
       <div
@@ -826,12 +837,12 @@ function HelpSheet({ onClose }: { onClose: () => void }) {
         style={{ borderBottom: `1px solid ${GLANCE_LINE}` }}
       >
         <span className="text-[12px] font-black uppercase tracking-[0.14em] text-[#aebccd]">
-          Board help
+          {t("Board help")}
         </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close help"
+          aria-label={t("Close help")}
           className="flex h-9 w-9 items-center justify-center border text-[16px] text-[#aebccd]"
           style={{ borderColor: GLANCE_LINE }}
         >
@@ -961,6 +972,7 @@ function HelpGlanceSheet({
 }
 
 export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean }) {
+  const t = useT();
   const [measured, setMeasured] = useState<Measured | undefined>(undefined);
   const [isSheetOpen, setSheetOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -1003,8 +1015,8 @@ export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean
           data-help-anchor="help"
           className={HELP_BUTTON_CLASS}
           style={{ zoom: BOARD_TOOL_SCALE }}
-          title="Board help"
-          aria-label="Show board help"
+          title={t("Board help")}
+          aria-label={t("Show board help")}
         >
           ?
         </button>
@@ -1048,8 +1060,8 @@ export const BoardHelp = memo(function BoardHelp({ compact }: { compact: boolean
         data-help-anchor="help"
         className={HELP_BUTTON_CLASS}
         style={{ zoom: BOARD_TOOL_SCALE }}
-        title="Board help"
-        aria-label="Show board help"
+        title={t("Board help")}
+        aria-label={t("Show board help")}
       >
         ?
       </button>

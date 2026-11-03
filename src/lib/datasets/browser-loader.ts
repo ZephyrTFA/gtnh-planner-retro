@@ -1,6 +1,6 @@
 "use client";
 
-import { useItemNames } from "@/lib/item-names";
+import { useLanguage } from "@/lib/i18n";
 import type { MachineTier, Recipe, ResourceAmount } from "@/lib/model/types";
 import type { RecipeContentRef } from "@/lib/import-export/recipe-ref-match";
 import { APP_VERSION } from "@/lib/version";
@@ -343,6 +343,6 @@ function addDatasetCacheKey(url: URL, version: DatasetVersion) {
 }
 
 function itemLanguageForSearch(): string | undefined {
-  const language = useItemNames.getState().language;
+  const language = useLanguage.getState().language;
   return language === "en_US" ? undefined : language;
 }

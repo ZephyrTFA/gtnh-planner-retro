@@ -6,6 +6,7 @@ import type {
   ResourceKey,
   ThroughputResult,
 } from "@/lib/model/types";
+import { t, tPlural } from "@/lib/i18n";
 import { solveEquationsCore } from "@/lib/solver/equations-core";
 import { getPoolProject } from "@/lib/solver/pool-mode";
 
@@ -395,17 +396,23 @@ export function describeClogLockForNode(
   const own = lock.vents.filter((vent) => vent.nodeId === nodeId);
   if (own.length > 0) {
     const list = own
-      .map((vent) => `${vent.resourceName} (about ${formatRate(vent.perSecond)}/s)`)
-      .join(" and ");
+      .map((vent) => t("{name} (about {rate}/s)", { name: vent.resourceName, rate: formatRate(vent.perSecond) }))
+      .join(t(" and "));
     return {
-      title: `Spare ${own[0]!.resourceName} has nowhere to go`,
-      detail: `${list} needs a home. Wire it to a drawer or a trash can and the ${lock.machineIds.length} frozen machines run.`,
+      title: t("Spare {name} has nowhere to go", { name: own[0]!.resourceName }),
+      detail: t("{list} needs a home. Wire it to a drawer or a trash can and the {count} frozen machines run.", {
+        list,
+        count: lock.machineIds.length,
+      }),
     };
   }
   const vent = lock.vents[0]!;
   return {
-    title: "Frozen by a clog lock",
-    detail: `The line's spare ${vent.resourceName} has nowhere to go, and the jam holds all ${lock.machineIds.length} machines at 0%. Fix it at ${vent.machineName}: wire ${vent.resourceName} to a drawer there.`,
+    title: t("Frozen by a clog lock"),
+    detail: t(
+      "The line's spare {resource} has nowhere to go, and the jam holds all {count} machines at 0%. Fix it at {machine}: wire {resource} to a drawer there.",
+      { resource: vent.resourceName, count: lock.machineIds.length, machine: vent.machineName },
+    ),
   };
 }
 
@@ -430,19 +437,31 @@ export function describeClogLock(lock: ClogLock): {
   // Every surplus in THIS lock, by name and rate - these are the necessary
   // ones, proven by the necessity probes, so the list is the whole fix.
   const list = lock.vents
-    .map((entry) => `${entry.resourceName} (about ${formatRate(entry.perSecond)}/s)`)
+    .map((entry) => t("{name} (about {rate}/s)", { name: entry.resourceName, rate: formatRate(entry.perSecond) }))
     .join(", ");
   const spares =
-    lock.vents.length === 1 ? `spare ${vent.resourceName}` : `spare ${vent.resourceName} and ${lock.vents.length - 1} more`;
+    lock.vents.length === 1
+      ? t("spare {name}", { name: vent.resourceName })
+      : t("spare {name} and {more} more", { name: vent.resourceName, more: lock.vents.length - 1 });
 
   return {
-    title: count === 1 ? "This machine is choking on its own surplus" : "These machines are choking on a surplus",
-    short:
-      count === 1
-        ? `A machine stopped because its ${spares} has nowhere to go.`
-        : `${count} machines stopped because ${spares} has nowhere to go.`,
-    what: `${count === 1 ? "One machine" : `${count} machines`} sit at 0% with everything they need. The line makes more ${vent.resourceName} than it uses, and the spare has no drawer, no trash can and no consumer with room.`,
-    why: "In game the spare piles up until every chest and slot on the line is full, and then nothing can run because nothing has room. Full inputs, full outputs, no progress: the opposite of starving. Taking a stack out by hand restarts it for a few seconds before it jams the same way again.",
-    fix: `Give ${list} somewhere to go: a drawer or a trash can on each blue wire. That is the whole list for this jam; any other clogged card just paces down once these can leave.`,
+    title: tPlural(count, "This machine is choking on its own surplus", "These machines are choking on a surplus"),
+    short: tPlural(
+      count,
+      "A machine stopped because its {spares} has nowhere to go.",
+      "{count} machines stopped because {spares} has nowhere to go.",
+      { count, spares },
+    ),
+    what: tPlural(
+      count,
+      "One machine sit at 0% with everything they need. The line makes more {resource} than it uses, and the spare has no drawer, no trash can and no consumer with room.",
+      "{count} machines sit at 0% with everything they need. The line makes more {resource} than it uses, and the spare has no drawer, no trash can and no consumer with room.",
+      { count, resource: vent.resourceName },
+    ),
+    why: t("In game the spare piles up until every chest and slot on the line is full, and then nothing can run because nothing has room. Full inputs, full outputs, no progress: the opposite of starving. Taking a stack out by hand restarts it for a few seconds before it jams the same way again."),
+    fix: t(
+      "Give {list} somewhere to go: a drawer or a trash can on each blue wire. That is the whole list for this jam; any other clogged card just paces down once these can leave.",
+      { list },
+    ),
   };
 }

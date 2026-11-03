@@ -7,6 +7,7 @@ import { LibraryMenu, MenuItem, MenuRule } from "@/components/library/library-me
 import { queryRecipeDatasetResources } from "@/lib/datasets/browser-loader";
 import { DEFAULT_DATASET_MANIFEST_URL } from "@/lib/datasets/remote";
 import type { DatasetResourceIndexEntry } from "@/lib/datasets/types";
+import { useT } from "@/lib/i18n";
 import type { ResourceAmount } from "@/lib/model/types";
 import { getUiScale } from "@/lib/ui-scale";
 import { useFactoryStore } from "@/store/factory-store";
@@ -47,6 +48,7 @@ export function BoardContextMenu({
   target: BoardMenuTarget;
   onClose: () => void;
 }) {
+  const t = useT();
   const [picking, setPicking] = useState(false);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
@@ -122,28 +124,28 @@ export function BoardContextMenu({
   };
 
   return (
-    <LibraryMenu left={target.x} top={target.y} label="Board menu" onClose={onClose}>
+    <LibraryMenu left={target.x} top={target.y} label={t("Board menu")} onClose={onClose}>
       {target.kind === "pane" ? (
-        <MenuItem label="New product drawer" onClick={() => setPicking(true)} />
+        <MenuItem label={t("New product drawer")} onClick={() => setPicking(true)} />
       ) : null}
       {target.kind === "node" ? (
         <>
-          <MenuItem label="Clone" onClick={run(() => store().duplicateNode(target.id))} />
+          <MenuItem label={t("Clone")} onClick={run(() => store().duplicateNode(target.id))} />
           <MenuRule />
-          <MenuItem label="Delete" tone="danger" onClick={run(() => store().deleteNode(target.id))} />
+          <MenuItem label={t("Delete")} tone="danger" onClick={run(() => store().deleteNode(target.id))} />
         </>
       ) : null}
       {target.kind === "storage" ? (
         <>
-          <MenuItem label="Clone" onClick={run(() => store().duplicateStorage(target.id))} />
+          <MenuItem label={t("Clone")} onClick={run(() => store().duplicateStorage(target.id))} />
           <MenuRule />
-          <MenuItem label="Delete" tone="danger" onClick={run(() => store().deleteStorage(target.id))} />
+          <MenuItem label={t("Delete")} tone="danger" onClick={run(() => store().deleteStorage(target.id))} />
         </>
       ) : null}
       {target.kind === "edge" ? (
         <>
           <MenuItem
-            label="Add a drawer here"
+            label={t("Add a drawer here")}
             disabled={!target.resource}
             onClick={run(() => {
               if (target.resource) {
@@ -153,7 +155,7 @@ export function BoardContextMenu({
           />
           <MenuRule />
           <MenuItem
-            label={target.ids.length > 1 ? "Delete wires" : "Delete wire"}
+            label={target.ids.length > 1 ? t("Delete wires") : t("Delete wire")}
             tone="danger"
             onClick={run(() => store().deleteEdge(target.ids))}
           />

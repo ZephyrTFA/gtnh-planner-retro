@@ -11,6 +11,7 @@ import { useIsCompactViewport } from "@/lib/compact-view";
 import { markNotesReadAndNotify, subscribeToNotesRead, unseenEntries } from "@/lib/whats-new";
 import { ChangelogDialog } from "./ChangelogDialog";
 import { APP_VERSION } from "@/lib/version";
+import { useT } from "@/lib/i18n";
 import { AccountMenu } from "./community/AccountMenu";
 import { SharePlanDialog } from "./community/SharePlanDialog";
 import { ONLINE_FEATURES, REQUEST_FORM_ENABLED } from "@/lib/site";
@@ -32,6 +33,7 @@ interface AppHeaderProps {
  * plan actions, settings, links and account.
  */
 export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
+  const t = useT();
   // The chip wears a dot while a shipped release has notes this browser has
   // not opened. It has its own stamp, separate from the release notice's
   // (see whats-new.ts).
@@ -96,14 +98,14 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
             markNotesReadAndNotify();
             setChangelogOpen(true);
           }}
-          title="What's new"
-          aria-label={`Version ${APP_VERSION}: see what's new`}
+          title={t("What's new")}
+          aria-label={t("Version {version}: see what's new", { version: APP_VERSION })}
           className="relative shrink-0 rounded border border-line px-1 py-px text-[10px] font-semibold leading-none text-fg-muted tabular-nums hover:border-cyan-600 hover:text-cyan-500"
         >
           v{APP_VERSION}
           {hasUnread ? (
             <span
-              aria-label="Unread release notes"
+              aria-label={t("Unread release notes")}
               className="absolute -right-1 -top-1 h-2 w-2 rounded-full border border-surface bg-cyan-400"
             />
           ) : null}
@@ -148,8 +150,8 @@ export function AppHeader({ onLoadDatasetVersion }: AppHeaderProps) {
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            title="Settings"
-            aria-label="Open settings"
+            title={t("Settings")}
+            aria-label={t("Open settings")}
             className="inline-flex h-5 w-5 items-center justify-center rounded border border-line-strong bg-surface text-fg-subtle hover:bg-surface-raised hover:text-fg"
           >
             <Settings className="h-3.5 w-3.5" />

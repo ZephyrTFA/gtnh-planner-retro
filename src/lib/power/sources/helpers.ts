@@ -1,5 +1,42 @@
+import { td } from "@/lib/i18n";
 import { powerPlannerData } from "../planner-data";
-import type { PowerFlowLine, PowerSelectOption, PowerStatLine } from "../types";
+import type { PowerFlowLine, PowerSelectOption, PowerSourceDefinition, PowerStatLine } from "../types";
+
+/**
+ * A power model's text is baked into the card's recipe, which plans store, so
+ * it is English unless a display asked for its own copy in the interface
+ * language (`translatingPowerText`).
+ */
+let translating = false;
+
+function fillVars(text: string, vars?: Record<string, string | number>): string {
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole));
+}
+
+/** Text for a power model: `english` is a msg()-marked key, its `{name}` placeholders filled from `vars`. */
+export function powerText(english: string, vars?: Record<string, string | number>): string {
+  return translating ? td(english, vars) : fillVars(english, vars);
+}
+
+/** Runs `build` with power model text in the interface language. */
+export function translatingPowerText<T>(build: () => T): T {
+  const was = translating;
+  translating = true;
+  try {
+    return build();
+  } finally {
+    translating = was;
+  }
+}
+
+/** A blurb with numbers in it: English for the definition, plus its key and values for `powerSourceBlurb`. */
+export function templatedBlurb(
+  english: string,
+  vars: Record<string, string | number>,
+): Pick<PowerSourceDefinition, "blurb" | "blurbTemplate"> {
+  return { blurb: fillVars(english, vars), blurbTemplate: { key: english, vars } };
+}
 
 export function liters(name: string, perSecond: number): PowerFlowLine {
   return { name, perSecond, unit: "L" };
@@ -9,8 +46,9 @@ export function items(name: string, perSecond: number): PowerFlowLine {
   return { name, perSecond, unit: "item" };
 }
 
+/** A stat line; `label` is a msg()-marked key. */
 export function stat(label: string, value: string): PowerStatLine {
-  return { label, value };
+  return { label: powerText(label), value };
 }
 
 const NUMBER_FORMAT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });

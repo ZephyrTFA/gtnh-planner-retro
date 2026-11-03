@@ -3,9 +3,10 @@
  * about as much again once turbined. Mk II only rewards fuels over
  * 1,000 EU/L (its efficiency is fuelEU/1000, floored at 1).
  */
+import { msg } from "@/lib/i18n";
 import { findFuel, fuelOptions, powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
-import { formatAmount, liters, percent, stat } from "./helpers";
+import { formatAmount, liters, percent, stat, templatedBlurb } from "./helpers";
 
 interface SofcSpec {
   id: string;
@@ -48,12 +49,15 @@ export const sofcSources: PowerSourceDefinition[] = SPECS.map((spec) => ({
   name: spec.name,
   group: "engines",
   unlock: spec.unlock,
-  blurb: `${formatAmount(spec.output)} EU/t plus ${formatAmount(spec.steamPerSecond)} L/s steam.`,
+  ...templatedBlurb(msg("{output} EU/t plus {steam} L/s steam."), {
+    output: formatAmount(spec.output),
+    steam: formatAmount(spec.steamPerSecond),
+  }),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: fuelOptions(powerPlannerData.gasFuels),
       defaultKey: "Benzene",
     },
@@ -68,7 +72,7 @@ export const sofcSources: PowerSourceDefinition[] = SPECS.map((spec) => ({
       euPerTick: spec.output,
       inputs: [liters(fuel.name, fuelPerSecond), liters("Oxygen", spec.oxygenPerSecond)],
       outputs: [liters(spec.steamGrade, spec.steamPerSecond)],
-      stats: [stat("Efficiency", percent(efficiency))],
+      stats: [stat(msg("Efficiency"), percent(efficiency))],
     };
   },
 }));

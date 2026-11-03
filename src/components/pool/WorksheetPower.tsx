@@ -2,6 +2,7 @@ import type { MachineListEntry } from "@/lib/model/machine-list";
 import { formatPoolPowerValue as formatPowerValue } from "./worksheet-format";
 import { powerDisplayFromEuT, powerDisplaySuffix, rateSuffixForKind } from "@/lib/model/rate-unit";
 import { Zap } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { formatPoolRateBare as formatSlotRateBare } from "./worksheet-format";
 
 /** Compact headline with the same complete average/peak breakdown available by click, keyboard, or touch. */
@@ -9,45 +10,46 @@ export function WorksheetPower({
   entries,
   id,
   compact = false,
-  title = "Power",
+  title,
 }: {
   entries: MachineListEntry[];
   id?: string;
   compact?: boolean;
   title?: string;
 }) {
+  const t = useT();
   const sum = (key: "euT" | "avgEuT" | "madeEuT" | "avgMadeEuT" | "steamLs" | "avgSteamLs") =>
     entries.reduce((total, entry) => total + (entry[key] ?? 0), 0);
   const rows = [
-    { label: "Used", average: sum("avgEuT"), peak: sum("euT") },
-    { label: "Made", average: sum("avgMadeEuT"), peak: sum("madeEuT") },
-    { label: "Net", average: sum("avgMadeEuT") - sum("avgEuT"), peak: sum("madeEuT") - sum("euT") },
+    { key: "used", label: t("Used"), average: sum("avgEuT"), peak: sum("euT") },
+    { key: "made", label: t("Made"), average: sum("avgMadeEuT"), peak: sum("madeEuT") },
+    { key: "net", label: t("Net"), average: sum("avgMadeEuT") - sum("avgEuT"), peak: sum("madeEuT") - sum("euT") },
     ...(entries.some((entry) => entry.steamLs !== undefined)
-      ? [{ label: "Steam", average: sum("avgSteamLs"), peak: sum("steamLs"), steam: true }]
+      ? [{ key: "steam", label: t("Steam"), average: sum("avgSteamLs"), peak: sum("steamLs"), steam: true }]
       : []),
   ];
   const format = (value: number) => formatPowerValue(powerDisplayFromEuT(Math.abs(value)));
   const table = (
-    <table className="pool-summary-table pool-power-table" aria-label="Pool power totals">
+    <table className="pool-summary-table pool-power-table" aria-label={t("Pool power totals")}>
       <thead>
         <tr>
-          <th>{!compact ? <h3 className="pool-overview-title">{title}</h3> : null}</th>
-          <th>Average</th>
-          <th>Peak</th>
+          <th>{!compact ? <h3 className="pool-overview-title">{title ?? t("Power")}</h3> : null}</th>
+          <th>{t("Average")}</th>
+          <th>{t("Peak")}</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.label}>
+          <tr key={row.key}>
             <th scope="row">{row.label}</th>
             {[row.average, row.peak].map((value, index) => {
               const steam = "steam" in row && row.steam;
               const number = steam ? formatSlotRateBare(value, "fluid") : format(value);
-              const signed = row.label === "Net" && number !== "0" ? (value < 0 ? "−" : "+") : "";
+              const signed = row.key === "net" && number !== "0" ? (value < 0 ? "−" : "+") : "";
               return (
                 <td key={index}>
                   <span
-                    className={`inspector-resource-net pool-balance-rate ${row.label === "Net" ? (value < 0 ? "pool-flow-input" : value > 0 ? "pool-flow-output" : "") : ""}`}
+                    className={`inspector-resource-net pool-balance-rate ${row.key === "net" ? (value < 0 ? "pool-flow-input" : value > 0 ? "pool-flow-output" : "") : ""}`}
                   >
                     {signed}
                     {number}
@@ -65,7 +67,7 @@ export function WorksheetPower({
   );
   if (compact)
     return (
-      <section id={id} className="pool-compact-power" aria-label="Pool power summary">
+      <section id={id} className="pool-compact-power" aria-label={t("Pool power summary")}>
         <details
           onKeyDown={(event) => {
             if (event.key === "Escape") {
@@ -76,13 +78,13 @@ export function WorksheetPower({
         >
           <summary
             className="pool-power-headline"
-            title="Power breakdown"
-            aria-label={`Average power used ${format(rows[0].average)} ${powerDisplaySuffix()}, peak ${format(rows[0].peak)} ${powerDisplaySuffix()}; made ${format(rows[1].average)} ${powerDisplaySuffix()}`}
+            title={t("Power breakdown")}
+            aria-label={t("Average power used {used} {unit}, peak {peak} {unit}; made {made} {unit}", { used: format(rows[0].average), peak: format(rows[0].peak), made: format(rows[1].average), unit: powerDisplaySuffix() })}
           >
             <Zap size={12} aria-hidden />
             <strong>{format(rows[0].average)}</strong>
             <small>{powerDisplaySuffix()}</small>
-            {rows[0].peak !== rows[0].average ? <small>peak {format(rows[0].peak)}</small> : null}
+            {rows[0].peak !== rows[0].average ? <small>{t("peak {value}", { value: format(rows[0].peak) })}</small> : null}
             {rows[1].average > 0 || rows[1].peak > 0 ? (
               <span className="pool-flow-output">
                 +{format(rows[1].average)}
@@ -92,7 +94,7 @@ export function WorksheetPower({
             {rows[3] ? (
               <span>
                 {formatSlotRateBare(rows[3].average, "fluid")}
-                <small>{rateSuffixForKind("fluid").trim()} steam</small>
+                <small>{t("{unit} steam", { unit: rateSuffixForKind("fluid").trim() })}</small>
               </span>
             ) : null}
           </summary>
@@ -101,7 +103,7 @@ export function WorksheetPower({
       </section>
     );
   return (
-    <section id={id} className="pool-sheet-power" aria-label="Pool power summary">
+    <section id={id} className="pool-sheet-power" aria-label={t("Pool power summary")}>
       <div className="pool-resources-scroll">{table}</div>
     </section>
   );

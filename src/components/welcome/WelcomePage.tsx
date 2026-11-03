@@ -26,6 +26,7 @@ import { writeWorkspaceView } from "@/lib/workspace-view";
 import { useDesignStore } from "@/store/design-store";
 import { useFactoryStore } from "@/store/factory-store";
 import { WelcomeBackdrop, type BackdropIcon } from "./WelcomeBackdrop";
+import { useT } from "@/lib/i18n";
 
 /**
  * The Welcome tab. It COVERS the board (see FactoryPlannerApp) rather than
@@ -80,6 +81,7 @@ function useBackdropIcons(): BackdropIcon[] {
 }
 
 export function WelcomePage() {
+  const t = useT();
   const welcome = useWelcomeTab();
   const addDesign = useDesignStore((state) => state.addDesign);
   const backdropIcons = useBackdropIcons();
@@ -110,9 +112,7 @@ export function WelcomePage() {
               </span>
             </div>
             <p className="max-w-[600px] text-[13px] leading-relaxed text-fg-subtle">
-              Draw a GregTech: New Horizons factory as a flowchart. Every card is a
-              real recipe, every wire carries a real rate, and the board tells you
-              what starves, what clogs and what to build.
+              {t("Draw a GregTech: New Horizons factory as a flowchart. Every card is a real recipe, every wire carries a real rate, and the board tells you what starves, what clogs and what to build.")}
             </p>
             <div className="mt-1 flex flex-wrap gap-2">
               <PrimaryButton
@@ -124,14 +124,14 @@ export function WelcomePage() {
                   void addDesign();
                 }}
               >
-                New design
+                {t("New design")}
               </PrimaryButton>
               {ONLINE_FEATURES ? (
                 <SecondaryButton
                   icon={Factory}
                   onClick={() => openLibrary({ kind: "public" })}
                 >
-                  Browse shared setups
+                  {t("Browse shared setups")}
                 </SecondaryButton>
               ) : null}
               <SecondaryButton
@@ -141,11 +141,11 @@ export function WelcomePage() {
                   openSidebarTab("items", { focusSearch: true });
                 }}
               >
-                Find a recipe
+                {t("Find a recipe")}
               </SecondaryButton>
               {/* Your own designs live in the library, not on this page. */}
               <SecondaryButton icon={Library} onClick={() => openLibrary()}>
-                Your library
+                {t("Your library")}
               </SecondaryButton>
             </div>
           </header>
@@ -160,7 +160,7 @@ export function WelcomePage() {
                 onChange={(event) => setWelcomeOnStartup(event.target.checked)}
                 className="h-3.5 w-3.5 accent-cyan-400"
               />
-              Open on this tab when I arrive
+              {t("Open on this tab when I arrive")}
             </label>
           </footer>
         </div>
@@ -258,6 +258,7 @@ function Face({ icon, size }: { icon: EntryIcon | undefined; size: number }) {
 
 /** The community's newest setups, opening in a tab of their own. */
 function CommunityShelf() {
+  const t = useT();
   const [plans, setPlans] = useState<CommunityPlanSummary[] | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
   const [busyId, setBusyId] = useState<string | undefined>(undefined);
@@ -272,20 +273,20 @@ function CommunityShelf() {
       })
       .catch((listError: unknown) => {
         if (!cancelled) {
-          setError(listError instanceof Error ? listError.message : "Could not reach the shelf.");
+          setError(listError instanceof Error ? listError.message : t("Could not reach the shelf."));
         }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const open = async (plan: CommunityPlanSummary) => {
     setBusyId(plan.id);
     try {
       await openCommunityPost({ id: plan.id, name: plan.name, isMine: plan.isMine === true, authorName: plan.authorName });
     } catch (openError) {
-      setError(openError instanceof Error ? openError.message : "Opening the setup failed.");
+      setError(openError instanceof Error ? openError.message : t("Opening the setup failed."));
     } finally {
       setBusyId(undefined);
     }
@@ -295,7 +296,7 @@ function CommunityShelf() {
     <section className="flex flex-col gap-2">
       <SectionTitle>
         <Factory className="h-3.5 w-3.5 text-cyan-300" aria-hidden />
-        New from the community
+        {t("New from the community")}
       </SectionTitle>
       {error ? <p className="text-[12px] text-amber-300">{error}</p> : null}
       <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -319,7 +320,7 @@ function CommunityShelf() {
                   </span>
                   <span className="flex items-center gap-2 truncate text-[11px] text-fg-muted">
                     <span className="truncate">
-                      {plan.authorName ? plan.authorName : "anonymous"}
+                      {plan.authorName ? plan.authorName : t("anonymous")}
                       {plan.highestTier ? ` · ${plan.highestTier}` : ""}
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-0.5">

@@ -28,6 +28,7 @@
  * evaluated over a grid of tiers and choices); that test says how to
  * regenerate it.
  */
+import { msg, t } from "@/lib/i18n";
 import type { MachineConfigControl, Recipe } from "@/lib/model/types";
 import { TGS_TICKS, getTgsControls } from "./tree-growth-simulator";
 import { getVatControls, getVatGateReason } from "./bacterial-vat";
@@ -340,7 +341,7 @@ function slug(value: string): string {
  */
 const ITEM_PIPE_CONTROL = choiceControl(
   ITEM_PIPE,
-  "Item Pipe Casing",
+  msg("Item Pipe Casing"),
   [
     "Tin",
     "Brass",
@@ -366,7 +367,7 @@ const ITEM_PIPE_CONTROL = choiceControl(
  */
 const FLUID_PIPE_CONTROL = choiceControl(
   PIPE,
-  "Pipe Casing",
+  msg("Pipe Casing"),
   ["Bronze", "Steel", "Titanium", "Tungstensteel"].map((label, index) => ({
     label,
     icon: `gregtech:gt.blockcasings2@${12 + index}`,
@@ -395,7 +396,7 @@ function normalizeLatheSettings(settings: Record<string, string>): Record<string
   return carried ? { ...settings, [ITEM_PIPE]: carried.key } : settings;
 }
 
-const CONTAINMENT_CONTROL = choiceControl(CONTAINMENT, "Containment Block", [
+const CONTAINMENT_CONTROL = choiceControl(CONTAINMENT, msg("Containment Block"), [
   "Neutronium",
   "Infinity",
   "Transcendent Metal",
@@ -403,8 +404,8 @@ const CONTAINMENT_CONTROL = choiceControl(CONTAINMENT, "Containment Block", [
   "Universum",
 ]);
 
-const UPGRADE_CHIP_CONTROL = choiceControl(UPGRADE_CHIP, "Upgrade Chip", [
-  "No Upgrade",
+const UPGRADE_CHIP_CONTROL = choiceControl(UPGRADE_CHIP, msg("Upgrade Chip"), [
+  msg("No Upgrade"),
   "Maceration Upgrade Chip",
 ]);
 
@@ -455,33 +456,33 @@ function row<T>(table: T[], index: number): T {
 
 const ELECTRODE_CONTROL = choiceControl(
   ELECTRODE,
-  "Electrode",
+  msg("Electrode"),
   ELECTRODES.map((entry) => entry.name),
 );
 const SAWBLADE_CONTROL = choiceControl(
   SAWBLADE,
-  "Sawblade",
+  msg("Sawblade"),
   SAWBLADES.map((entry) => entry.name),
 );
 const ELECTROMAGNET_CONTROL = choiceControl(
   ELECTROMAGNET,
-  "Electromagnet",
+  msg("Electromagnet"),
   ELECTROMAGNETS.map((entry) => entry.name),
 );
-const COOLANT_CONTROL = choiceControl("fridgeCoolant", "Coolant", [
-  "No Coolant",
+const COOLANT_CONTROL = choiceControl("fridgeCoolant", msg("Coolant"), [
+  msg("No Coolant"),
   "Molten SpaceTime",
   "Spatially Enlarged Fluid",
   "Molten Eternity",
 ]);
 const PLASMA_MIXER_PARALLEL_CONTROL = countControl(
   "plasmaMixerParallels",
-  "Parallels",
+  msg("Parallels"),
   [1, 2, 4, 8, 16, 32, 64, 128, 256],
 );
 /** Fluid Shaper width expansions, 0 through the structure's 6 maximum. */
 const WIDTH_EXPANSION = "widthExpansion";
-const WIDTH_EXPANSION_CONTROL = countControl(WIDTH_EXPANSION, "Width Expansion", [
+const WIDTH_EXPANSION_CONTROL = countControl(WIDTH_EXPANSION, msg("Width Expansion"), [
   0, 1, 2, 3, 4, 5, 6,
 ]);
 /**
@@ -491,7 +492,7 @@ const WIDTH_EXPANSION_CONTROL = countControl(WIDTH_EXPANSION, "Width Expansion",
 const DISTILLUS_HEIGHT = "distillusHeight";
 const DISTILLUS_HEIGHT_CONTROL = countControl(
   DISTILLUS_HEIGHT,
-  "Height",
+  msg("Height"),
   [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   9,
 );
@@ -500,10 +501,10 @@ const DISTILLUS_HEIGHT_CONTROL = countControl(
  * them (the top slice is extra). Only distillery mode reads it; the full 5 is the default.
  */
 const MEGA_DT_HEIGHT = "megaDtHeight";
-const MEGA_DT_HEIGHT_CONTROL = countControl(MEGA_DT_HEIGHT, "Tower Height", [1, 2, 3, 4, 5], 4);
+const MEGA_DT_HEIGHT_CONTROL = countControl(MEGA_DT_HEIGHT, msg("Tower Height"), [1, 2, 3, 4, 5], 4);
 const LATEX_SINGULARITY = "latexSingularity";
-const LATEX_SINGULARITY_CONTROL = choiceControl(LATEX_SINGULARITY, "Controller Slot", [
-  "Empty",
+const LATEX_SINGULARITY_CONTROL = choiceControl(LATEX_SINGULARITY, msg("Controller Slot"), [
+  msg("Empty"),
   "Elastic Singularity",
 ]);
 /**
@@ -530,7 +531,7 @@ const HEATING_COIL_TIERS: Array<[key: string, label: string, heat: number, block
 
 const HEATING_COIL_CONTROL: MachineConfigControl = {
   id: "heatingCoil",
-  label: "Heating Coil",
+  label: msg("Heating Coil"),
   minimumKey: "cupronickel",
   defaultKey: "cupronickel",
   tiers: HEATING_COIL_TIERS.map(([key, label, heat, block]) => ({
@@ -542,7 +543,7 @@ const HEATING_COIL_CONTROL: MachineConfigControl = {
       id: block,
       amount: 1,
       displayName: `${label} Coil Block`,
-      tooltip: ["Heating coil tier", `Heat capacity: ${heat} K`],
+      tooltip: [msg("Heating coil tier"), `Heat capacity: ${heat} K`],
       consumed: false,
     },
   })),
@@ -566,7 +567,7 @@ const FIELD_COIL_CONTROL: MachineConfigControl = {
   id: FIELD_COIL,
   // "Field Coil", not the full block name: the config panel's knob labels sit
   // in a half-card column and three words wrap.
-  label: "Field Coil",
+  label: msg("Field Coil"),
   minimumKey: "t1",
   defaultKey: "t1",
   minimumFromSpecialValue: true,
@@ -581,7 +582,7 @@ const FIELD_COIL_CONTROL: MachineConfigControl = {
       tooltip: [
         `Field restriction coil tier ${index + 1}`,
         `Parallels: ${4 * (index + 1)}`,
-        "One perfect overclock per tier above the recipe's minimum",
+        msg("One perfect overclock per tier above the recipe's minimum"),
       ],
       consumed: false,
     },
@@ -598,14 +599,14 @@ const COKE_SLICES = "cokeOvenSlices";
 const SPIN_MODE = "spinmatronMode";
 const TURBINE_TIER = "sumTurbineTier";
 const SPIN_FUEL = "spinmatronFuel";
-const SPIN_MODE_CONTROL = choiceControl(SPIN_MODE, "Mode", ["Standard", "Light", "Heavy"]);
-const SPIN_FUEL_CONTROL = choiceControl(SPIN_FUEL, "Fuel", [
+const SPIN_MODE_CONTROL = choiceControl(SPIN_MODE, msg("Mode"), [msg("Standard"), msg("Light"), msg("Heavy")]);
+const SPIN_FUEL_CONTROL = choiceControl(SPIN_FUEL, msg("Fuel"), [
   "Kerosene",
   "Biocatalysed Propulsion Fluid",
 ]);
 const TURBINE_TIER_CONTROL = countControl(
   TURBINE_TIER,
-  "Sum Turbine Tier",
+  msg("Sum Turbine Tier"),
   [1, 2, 3, 4, 6, 8, 12, 16, 24, 32],
 );
 
@@ -619,30 +620,30 @@ const TURBINE_TIER_CONTROL = countControl(
  */
 const STEAM_PRESSURE_CONTROL: MachineConfigControl = {
   id: STEAM_PRESSURE,
-  label: "Pressure",
+  label: msg("Pressure"),
   minimumKey: "normal",
   defaultKey: "normal",
   tiers: [
     {
       key: "normal",
-      label: "Normal Pressure",
+      label: msg("Normal Pressure"),
       resource: {
         kind: "item",
         id: "factoryflow:machine_config/steam_pressure_normal",
         amount: 1,
-        displayName: "Normal Pressure",
-        tooltip: ["Bronze build", "Runs at 62.5% of the recipe's speed"],
+        displayName: msg("Normal Pressure"),
+        tooltip: [msg("Bronze build"), msg("Runs at 62.5% of the recipe's speed")],
       },
     },
     {
       key: "high",
-      label: "High Pressure",
+      label: msg("High Pressure"),
       resource: {
         kind: "item",
         id: "factoryflow:machine_config/steam_pressure_high",
         amount: 1,
-        displayName: "High Pressure",
-        tooltip: ["Steel build", "Twice the speed and twice the steam of bronze"],
+        displayName: msg("High Pressure"),
+        tooltip: [msg("Steel build"), msg("Twice the speed and twice the steam of bronze")],
       },
     },
   ],
@@ -670,7 +671,7 @@ const STEAM_MULTIBLOCK: MachineBehaviour = {
 
 /** checkMachine accepts any pipe height >= 4; it never imposes a top rung. */
 const NEUTRON_PIPE_CONTROL: MachineConfigControl = {
-  ...countControl("speedingPipeCasing", "Pipe height", [4]),
+  ...countControl("speedingPipeCasing", msg("Pipe height"), [4]),
   numeric: { min: 4 },
 };
 
@@ -723,7 +724,7 @@ const TST_GLASS = "tstGlassTier";
 const TST_GLASS_NAMES = ["HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV"];
 const TST_GLASS_CONTROL = choiceControl(
   TST_GLASS,
-  "Glass",
+  msg("Glass"),
   TST_GLASS_NAMES.map((tier) => `${tier} Glass`),
   TST_GLASS_NAMES.length - 1,
 );
@@ -734,12 +735,12 @@ const tstGlassTier = (c: MachineContext) => c.tier(TST_GLASS) + 3;
  * casing 6 is 1, casing 14 is 2, Stabilisation Field Generator meta m is m + 3.
  */
 const TST_FIELD_TIER = "tstFieldTier";
-const TST_FIELD_TIER_CONTROL = countControl(TST_FIELD_TIER, "Field Tier", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+const TST_FIELD_TIER_CONTROL = countControl(TST_FIELD_TIER, msg("Field Tier"), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 
 /** "Recipe tier at most the glass tier, unless the glass is UMV." */
 const tstGlassGate = (c: MachineContext) =>
   tstGlassTier(c) < 12 && (c.recipeVoltageTier ?? 0) > tstGlassTier(c)
-    ? "This recipe needs glass of at least its own voltage tier."
+    ? t("This recipe needs glass of at least its own voltage tier.")
     : undefined;
 
 const HOLY_SEPARATOR_PIECES = "holySeparatorPieces";
@@ -755,7 +756,7 @@ const ASSEMBLY_MATRIX_NANITES = "assemblyMatrixNanites";
 /** [label, duration multiplier, gold?] for TST_IntegratedAssemblyMatrix's nanite bus. */
 const ASSEMBLY_MATRIX_NANITE_OPTIONS: Array<[string, number, boolean]> = [
   // speedBonus 1.5 with no nanites; silver 1 + 0.5 x (256 - n) / 256; gold 0.5 + (1024 - n) / 1024.
-  ["No Nanites", 1.5, false],
+  [msg("No Nanites"), 1.5, false],
   ["64 Silver Nanites", 1 + (0.5 * (256 - 64)) / 256, false],
   ["128 Silver Nanites", 1 + (0.5 * (256 - 128)) / 256, false],
   ["256 Silver Nanites", 1, false],
@@ -799,7 +800,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 2.2,
     power: 0.9,
     parallels: 8,
-    note: "Blazing pyrotheum is not counted.",
+    note: msg("Blazing pyrotheum is not counted."),
   },
   "Exothermic Hearth": {
     overclock: HEAT_OVERCLOCK,
@@ -808,7 +809,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     // (faster with pyrotheum, but it gets there regardless), so steady state
     // is the doubled figure.
     parallels: 512,
-    note: "Assumes fully ramped up; pyrotheum only speeds the ramp.",
+    note: msg("Assumes fully ramped up; pyrotheum only speeds the ramp."),
   },
 
   // -- Perfect overclockers -------------------------------------------------
@@ -885,7 +886,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => 1 / (1 - 0.05 * Math.max(0, c.tier(COIL) - 3)),
     power: (c) =>
       Math.pow(0.95, Math.max(0, c.tier(COIL) + 1 - (c.recipeVoltageTier ?? c.voltageTier))),
-    note: "Assumes a matching glass tier.",
+    note: msg("Assumes a matching glass tier."),
   },
   "Large Fluid Extractor": {
     overclock: OVERCLOCK.normal(),
@@ -942,7 +943,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 3,
     power: 0.9,
     parallels: (c) => c.voltageTier * 8,
-    note: "Assumes max speed.",
+    note: msg("Assumes max speed."),
   },
   "Industrial Extrusion Machine": {
     overclock: OVERCLOCK.normal(),
@@ -974,7 +975,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
       (recipe.source?.recipeMap ?? recipe.machineType ?? "").toLowerCase() === "distillery"
         ? [MEGA_DT_HEIGHT_CONTROL]
         : [],
-    note: "Distillery mode: 512 parallels at 1 or 2 slices, 768 at 3 or 4, 1024 at the full 5. Tower mode has 256 parallels at any height.",
+    note: msg("Distillery mode: 512 parallels at 1 or 2 slices, 768 at 3 or 4, 1024 at the full 5. Tower mode has 256 parallels at any height."),
   },
   "Molecular Transformer": { overclock: OVERCLOCK.normal() },
   "Nuclear Salt Processing Plant": {
@@ -989,8 +990,8 @@ const MACHINES: Record<string, MachineBehaviour> = {
   },
   // The lanthanide beamline chambers bypass ProcessingLogic entirely: raw
   // recipe duration, EU pinned to the hatch tier, no overclocking.
-  "Source Chamber": { overclock: OVERCLOCK.none(), note: "Beam energy is not modelled." },
-  "Target Chamber": { overclock: OVERCLOCK.none(), note: "Beam energy is not modelled." },
+  "Source Chamber": { overclock: OVERCLOCK.none(), note: msg("Beam energy is not modelled.") },
+  "Target Chamber": { overclock: OVERCLOCK.none(), note: msg("Beam energy is not modelled.") },
   "Thermic Heating Device": {
     overclock: OVERCLOCK.normal(),
     speed: 2.2,
@@ -1011,7 +1012,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     power: (c) => row(ELECTRODES, c.tier(ELECTRODE)).power,
     parallels: (c) => row(ELECTRODES, c.tier(ELECTRODE)).parallels,
     controls: [ELECTRODE_CONTROL],
-    note: "Electrode durability, startup and blast mode's 16x power are not counted.",
+    note: msg("Electrode durability, startup and blast mode's 16x power are not counted."),
   },
   "Industrial Cutting Factory": {
     overclock: OVERCLOCK.normal(),
@@ -1082,7 +1083,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: 1,
     fullPowerPool: true,
     controls: EEC_CONTROLS,
-    note: "An infernal kill also drops one random enchanted item, which is not listed.",
+    note: msg("An infernal kill also drops one random enchanted item, which is not listed."),
   },
   "Industrial Maceration Stack": {
     overclock: OVERCLOCK.normal(),
@@ -1152,7 +1153,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: (c) => 16 * 2 ** c.tier("preciseCasing"),
     controls: [PRASS_NORMAL_CASING, PRASS_MACHINE_CASING],
     inputVoltageTierLimit: prassInputVoltageLimit,
-    note: "Normal Assembler mode. Requires EV+ glass. Unit casings set parallels; machine casings limit working voltage, with UHV unlocking all tiers.",
+    note: msg("Normal Assembler mode. Requires EV+ glass. Unit casings set parallels; machine casings limit working voltage, with UHV unlocking all tiers."),
   },
   "Precise Assembler": {
     overclock: OVERCLOCK.normal(),
@@ -1162,9 +1163,9 @@ const MACHINES: Record<string, MachineBehaviour> = {
     controls: [PRASS_PRECISE_CASING, PRASS_MACHINE_CASING],
     inputVoltageTierLimit: prassInputVoltageLimit,
     recipeGate: (c) => (c.recipeSpecialValue ?? 0) > c.tier("preciseCasing") + 1
-      ? "This precise recipe requires a higher unit casing tier."
+      ? t("This precise recipe requires a higher unit casing tier.")
       : undefined,
-    note: "Precise mode. Unit casings unlock recipes, not extra parallels or speed. Requires EV+ glass; UHV machine casings remove the voltage cap.",
+    note: msg("Precise mode. Unit casings unlock recipes, not extra parallels or speed. Requires EV+ glass; UHV machine casings remove the voltage cap."),
   },
   "Hyper-Intensity Laser Engraver": {
     // MTEIndustrialLaserEngraver caps OCs at source tier + 1 - raw recipe
@@ -1176,7 +1177,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     recipeGate: (c) => {
       const source = hileSourceAt(c.tier("laserSource"));
       return source.ordinal < 13 && (c.recipeVoltageTier ?? 0) > source.ordinal + 1
-        ? `Laser source tier too low: ${source.tier} permits recipes up to one tier above it. Select a higher-tier laser source and matching glass.`
+        ? t("Laser source tier too low: {tier} permits recipes up to one tier above it. Select a higher-tier laser source and matching glass.", { tier: source.tier })
         : undefined;
     },
     speed: 3.5,
@@ -1185,7 +1186,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     controls: [HILE_SOURCE_CONTROL],
     hidesControls: ["laserAmperage"],
     normalizeConfig: normalizeHileSettings,
-    note: "Laser source sets parallels and the recipe/overclock ceiling; it supplies no power. Assumes glass at least the source tier. UEV+ sources allow one multi-amp energy hatch.",
+    note: msg("Laser source sets parallels and the recipe/overclock ceiling; it supplies no power. Assumes glass at least the source tier. UEV+ sources allow one multi-amp energy hatch."),
   },
   "Transcendent Plasma Mixer": {
     overclock: OVERCLOCK.none(),
@@ -1200,7 +1201,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     unlimitedTierSkip: true,
     power: 0,
     controls: [NEUTRON_PIPE_CONTROL],
-    note: "Assumes neutron kinetic energy is in the recipe's range. Accelerator hatch power is not counted.",
+    note: msg("Assumes neutron kinetic energy is in the recipe's range. Accelerator hatch power is not counted."),
   },
   /**
    * MTENaquadahFuelRefinery: 4 parallels per field restriction coil tier
@@ -1225,7 +1226,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 1.5,
     parallels: 256,
     controls: [COOLANT_CONTROL],
-    note: "Assumes fully ramped up. Coolant consumption is not counted.",
+    note: msg("Assumes fully ramped up. Coolant consumption is not counted."),
   },
 
   // -- Flat multiblocks, second batch --------------------------------------
@@ -1240,7 +1241,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 3.5,
     power: 0.75,
     parallels: (c) => c.voltageTier * 4,
-    note: "Assumes it is not overheated.",
+    note: msg("Assumes it is not overheated."),
   },
   "Neutronium Compressor": { overclock: OVERCLOCK.normal(), parallels: 8 },
   /**
@@ -1308,7 +1309,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
       const perSlice = heatProof ? 16 : 8;
       return base + (slices - 1) * perSlice;
     },
-    note: "Eternal coils are needed for more than 15 slices.",
+    note: msg("Eternal coils are needed for more than 15 slices."),
   },
 
   // MTEMassFabricator, in-game "Matter Fabrication CPU" (dataset map
@@ -1330,7 +1331,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 5,
     power: 0.7,
     parallels: (c) => c.voltageTier * 8,
-    note: "Parallels also depend on stability, which is not modelled.",
+    note: msg("Parallels also depend on stability, which is not modelled."),
   },
   // -- Singleblocks the dataset's raw numbers get wrong ---------------------
   /**
@@ -1445,7 +1446,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: 3,
     power: 0.8,
     parallels: (c) => c.voltageTier * 10,
-    note: "Assumes max speed.",
+    note: msg("Assumes max speed."),
   },
   // MTEFluidShaper: (2 + 3 per width expansion) * GTUtility.getTier,
   // setEuModifier(0.8F), the same momentum ramp as the Mass Solidifier.
@@ -1455,7 +1456,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     power: 0.8,
     parallels: (c) => c.voltageTier * (2 + 3 * c.value(WIDTH_EXPANSION)),
     controls: [WIDTH_EXPANSION_CONTROL],
-    note: "Assumes max speed.",
+    note: msg("Assumes max speed."),
   },
   // MTELatex: setSpeedBonus(1F / 2F), setEuModifier(0.85F), 8 * GTUtility
   // .getTier doubled by an Elastic Singularity in the controller slot. The
@@ -1467,7 +1468,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     power: 0.85,
     parallels: (c) => c.voltageTier * (c.tier(LATEX_SINGULARITY) === 1 ? 16 : 8),
     controls: [LATEX_SINGULARITY_CONTROL],
-    note: "Rubber cost discounts are not counted.",
+    note: msg("Rubber cost discounts are not counted."),
   },
   // MTEAdvDistillationTower: mode follows the recipe map. The reference only
   // models distillery mode and charges 85% EU; Java charges 15%. mHeight is
@@ -1487,7 +1488,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
       (recipe.source?.recipeMap ?? recipe.machineType ?? "").toLowerCase() === "distillery"
         ? [DISTILLUS_HEIGHT_CONTROL]
         : [],
-    note: "Distillery mode: 2 parallels per voltage tier for every 3 layers of height (8 at the full 12). Tower mode has 12 parallels whatever the height. Power comes from ordinary energy hatches; multi-amp and laser hatches are not supported.",
+    note: msg("Distillery mode: 2 parallels per voltage tier for every 3 layers of height (8 at the full 12). Tower mode has 12 parallels whatever the height. Power comes from ordinary energy hatches; multi-amp and laser hatches are not supported."),
   },
   /**
    * goodgenerator's MTEExtremeHeatExchanger. Its recipes carry no duration
@@ -1510,7 +1511,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => 1 / 0.9 ** tstTotalPowerTier(c),
     parallels: (c) => 8 * c.value(HOLY_SEPARATOR_PIECES),
     overclock: (c) => (c.value(HOLY_SEPARATOR_PIECES) >= 16 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
-    controls: [countControl(HOLY_SEPARATOR_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32, 64])],
+    controls: [countControl(HOLY_SEPARATOR_PIECES, msg("Middle Pieces"), [1, 2, 4, 8, 16, 32, 64])],
   },
   "Intensify Chemical Distorter": {
     // Own map: 16 parallels at base speed; Large Chemical Reactor mode: 1024 parallels, 10x.
@@ -1522,7 +1523,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     controls: [HEATING_COIL_CONTROL],
     recipeGate: (c) =>
       (c.recipeSpecialValue ?? 0) > coilHeat(c)
-        ? `This recipe needs coils of at least ${c.recipeSpecialValue} K.`
+        ? t("This recipe needs coils of at least {heat} K.", { heat: c.recipeSpecialValue ?? 0 })
         : undefined,
   },
   "Magnetic Domain Constructor": {
@@ -1530,7 +1531,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => 1 / 0.75 ** tstTotalPowerTier(c),
     parallels: (c) => 64 * c.value(MAGNETIC_DOMAIN_RINGS),
     overclock: OVERCLOCK.normal(),
-    controls: [countControl(MAGNETIC_DOMAIN_RINGS, "Rings", [1, 2, 3, 4, 6, 8, 12, 16])],
+    controls: [countControl(MAGNETIC_DOMAIN_RINGS, msg("Rings"), [1, 2, 3, 4, 6, 8, 12, 16])],
   },
   "Magnetic Drive Pressure Former": {
     // Extruder mode 8x, bender, press and hammer 16x, each times (1 + coil tier); 0.75 EU;
@@ -1556,14 +1557,14 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => 4 * c.value(MIRACLE_TOP_RINGS),
     parallels: (c) => 128 * c.value(MIRACLE_TOP_RINGS),
     overclock: (c) => (c.value(MIRACLE_TOP_RINGS) >= 8 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
-    controls: [countControl(MIRACLE_TOP_RINGS, "Rings", [2, 4, 6, 8, 10, 12, 14, 16])],
+    controls: [countControl(MIRACLE_TOP_RINGS, msg("Rings"), [2, 4, 6, 8, 10, 12, 14, 16])],
   },
   "Molecule Deconstructor": {
     // speedBonus 0.9^T; 24 parallels per piece (1 + middles); perfect from 16 pieces.
     speed: (c) => 1 / 0.9 ** tstTotalPowerTier(c),
     parallels: (c) => 24 * c.value(MOLECULE_DECONSTRUCTOR_PIECES),
     overclock: (c) => (c.value(MOLECULE_DECONSTRUCTOR_PIECES) >= 16 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
-    controls: [countControl(MOLECULE_DECONSTRUCTOR_PIECES, "Pieces", [1, 2, 4, 8, 16, 32])],
+    controls: [countControl(MOLECULE_DECONSTRUCTOR_PIECES, msg("Pieces"), [1, 2, 4, 8, 16, 32])],
     hidesControls: ["voltageParallel"],
   },
   "Physical Form Switcher": {
@@ -1586,12 +1587,12 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: (c) => (c.recipeMap === "Laser Engraver" ? 256 : 16),
     overclock: (c) => (c.tier(PHOTON_UPGRADES) >= 12 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
     controls: [
-      choiceControl(PHOTON_UPGRADES, "Upgrade Casings", [
-        "None",
+      choiceControl(PHOTON_UPGRADES, msg("Upgrade Casings"), [
+        msg("None"),
         ...PHOTON_UPGRADE_TIERS.map((tier) => `25 ${tier} Upgrades`),
       ]),
     ],
-    note: "Assumes all 25 upgrade casings are one tier.",
+    note: msg("Assumes all 25 upgrade casings are one tier."),
   },
   Silksong: {
     // Hatch mode: speedBonus 0.85^T / coil (1 to 14), 32 x pieces x coil parallels, perfect from
@@ -1600,8 +1601,8 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => (c.tier(COIL) + 1) / 0.85 ** tstTotalPowerTier(c),
     parallels: (c) => 32 * c.value(SILKSONG_PIECES) * (c.tier(COIL) + 1),
     overclock: (c) => (c.value(SILKSONG_PIECES) >= 94 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
-    controls: [HEATING_COIL_CONTROL, countControl(SILKSONG_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32, 64, 94])],
-    note: "With energy hatches. Wireless mode (94+ pieces, no hatches) runs fixed batches not shown here.",
+    controls: [HEATING_COIL_CONTROL, countControl(SILKSONG_PIECES, msg("Middle Pieces"), [1, 2, 4, 8, 16, 32, 64, 94])],
+    note: msg("With energy hatches. Wireless mode (94+ pieces, no hatches) runs fixed batches not shown here."),
   },
   "Space Scaler": {
     // Field tier 1: base speed, normal overclocks; tier 2+: 10x and perfect. Unlimited parallels.
@@ -1610,7 +1611,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     overclock: (c) => (c.value(TST_FIELD_TIER) >= 2 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
     controls: [TST_FIELD_TIER_CONTROL],
     hidesControls: ["machineParallel"],
-    note: "Particle collider mode from field tier 4 multiplies outputs by 1 + 4 x (tier - 3); not counted here.",
+    note: msg("Particle collider mode from field tier 4 multiplies outputs by 1 + 4 x (tier - 3); not counted here."),
   },
   "Crystalline Infinitier": {
     // Autoclave 4x, chemical bath 16x, own map 1x; EU 1 / field tier; parallels glass tier x
@@ -1622,9 +1623,9 @@ const MACHINES: Record<string, MachineBehaviour> = {
     controls: [TST_FIELD_TIER_CONTROL, TST_GLASS_CONTROL],
     recipeGate: (c) =>
       (c.recipeSpecialValue ?? 0) > c.value(TST_FIELD_TIER)
-        ? `This recipe needs field tier ${c.recipeSpecialValue} or higher.`
+        ? t("This recipe needs field tier {tier} or higher.", { tier: c.recipeSpecialValue ?? 0 })
         : undefined,
-    note: "A new controller runs autoclave mode at base speed until its mode is switched once.",
+    note: msg("A new controller runs autoclave mode at base speed until its mode is switched once."),
   },
   ElvenWorkshop: {
     // GTCM_ElvenWorkshop (and its Legacy twin): one parallel, base speed, always perfect.
@@ -1647,11 +1648,11 @@ const MACHINES: Record<string, MachineBehaviour> = {
     controls: [
       choiceControl(
         ASSEMBLY_MATRIX_NANITES,
-        "Nanites",
+        msg("Nanites"),
         ASSEMBLY_MATRIX_NANITE_OPTIONS.map(([label]) => label),
       ),
     ],
-    note: "Runs only recipes on its data sticks, and only those whose EU/t fits one hatch's voltage.",
+    note: msg("Runs only recipes on its data sticks, and only those whose EU/t fits one hatch's voltage."),
   },
   "Large Canner": {
     parallels: TST_UNLIMITED_PARALLELS,
@@ -1672,12 +1673,12 @@ const MACHINES: Record<string, MachineBehaviour> = {
     power: (c) => 1 - 0.15 * c.tier(MANUFACTURING_CORE),
     parallels: (c) => 2 * c.voltageTier,
     overclock: OVERCLOCK.normal(),
-    controls: [choiceControl(MANUFACTURING_CORE, "Core", ["IV Core", "LuV Core", "ZPM Core", "UV Core"])],
+    controls: [choiceControl(MANUFACTURING_CORE, msg("Core"), ["IV Core", "LuV Core", "ZPM Core", "UV Core"])],
     recipeGate: (c) =>
       (c.recipeVoltageTier ?? 0) > 5 + c.tier(MANUFACTURING_CORE)
-        ? "This recipe needs a core of at least its own voltage tier."
+        ? t("This recipe needs a core of at least its own voltage tier.")
         : undefined,
-    note: "A single energy hatch gives it 2 amps, but extra voltage then buys no amperage overclocks.",
+    note: msg("A single energy hatch gives it 2 amps, but extra voltage then buys no amperage overclocks."),
   },
   '"Mini" Household Cell Fragmentizer': {
     // TST_MegaMacerator: 8x when the glass outranks the recipe (or is UMV), else 1x; normal
@@ -1687,7 +1688,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     overclock: OVERCLOCK.normal(),
     controls: [
       TST_GLASS_CONTROL,
-      choiceControl(FRAGMENTIZER_BLOCK, "Containment", ["Damascus Steel Block", "Neutronium Block", "Universium Block"]),
+      choiceControl(FRAGMENTIZER_BLOCK, msg("Containment"), ["Damascus Steel Block", "Neutronium Block", "Universium Block"]),
     ],
     recipeGate: tstGlassGate,
   },
@@ -1697,7 +1698,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: TST_UNLIMITED_PARALLELS,
     overclock: OVERCLOCK.perfect(),
     controls: [
-      choiceControl(SOLAR_FACTORY_CASING, "Component Casing", PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
+      choiceControl(SOLAR_FACTORY_CASING, msg("Component Casing"), PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
     ],
   },
   "Micro SpaceTime Fabricatorio": {
@@ -1709,8 +1710,8 @@ const MACHINES: Record<string, MachineBehaviour> = {
     },
     parallels: 16,
     overclock: (c) => (c.value(MSTF_FIELD_TIER) > 1 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
-    controls: [countControl(MSTF_FIELD_TIER, "Field Tier", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])],
-    note: "A Seed of Space and Time doubles every output of a run; not counted here.",
+    controls: [countControl(MSTF_FIELD_TIER, msg("Field Tier"), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])],
+    note: msg("A Seed of Space and Time doubles every output of a run; not counted here."),
   },
   Scavenger: {
     // speedBonus 0.8^T, EU 0.6, unlimited parallels, normal overclocks.
@@ -1726,8 +1727,8 @@ const MACHINES: Record<string, MachineBehaviour> = {
     power: (c) => (c.tier(DEVOURER_MODE) === 1 ? 1 / (1 + tstTotalPowerTierWithin(c)) : 1),
     parallels: (c) => (c.tier(DEVOURER_MODE) === 0 ? 1024 : TST_UNLIMITED_PARALLELS),
     overclock: OVERCLOCK.normal(),
-    controls: [choiceControl(DEVOURER_MODE, "Mode", ["High Speed", "Devourer"])],
-    note: "With energy hatches. An Energised Tesseract switches it to wireless batches not shown here.",
+    controls: [choiceControl(DEVOURER_MODE, msg("Mode"), [msg("High Speed"), msg("Devourer")])],
+    note: msg("With energy hatches. An Energised Tesseract switches it to wireless batches not shown here."),
   },
   "Vacuum Filter Extractor": {
     // speedBonus 1 / (1 + T), EU 0.5, unlimited parallels; perfect in distillery mode only.
@@ -1748,7 +1749,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     // 16 parallels at base speed and EU, always perfect.
     parallels: 16,
     overclock: OVERCLOCK.perfect(),
-    note: "Needs the circuit's imprint, and runs only recipes whose EU/t fits one amp of its single hatch.",
+    note: msg("Needs the circuit's imprint, and runs only recipes whose EU/t fits one amp of its single hatch."),
   },
   "Core Device of Human Power Generation Facility": {
     // A fluid heater: speedBonus 1 / (coil tier + 1), unlimited parallels, perfect.
@@ -1762,7 +1763,7 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => (0.5 * (c.tier(COIL) + 1)) / 0.8 ** tstTotalPowerTier(c),
     parallels: (c) => 32 * c.value(DRYING_FURNACE_PIECES) * (c.tier(COIL) + 1),
     overclock: OVERCLOCK.normal(),
-    controls: [HEATING_COIL_CONTROL, countControl(DRYING_FURNACE_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32])],
+    controls: [HEATING_COIL_CONTROL, countControl(DRYING_FURNACE_PIECES, msg("Middle Pieces"), [1, 2, 4, 8, 16, 32])],
     // Both its maps' primary machines lend a parallels knob it does not have.
     hidesControls: ["machineParallel"],
   },
@@ -1774,13 +1775,13 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: 256,
     overclock: (c) => (c.tier(SPACETIME_COOLING) === 1 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
     controls: [
-      countControl(SPACETIME_FUSION_COIL, "Fusion Coil Tier", [1, 2, 3, 4, 5, 6]),
-      choiceControl(SPACETIME_COOLING, "Cooling", ["Tier 1 Cooling Casing", "Tier 2 Cooling Casing"]),
-      countControl(SPACETIME_MATRIX, "Energy Matrix Tier", [1, 2, 3, 4, 5, 6]),
+      countControl(SPACETIME_FUSION_COIL, msg("Fusion Coil Tier"), [1, 2, 3, 4, 5, 6]),
+      choiceControl(SPACETIME_COOLING, msg("Cooling"), ["Tier 1 Cooling Casing", "Tier 2 Cooling Casing"]),
+      countControl(SPACETIME_MATRIX, msg("Energy Matrix Tier"), [1, 2, 3, 4, 5, 6]),
     ],
     recipeGate: (c) =>
       (c.recipeVoltageTier ?? 0) > 8 + c.value(SPACETIME_MATRIX)
-        ? "This recipe needs a higher Energy Sustainment Matrix tier."
+        ? t("This recipe needs a higher Energy Sustainment Matrix tier.")
         : undefined,
   },
   "Hyper Thermal Convector": {
@@ -1807,26 +1808,26 @@ const MACHINES: Record<string, MachineBehaviour> = {
     overclock: (c) =>
       (c.recipeVoltageTier ?? 0) <= c.tier(TENTACLE_CASING) ? OVERCLOCK.perfect() : OVERCLOCK.normal(),
     controls: [
-      choiceControl(TENTACLE_CASING, "Component Casing", PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
+      choiceControl(TENTACLE_CASING, msg("Component Casing"), PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
     ],
     recipeGate: (c) => {
       if ((c.recipeVoltageTier ?? 0) > c.tier(TENTACLE_CASING) + 2) {
-        return "This recipe needs a component casing at most one tier below it.";
+        return t("This recipe needs a component casing at most one tier below it.");
       }
       return c.recipeMap === "Component Assembly Line" && (c.recipeSpecialValue ?? 0) > c.tier(TENTACLE_CASING) + 1
-        ? "This recipe needs a higher component casing tier."
+        ? t("This recipe needs a higher component casing tier.")
         : undefined;
     },
     // The precise assembler map's own machine lends its casing and parallel knobs.
     hidesControls: ["parallel-precise-casing-tier", "machineParallel", "preciseCasing"],
-    note: "With energy hatches, glass at least their tier. Wireless mode runs fixed batches not shown here.",
+    note: msg("With energy hatches, glass at least their tier. Wireless mode runs fixed batches not shown here."),
   },
   "Mass Fabricator : Genesis": {
     // 1 + the sum of its parallel controllers (any number of them); perfect overclocks.
     parallels: (c) => c.value(GENESIS_PARALLEL),
     overclock: OVERCLOCK.perfect(),
     controls: [
-      countControl(GENESIS_PARALLEL, "Parallels", [1, 9, 129, 2049, 32769, 524289, 8388609, 134217729]),
+      countControl(GENESIS_PARALLEL, msg("Parallels"), [1, 9, 129, 2049, 32769, 524289, 8388609, 134217729]),
     ],
   },
 };

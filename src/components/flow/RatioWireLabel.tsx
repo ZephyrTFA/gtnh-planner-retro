@@ -7,6 +7,7 @@ import {
   ratioExportShare,
 } from "@/lib/model/storage-ratios";
 import { ArrowUpRight } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 import type { RatioWireLabel as Label } from "./ratio-label-layout";
 import { arrowInkFor } from "./node-colors";
@@ -144,6 +145,7 @@ function WirePercentage({
   share: number;
   locked: boolean;
 }) {
+  const t = useT();
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const element = ref.current;
@@ -170,7 +172,13 @@ function WirePercentage({
         data-ratio-control={side}
         role="spinbutton"
         tabIndex={locked ? -1 : 0}
-        aria-label={`${side === "export" ? "Setup output" : side === "input" ? "Incoming" : "Outgoing"} percentage`}
+        aria-label={
+          side === "export"
+            ? t("Setup output percentage")
+            : side === "input"
+              ? t("Incoming percentage")
+              : t("Outgoing percentage")
+        }
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={share * 100}

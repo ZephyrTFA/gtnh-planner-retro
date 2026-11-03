@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+
 type Point = { x: number; y: number };
 export type RatioLabelWire = {
   id: string;
@@ -114,10 +116,10 @@ export function layoutRatioLabels(wires: readonly RatioLabelWire[]): Map<string,
       let remaining = ratio * length;
       for (const segment of segments) {
         if (remaining <= segment.length && segment.length) {
-          const t = remaining / segment.length;
+          const along = remaining / segment.length;
           return {
-            x: segment.start.x + (segment.end.x - segment.start.x) * t,
-            y: segment.start.y + (segment.end.y - segment.start.y) * t,
+            x: segment.start.x + (segment.end.x - segment.start.x) * along,
+            y: segment.start.y + (segment.end.y - segment.start.y) * along,
           };
         }
         remaining -= segment.length;
@@ -127,12 +129,17 @@ export function layoutRatioLabels(wires: readonly RatioLabelWire[]): Map<string,
     const both = wire.input !== undefined && wire.output !== undefined;
     const candidates =
       both && length < 160
-        ? [{ key: "both", text: `Out ${wire.output}\nIn ${wire.input}` }]
-        : (["output", "input"] as const).flatMap((key) =>
-            wire[key] === undefined
-              ? []
-              : [{ key, text: `${both ? (key === "output" ? "Out " : "In ") : ""}${wire[key]}` }],
-          );
+        ? [{ key: "both", text: `${t("Out {share}", { share: wire.output! })}\n${t("In {share}", { share: wire.input! })}` }]
+        : (["output", "input"] as const).flatMap((key) => {
+            const share = wire[key];
+            if (share === undefined) return [];
+            const text = !both
+              ? share
+              : key === "output"
+                ? t("Out {share}", { share })
+                : t("In {share}", { share });
+            return [{ key, text }];
+          });
     const placed: RatioWireLabel[] = [];
     for (const label of candidates) {
       const { width, height } = ratioLabelBounds(label.text, { x: 0, y: 0 });

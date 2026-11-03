@@ -25,6 +25,7 @@ import {
   type OptimizeCard,
 } from "./board-arrange-optimize";
 import { makeAirTerm } from "./board-arrange-air";
+import { msg } from "@/lib/i18n";
 import { DEFAULT_ROUTER_TUNING, type RouterTuning } from "@/components/flow/router-tuning";
 import { arrangeFree } from "./board-arrange-free";
 
@@ -169,7 +170,8 @@ export interface ArrangeInput {
    */
   tuning?: RouterTuning;
   /** Where the arrange is, as it goes: for a loader on the board. */
-  onProgress?: (progress: { step: number; stage: string; done: number; total: number }) => void;
+  /** `stage` is interface text (msg); a polish step also sets `crossings`. */
+  onProgress?: (progress: { step: number; stage: string; crossings?: number; done: number; total: number }) => void;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -354,7 +356,7 @@ export function arrangeBoard(rawInput: ArrangeInput): ArrangeResult {
         },
       }
     : rawInput;
-  input.onProgress?.({ step: 0, stage: "Laying the board out", done: 0, total: 1 });
+  input.onProgress?.({ step: 0, stage: msg("Laying the board out"), done: 0, total: 1 });
   const plain = arrangeBoardOnce(input, false);
   if (input.cards.length < 2) {
     return plain;
@@ -375,14 +377,14 @@ export function arrangeBoard(rawInput: ArrangeInput): ArrangeResult {
     const free = arrangeFreeCandidate(input);
     return [plain, challenger, free].sort((a, b) => proxy(a) - proxy(b))[0];
   }
-  input.onProgress?.({ step: 1, stage: "Searching for a better layout", done: 0, total: 1 });
+  input.onProgress?.({ step: 1, stage: msg("Searching for a better layout"), done: 0, total: 1 });
   ARRANGE_SEARCH_PROGRESS = (done, total) =>
-    input.onProgress?.({ step: 1, stage: "Searching for a better layout", done, total });
+    input.onProgress?.({ step: 1, stage: msg("Searching for a better layout"), done, total });
   const challenger = arrangeBoardOnce(input, true);
   ARRANGE_SEARCH_PROGRESS = undefined;
   // The third candidate: no columns at all (board-arrange-free.ts).
   const free = arrangeFreeCandidate(input);
-  input.onProgress?.({ step: 2, stage: "Routing the candidates", done: 0, total: 1 });
+  input.onProgress?.({ step: 2, stage: msg("Routing the candidates"), done: 0, total: 1 });
   const verdict = (result: ArrangeResult) =>
     input.judge!(new Map(result.moves.map((move) => [move.id, move.position])));
   // The two best by the router's verdict are polished - they start from
@@ -404,7 +406,7 @@ export function arrangeBoard(rawInput: ArrangeInput): ArrangeResult {
   }));
   const polishedFirst = polishWithJudge(input, ranked[0].result, ranked[0].verdict, "first");
   const polishedSecond = polishWithJudge(input, ranked[1].result, ranked[1].verdict, "second");
-  input.onProgress?.({ step: 5, stage: "Choosing the better board", done: 1, total: 1 });
+  input.onProgress?.({ step: 5, stage: msg("Choosing the better board"), done: 1, total: 1 });
   const finalFirst = verdict(polishedFirst);
   const finalSecond = verdict(polishedSecond);
   // Points alone decide: a crossing is already priced into them, so a
@@ -424,7 +426,7 @@ function arrangeFreeCandidate(input: ArrangeInput): ArrangeResult {
     gapCells: ROW_GAP / BOARD_GRID,
     besideCells: spacing === "compact" ? 2 : spacing === "roomy" ? 5 : 3,
     onProgress: (done, total) =>
-      input.onProgress?.({ step: 1, stage: "Placing freely", done, total }),
+      input.onProgress?.({ step: 1, stage: msg("Placing freely"), done, total }),
   });
   const origin = input.origin ?? boundingTopLeft(input.cards);
   const newById = new Map<string, { x: number; y: number }>();
@@ -515,6 +517,7 @@ function polishWithJudge(
       // The step label already says which layout; this is the detail line
       // beside it, short enough not to be cut off.
       stage: `${verdict.crossings} crossings to start`,
+      crossings: verdict.crossings,
       done: Math.min(
         fullBudget,
         Math.max(fullBudget - budget, (fullBudget * (performance.now() - startedAt)) / POLISH_TIME_MS),

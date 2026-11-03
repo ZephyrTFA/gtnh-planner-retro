@@ -1,3 +1,4 @@
+import { msg } from "@/lib/i18n";
 import { playBoardSound } from "@/lib/board-sounds";
 import { computeBoardLevelView } from "@/lib/model/board-windows";
 import type { FactoryProject } from "@/lib/model/types";
@@ -1191,7 +1192,7 @@ export interface BoardTimelapsePreset {
 export const BOARD_TIMELAPSE_PRESETS: BoardTimelapsePreset[] = [
   {
     id: "afar",
-    name: "From afar",
+    name: msg("From afar"),
     line: "One slow shot of the whole build.",
     speed: 2,
     volume: 0.15,
@@ -1206,7 +1207,7 @@ export const BOARD_TIMELAPSE_PRESETS: BoardTimelapsePreset[] = [
   },
   {
     id: "close",
-    name: "Up close",
+    name: msg("Up close"),
     line: "The camera follows each machine as it lands.",
     speed: 4,
     volume: 0.15,

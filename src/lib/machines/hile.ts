@@ -1,3 +1,4 @@
+import { msg } from "@/lib/i18n";
 import type { MachineConfigControl } from "@/lib/model/types";
 import { GT_VOLTAGE_TIERS } from "@/lib/model/tiers";
 
@@ -16,7 +17,7 @@ HILE_SOURCES.push({ key: "uxv-536870912", tier: "UXV", ordinal: 13, amps: 536_87
 
 export const HILE_SOURCE_CONTROL: MachineConfigControl = {
   id: "laserSource",
-  label: "Laser source",
+  label: msg("Laser source"),
   minimumKey: HILE_SOURCES[0].key,
   defaultKey: HILE_SOURCES[0].key,
   tiers: HILE_SOURCES.map(({ key, tier, ordinal, amps }) => ({
@@ -35,7 +36,7 @@ export const HILE_SOURCE_CONTROL: MachineConfigControl = {
         `${Math.floor(Math.cbrt(amps))} maximum parallels; recipe and overclock ceiling: ${GT_VOLTAGE_TIERS[ordinal + 1].tier}.`,
         `Requires ${tier} or higher glass. The laser source supplies no operating power; set energy supply separately.`,
         ...(ordinal >= 10
-          ? ["Allows one multi-amp energy hatch instead of regular energy hatches."]
+          ? [msg("Allows one multi-amp energy hatch instead of regular energy hatches.")]
           : []),
       ],
     },

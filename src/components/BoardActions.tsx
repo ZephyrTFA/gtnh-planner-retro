@@ -56,6 +56,7 @@ import { useFactoryStore } from "@/store/factory-store";
 import { useDesignStore } from "@/store/design-store";
 import { untagCommunityPlan } from "@/lib/community/client";
 import { copyToClipboard } from "@/lib/clipboard";
+import { useT } from "@/lib/i18n";
 import { PastePlanDialog } from "./export/PastePlanDialog";
 
 interface BoardActionsProps {
@@ -86,6 +87,7 @@ export function BoardActions({
   onShare,
   onExportImage,
 }: BoardActionsProps = {}) {
+  const t = useT();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const projectInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -112,20 +114,20 @@ export function BoardActions({
   const isWelcomeCoveringBoard = useWelcomeTab().active;
   const canShare = !isWelcomeCoveringBoard && project.nodes.length > 0;
   const shareTitle = isWelcomeCoveringBoard
-    ? "Share: open a design tab first"
+    ? t("Share: open a design tab first")
     : project.nodes.length === 0
-      ? "Share: build something first"
-      : "Share";
+      ? t("Share: build something first")
+      : t("Share");
 
   const selectedCardCount = selectedBoardIds.length;
   const diagnosticsLabel =
     diagnosticsState === "copied"
-      ? "Copied to clipboard"
+      ? t("Copied to clipboard")
       : diagnosticsState === "failed"
-        ? "Could not reach the clipboard"
+        ? t("Could not reach the clipboard")
         : selectedCardCount > 0
-          ? `Copy diagnostics (${selectedCardCount} selected)`
-          : "Copy diagnostics (whole plan)";
+          ? t("Copy diagnostics ({count} selected)", { count: selectedCardCount })
+          : t("Copy diagnostics (whole plan)");
 
   /**
    * Copies every selected card's machine, tier, config, overclock, rates and
@@ -257,7 +259,7 @@ export function BoardActions({
       return;
     }
 
-    if (!window.confirm("Clean the board and remove all nodes and links?")) {
+    if (!window.confirm(t("Clean the board and remove all nodes and links?"))) {
       return;
     }
 
@@ -287,7 +289,7 @@ export function BoardActions({
         {onShare ? (
           <MenuAction
             icon={Share2}
-            label="Share this setup"
+            label={t("Share this setup")}
             disabled={!canShare}
             onClick={() => {
               onShare();
@@ -297,7 +299,7 @@ export function BoardActions({
         ) : null}
         <MenuAction
           icon={Trash2}
-          label="Clean the board"
+          label={t("Clean the board")}
           onClick={() => {
             requestCleanBoard();
             onAction?.();
@@ -305,7 +307,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={Upload}
-          label="Import a plan"
+          label={t("Import a plan")}
           disabled={isProjectImporting}
           onClick={() => {
             projectInputRef.current?.click();
@@ -314,7 +316,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={ClipboardPaste}
-          label="Paste a copied plan"
+          label={t("Paste a copied plan")}
           onClick={() => setPastingPlan(true)}
         />
         <MenuAction
@@ -326,7 +328,7 @@ export function BoardActions({
         />
         <MenuAction
           icon={Download}
-          label="Export as JSON"
+          label={t("Export as JSON")}
           disabled={Boolean(pendingExport)}
           onClick={() => {
             void exportJson();
@@ -336,7 +338,7 @@ export function BoardActions({
         {onExportImage ? (
           <MenuAction
             icon={ImageDown}
-            label="Export an image"
+            label={t("Export an image")}
             onClick={() => {
               onExportImage();
               onAction?.();
@@ -366,8 +368,8 @@ export function BoardActions({
           <button
             type="button"
             onClick={() => setExportMenuOpen((isOpen) => !isOpen)}
-            title="Plan: share, import, export"
-            aria-label="Plan menu: share, import, export"
+            title={t("Plan: share, import, export")}
+            aria-label={t("Plan menu: share, import, export")}
             aria-expanded={isExportMenuOpen}
             aria-busy={pendingExport ? true : undefined}
             disabled={Boolean(pendingExport)}
@@ -385,7 +387,7 @@ export function BoardActions({
               {onShare ? (
                 <ExportMenuItem
                   icon={Share2}
-                  label="Share this setup"
+                  label={t("Share this setup")}
                   title={shareTitle}
                   disabled={!canShare}
                   onClick={() => {
@@ -396,7 +398,7 @@ export function BoardActions({
               ) : null}
               <ExportMenuItem
                 icon={Upload}
-                label="Import a plan..."
+                label={t("Import a plan...")}
                 disabled={isProjectImporting}
                 onClick={() => {
                   setExportMenuOpen(false);
@@ -405,7 +407,7 @@ export function BoardActions({
               />
               <ExportMenuItem
                 icon={ClipboardPaste}
-                label="Paste a copied plan..."
+                label={t("Paste a copied plan...")}
                 onClick={() => {
                   setExportMenuOpen(false);
                   setPastingPlan(true);
@@ -422,7 +424,7 @@ export function BoardActions({
               <div className="my-1 border-t border-line-strong" />
               <ExportMenuItem
                 icon={Download}
-                label="Export plan JSON"
+                label={t("Export plan JSON")}
                 onClick={() => {
                   void exportJson();
                 }}
@@ -430,7 +432,7 @@ export function BoardActions({
               {onExportImage ? (
                 <ExportMenuItem
                   icon={ImageDown}
-                  label="Export an image..."
+                  label={t("Export an image...")}
                   onClick={() => {
                     setExportMenuOpen(false);
                     onExportImage();

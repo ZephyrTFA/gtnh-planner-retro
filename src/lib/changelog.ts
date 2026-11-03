@@ -40,12 +40,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "1.2.1",
+    version: "1.3.0",
     date: "2026-11-03",
-    headline: "More of the planner uses your item language",
+    headline: "The planner in Russian and Chinese",
     notes: [
-      "Recipe search's Takes and Makes chips, minimized boards, ratio splits, the crop and mob pickers, and the Library and export stats now show item names in the chosen language.",
-      "Every item picker searches translated names, not only the item list.",
+      "Settings, Language: Русский or 中文 now translates the whole planner, not just item names: menus, panels, cards, tooltips, help and messages.",
+      "Item names follow the language everywhere they appear, including recipe search chips, boards and the Library, and every item picker searches them.",
+      "Machine names stay in English, as do plans themselves, so shared plans open the same for everyone.",
     ],
   },
   {

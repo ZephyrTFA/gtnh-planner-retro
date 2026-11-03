@@ -7,6 +7,7 @@ import type { EecMetadata } from "@/lib/machines/extreme-entity-crusher";
 import type { RecipeOutput } from "@/lib/model/types";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 import { RecipeListPicker, recipeChoiceName } from "./RecipeListPicker";
 
 /** What a kill yields most of, as the mob's face: every spawner looks the same. */
@@ -29,15 +30,16 @@ function dropFigure(output: RecipeOutput): string {
 
 /** A kill, drawn: each drop with its icon and what one kill yields with no weapon. */
 function MobHover({ mob }: { mob: RecipeSummary }) {
+  const t = useT();
   const eec = (mob.metadata as { eec?: EecMetadata } | undefined)?.eec;
   return (
     <div className="min-w-[190px]">
       <p className="text-[14px] font-bold leading-4 text-white">
         {recipeChoiceName(mob.name)}
-        {eec ? <span className="text-[11px] font-normal text-slate-400"> · {eec.maxHealth} health</span> : null}
+        {eec ? <span className="text-[11px] font-normal text-slate-400"> · {t("{health} health", { health: eec.maxHealth })}</span> : null}
       </p>
       {eec?.alwaysInfernal ? (
-        <p className="mt-0.5 text-[12px] leading-4 text-[var(--mc-bad)]">Always infernal: 8x power.</p>
+        <p className="mt-0.5 text-[12px] leading-4 text-[var(--mc-bad)]">{t("Always infernal: 8x power.")}</p>
       ) : null}
       <div className="mt-1.5 space-y-1">
         {mob.outputs.map((output, index) => (
@@ -59,7 +61,7 @@ function MobHover({ mob }: { mob: RecipeSummary }) {
           </div>
         ))}
       </div>
-      <p className="mt-1.5 text-[12px] leading-4 text-slate-400">Per kill, with no weapon.</p>
+      <p className="mt-1.5 text-[12px] leading-4 text-slate-400">{t("Per kill, with no weapon.")}</p>
     </div>
   );
 }
@@ -71,6 +73,7 @@ function MobHover({ mob }: { mob: RecipeSummary }) {
  * also makes stay connected.
  */
 export function MobPickerMenu({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
+  const t = useT();
   const swapMachineRecipe = useFactoryStore((state) => state.swapMachineRecipe);
   const currentRecipeId = useFactoryStore(
     (state) => state.project.nodes.find((entry) => entry.id === nodeId)?.recipeId,
@@ -79,7 +82,13 @@ export function MobPickerMenu({ nodeId, onClose }: { nodeId: string; onClose: ()
     <RecipeListPicker
       cacheKey="mobs"
       load={async (manifestUrl, version) => (await listRecipeDatasetMobs(manifestUrl, version)).mobs}
-      noun="mobs"
+      text={{
+        searchPlaceholder: t("Search mobs or drops..."),
+        searchLabel: t("Search mobs"),
+        loading: t("Loading mobs..."),
+        empty: t("No mobs match."),
+        loadFailed: t("Could not load mobs."),
+      }}
       toggleSelector="[data-mob-picker-toggle]"
       onPick={(recipe) => swapMachineRecipe(nodeId, recipe)}
       onClose={onClose}

@@ -6,6 +6,7 @@
  * docs/power-planner-math.md - that workbook is the source of truth, with
  * the game source as arbiter (src/lib/power/CLAUDE.md).
  */
+import { td } from "@/lib/i18n";
 
 export type PowerGroupId =
   | "burners"
@@ -104,10 +105,20 @@ export interface PowerSourceDefinition {
   group: PowerGroupId;
   /** Voltage tier chip in the picker; a plain label, not enforced anywhere. */
   unlock?: string;
-  /** One plain sentence for the picker card. */
+  /**
+   * One plain sentence for the picker card, in English: it is also the card
+   * recipe's notes, which plans store. Show it with `powerSourceBlurb`.
+   */
   blurb: string;
+  /** The msg() key and values `blurb` was filled from, when it carries numbers. */
+  blurbTemplate?: { key: string; vars: Record<string, string | number> };
   settings: PowerSetting[];
   compute(read: PowerSettingsReader): PowerModel;
+}
+
+/** A source's blurb in the interface language. */
+export function powerSourceBlurb(source: Pick<PowerSourceDefinition, "blurb" | "blurbTemplate">): string {
+  return source.blurbTemplate ? td(source.blurbTemplate.key, source.blurbTemplate.vars) : td(source.blurb);
 }
 
 /** The option a select setting reads as: the stored key, its legacy mapping, or the default. */

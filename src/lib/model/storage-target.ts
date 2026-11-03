@@ -1,3 +1,4 @@
+import { msg, t } from "@/lib/i18n";
 import type { FactoryStorage } from "./types";
 import type { StorageRole } from "./storage-role";
 
@@ -34,19 +35,19 @@ export function hasStorageTarget(storage: FactoryStorage, role?: StorageRole): b
 }
 
 export const TARGET_MODE_LABELS: Record<TargetMode, string> = {
-  "at-least": "At least",
-  "at-most": "At most",
-  exact: "Exactly",
-  ignore: "Ignore",
+  "at-least": msg("At least"),
+  "at-most": msg("At most"),
+  exact: msg("Exactly"),
+  ignore: msg("Ignore"),
 };
 export function targetModeHelp(mode: TargetMode, input: boolean): string {
   if (mode === "ignore")
-    return "Keep the saved rate without enforcing it. An input source remains available.";
+    return t("Keep the saved rate without enforcing it. An input source remains available.");
   if (mode === "at-most")
     return input
-      ? "Use up to this much fresh input; unused supply is allowed. This limit alone does not request production."
-      : "Make up to this much output. This limit alone does not request production.";
+      ? t("Use up to this much fresh input; unused supply is allowed. This limit alone does not request production.")
+      : t("Make up to this much output. This limit alone does not request production.");
   if (mode === "exact")
-    return input ? "Use exactly this much fresh input." : "Make exactly this much output.";
-  return input ? "Use at least this much fresh input." : "Make this much output or more.";
+    return input ? t("Use exactly this much fresh input.") : t("Make exactly this much output.");
+  return input ? t("Use at least this much fresh input.") : t("Make this much output or more.");
 }

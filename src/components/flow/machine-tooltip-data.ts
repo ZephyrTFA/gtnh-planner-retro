@@ -6,6 +6,7 @@ import { getNodePowerReport, getNodeSteamReport, hasPowerReport, describePowerSt
 import { getMachineParallelMultiplier } from "@/lib/solver/machine-effects";
 import { isMultiblockRecipe } from "@/lib/solver/power";
 import { getMachineBehaviour, getMachineTableControls } from "@/lib/machines/machine-table";
+import { t, td } from "@/lib/i18n";
 import type { RecipeTooltipView, TooltipMode } from "./recipe-tooltip-data";
 
 const number = (value: number) => value > 0 && value < 0.001 ? "<0.001" : value.toLocaleString(undefined, { maximumFractionDigits: 3 });
@@ -24,22 +25,22 @@ export function buildMachineTooltip(recipe: Recipe, handler: MachineHandler, nod
   const parallels = power?.parallels ?? getMachineParallelMultiplier(effective, selectedNode);
   const count = mode === "build" ? node.machineCount : node.solvePin ?? result?.theoreticalMachinesRequired;
   const rows = [
-    { label: mode === "build" ? "Installed machines" : node.solvePin ? "Pinned machines" : "Required machines", value: count === undefined ? "Unavailable" : number(count) },
-    ...(power ? [{ label: "Configured tier", value: stats.tier }] : []),
-    { label: "Time per operation", value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : "Instant" },
-    ...(steam ? [{ label: "Steam per machine", value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
-      : power ? [{ label: "Draw per machine", value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
-    ...(parallels > 1 ? [{ label: "Parallel operations", value: number(parallels) }] : []),
+    { label: mode === "build" ? t("Installed machines") : node.solvePin ? t("Pinned machines") : t("Required machines"), value: count === undefined ? t("Unavailable") : number(count) },
+    ...(power ? [{ label: t("Configured tier"), value: stats.tier }] : []),
+    { label: t("Time per operation"), value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : t("Instant") },
+    ...(steam ? [{ label: t("Steam per machine"), value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
+      : power ? [{ label: t("Draw per machine"), value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
+    ...(parallels > 1 ? [{ label: t("Parallel operations"), value: number(parallels) }] : []),
   ];
   const curated = getMachineBehaviour(effective.machineType);
   const unchecked = addon && !curated;
   return {
-    title: title ?? handler.label, subtitle: isMultiblockRecipe(effective) ? "Multiblock" : "Machine", mode, rows,
+    title: title ?? handler.label, subtitle: isMultiblockRecipe(effective) ? t("Multiblock") : t("Machine"), mode, rows,
     ...(unchecked ? {
-      status: { label: "Unchecked", tone: "warning" as const },
-      bullets: [`From ${addon}.`, "Speed, power and parallels are read from its tooltip, not checked against the mod."],
+      status: { label: t("Unchecked"), tone: "warning" as const },
+      bullets: [t("From {addon}.", { addon }), t("Speed, power and parallels are read from its tooltip, not checked against the mod.")],
     } : {}),
-    requirement: curated?.note,
+    requirement: curated?.note ? td(curated.note) : undefined,
     reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
   };
 }
@@ -55,21 +56,21 @@ export function buildConfigTooltip(recipe: Recipe, node: FactoryNode, control: M
   // the machine never receives. These explain source/glass requirements too.
   const curatedControl = getMachineTableControls(effective.machineType).find(c => c.id === control.id);
   // A typed number never matches a listed rung; its one rung carries the help.
-  const curatedOption = curatedControl?.tiers.find(t => t.key === selected.current.key)
+  const curatedOption = curatedControl?.tiers.find(tier => tier.key === selected.current.key)
     ?? (control.numeric ? curatedControl?.tiers[0] : undefined);
   return {
-    title: control.label, subtitle: selected.current.label,
-    bullets: curatedOption?.resource.tooltip,
+    title: td(control.label), subtitle: td(selected.current.label),
+    bullets: curatedOption?.resource.tooltip?.map((line) => td(line)),
     rows: [
-      ...(control.numeric ? [{ label: "Range", value: control.numeric.max === undefined
-        ? `${control.numeric.min} or more` : `${control.numeric.min} to ${control.numeric.max}` }] : []),
-      { label: "Time per operation", value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : "Instant" },
-      ...(steam ? [{ label: "Steam per machine", value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
-        : power ? [{ label: "Draw per machine", value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
-      { label: "Parallel operations", value: number(power?.parallels ?? getMachineParallelMultiplier(effective, node)) },
+      ...(control.numeric ? [{ label: t("Range"), value: control.numeric.max === undefined
+        ? t("{min} or more", { min: control.numeric.min }) : t("{min} to {max}", { min: control.numeric.min, max: control.numeric.max }) }] : []),
+      { label: t("Time per operation"), value: stats.durationTicks > 0 ? `${number(stats.durationTicks / 20)} s` : t("Instant") },
+      ...(steam ? [{ label: t("Steam per machine"), value: `${formatCompact(steam.drawSteamPerTick * 20)} L/s` }]
+        : power ? [{ label: t("Draw per machine"), value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
+      { label: t("Parallel operations"), value: number(power?.parallels ?? getMachineParallelMultiplier(effective, node)) },
     ],
     reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
-    actions: control.numeric ? [{ gesture: "left", label: "Type a value" }, { gesture: "wheel", label: "Step" }]
-      : control.tiers.length > 1 ? [{ gesture: "left", label: "Change setting" }] : [],
+    actions: control.numeric ? [{ gesture: "left", label: t("Type a value") }, { gesture: "wheel", label: t("Step") }]
+      : control.tiers.length > 1 ? [{ gesture: "left", label: t("Change setting") }] : [],
   };
 }

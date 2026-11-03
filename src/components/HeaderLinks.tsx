@@ -8,6 +8,7 @@ import { leaveLibrary, openLibrary } from "@/lib/library/library-tab";
 import { openRequestDialog } from "@/lib/requests/send-request";
 import { openWelcomeTab } from "@/lib/welcome/welcome-tab";
 import { APP_VERSION } from "@/lib/version";
+import { useT } from "@/lib/i18n";
 import { DISCORD_URL, REQUEST_FORM_ENABLED, SITE_NAME, SOURCE_URL, SUPPORT_URL, UPSTREAM_URL } from "@/lib/site";
 
 /**
@@ -20,15 +21,16 @@ const BUG_REPORT_URL = SOURCE_URL
 
 /** The header's "Help" dropdown: the auxiliary set of MenuLinks. */
 export function HeaderLinks() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useDropdownDismiss(open, { refs: [root], onClose: () => setOpen(false) });
   return (
     <div ref={root} className="relative shrink-0">
-      <button type="button" aria-expanded={open} aria-label="Help and links"
+      <button type="button" aria-expanded={open} aria-label={t("Help and links")}
         onClick={() => setOpen(!open)}
         className="inline-flex h-6 items-center gap-1 rounded px-1.5 text-fg-muted hover:bg-surface-raised hover:text-fg">
-        Help <ChevronDown className="h-3 w-3" />
+        {t("Help")} <ChevronDown className="h-3 w-3" />
       </button>
       {open ? <div className="absolute right-0 top-full z-[100] mt-1 w-52 rounded border border-line-strong bg-surface p-1 text-sm shadow-xl">
         <MenuLinks auxiliary onAction={() => setOpen(false)} />
@@ -39,6 +41,7 @@ export function HeaderLinks() {
 
 /** The donation link: a heart in its own colour, labelled for screen readers. */
 export function SupportButton() {
+  const t = useT();
   if (!SUPPORT_URL) {
     return null;
   }
@@ -47,14 +50,14 @@ export function SupportButton() {
       href={SUPPORT_URL}
       target="_blank"
       rel="noreferrer noopener"
-      title="Support"
-      aria-label={`Support ${SITE_NAME}`}
+      title={t("Support")}
+      aria-label={t("Support {site}", { site: SITE_NAME })}
       data-umami-event="support-kofi"
       data-umami-event-source="header"
       className="inline-flex h-5 shrink-0 items-center gap-1.5 rounded border border-pink-800 bg-pink-950 px-2 text-xs font-semibold text-pink-300 hover:border-pink-600 hover:bg-pink-900 hover:text-pink-200 snug:w-5 snug:justify-center snug:px-0"
     >
       <Heart className="h-3.5 w-3.5 fill-current" aria-hidden />
-      <span className="sr-only">Support</span>
+      <span className="sr-only">{t("Support")}</span>
     </a>
   );
 }
@@ -65,6 +68,7 @@ export function SupportButton() {
  * and Support.
  */
 export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => void; auxiliary?: boolean }) {
+  const t = useT();
   return (
     <div className="flex flex-col">
       <button
@@ -79,7 +83,7 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
           <Compass className="h-3.5 w-3.5" aria-hidden />
         </span>
-        <span className="truncate">Welcome</span>
+        <span className="truncate">{t("Welcome")}</span>
       </button>
       {!auxiliary ? <button
         type="button"
@@ -92,9 +96,9 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
           <Library className="h-3.5 w-3.5" aria-hidden />
         </span>
-        <span className="truncate">Library</span>
+        <span className="truncate">{t("Library")}</span>
       </button> : null}
-      {SOURCE_URL ? <MenuLink href={SOURCE_URL} label="Source on GitHub">
+      {SOURCE_URL ? <MenuLink href={SOURCE_URL} label={t("Source on GitHub")}>
         <GithubMark />
       </MenuLink> : null}
       {DISCORD_URL ? <MenuLink href={DISCORD_URL} label="Discord">
@@ -102,7 +106,7 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
       </MenuLink> : null}
       {!auxiliary && SUPPORT_URL ? <MenuLink
         href={SUPPORT_URL}
-        label={`Support ${SITE_NAME}`}
+        label={t("Support {site}", { site: SITE_NAME })}
         tone="support"
         umamiEvent="support-kofi"
       >
@@ -120,12 +124,12 @@ export function MenuLinks({ onAction, auxiliary = false }: { onAction?: () => vo
         <span className="flex h-4 w-4 shrink-0 items-center justify-center">
           <MessageSquarePlus className="h-3.5 w-3.5" aria-hidden />
         </span>
-        <span className="truncate">Send a request</span>
+        <span className="truncate">{t("Send a request")}</span>
       </button> : null}
-      {BUG_REPORT_URL ? <MenuLink href={BUG_REPORT_URL} label="Report a bug">
+      {BUG_REPORT_URL ? <MenuLink href={BUG_REPORT_URL} label={t("Report a bug")}>
         <Bug className="h-3.5 w-3.5" aria-hidden />
       </MenuLink> : null}
-      <MenuLink href={UPSTREAM_URL} label="Based on GTNH Factory Flow">
+      <MenuLink href={UPSTREAM_URL} label={t("Based on GTNH Factory Flow")}>
         <GithubMark />
       </MenuLink>
     </div>

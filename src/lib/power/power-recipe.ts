@@ -7,11 +7,12 @@
  * buildPowerRecipe, and normalizeLoadedProject resynthesizes on load so
  * stored plans always carry the current math.
  */
+import { msg } from "@/lib/i18n";
 import type { FactoryNode, Recipe, RecipeInput, RecipeOutput } from "@/lib/model/types";
 import { resolvePowerResource } from "./planner-data";
 import { getPowerSource } from "./registry";
 import { buildPowerSettingsReader, type PowerFlowLine, type PowerModel } from "./types";
-import { formatAmount } from "./sources/helpers";
+import { formatAmount, powerText, translatingPowerText } from "./sources/helpers";
 
 export const POWER_RECIPE_CATEGORY = "power-source";
 
@@ -64,19 +65,37 @@ function flowToSlot(flow: PowerFlowLine): (RecipeInput & RecipeOutput) | undefin
 function unresolvedFlowStats(model: PowerModel): Array<{ label: string; value: string }> {
   const lines: Array<{ label: string; value: string }> = [];
   for (const [flows, direction] of [
-    [model.inputs, "in"],
-    [model.outputs, "out"],
+    [model.inputs, msg("{amount}/s in")],
+    [model.outputs, msg("{amount}/s out")],
   ] as const) {
     for (const flow of flows) {
       if (!resolvePowerResource(flow.name) && flow.perSecond > 0) {
         lines.push({
           label: flow.name,
-          value: `${formatAmount(flow.perSecond)}${flow.unit === "L" ? " L" : ""}/s ${direction}`,
+          value: powerText(direction, { amount: `${formatAmount(flow.perSecond)}${flow.unit === "L" ? " L" : ""}` }),
         });
       }
     }
   }
   return lines;
+}
+
+/**
+ * A power card's stat lines and warnings in the interface language, rebuilt
+ * from its settings for display; the stored recipe keeps them in English.
+ */
+export function powerDisplayInfo(
+  sourceId: string,
+  settings: Record<string, string> | undefined,
+): Pick<RecipePowerInfo, "stats" | "warnings"> | undefined {
+  const source = getPowerSource(sourceId);
+  if (!source) {
+    return undefined;
+  }
+  return translatingPowerText(() => {
+    const model = source.compute(buildPowerSettingsReader(source, settings));
+    return { stats: [...model.stats, ...unresolvedFlowStats(model)], warnings: model.warnings };
+  });
 }
 
 /**

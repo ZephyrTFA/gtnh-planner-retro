@@ -9,7 +9,7 @@ import {
   resolveProjectRecipes,
 } from "@/lib/datasets/refresh-project-recipes";
 import type { Recipe } from "@/lib/model/types";
-import { useCallback, useEffect, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, type CSSProperties } from "react";
 import {
   DEFAULT_DATASET_MANIFEST_URL,
   datasetVersionForAddonSet,
@@ -20,7 +20,9 @@ import {
   initRecipeDatasetVersion,
 } from "@/lib/datasets/browser-loader";
 import { loadResourceHistory, useFactoryStore } from "@/store/factory-store";
-import { loadItemNames, useItemNames } from "@/lib/item-names";
+import { loadItemNames } from "@/lib/item-names";
+import { getStoredLanguage, t, useLanguage, useT } from "@/lib/i18n";
+import { applyLanguage } from "@/lib/i18n/apply";
 import { useCommunityAuthStore } from "@/store/community-auth-store";
 import { useDesignStore } from "@/store/design-store";
 import { recordResourceTrend, resetResourceTrends } from "@/lib/resource-trends";
@@ -79,7 +81,13 @@ export function FactoryPlannerApp() {
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const projectAddonSetId = useFactoryStore((state) => state.project.addonSetId);
-  const itemLanguage = useItemNames((state) => state.language);
+  const itemLanguage = useLanguage((state) => state.language);
+  // The page is prerendered in English, so hydration renders English; the saved
+  // language takes over here, before the first paint (src/lib/i18n).
+  useLayoutEffect(() => {
+    const saved = getStoredLanguage();
+    if (saved !== "en_US") void applyLanguage(saved);
+  }, []);
   // The dataset version last asked for. A load that finishes after a newer one
   // was asked for (boot loads the plain pack, then the hydrated plan wants its
   // addon set) must not land over it.
@@ -129,7 +137,7 @@ export function FactoryPlannerApp() {
       const version = manifest?.versions.find((entry) => entry.id === versionId);
 
       if (!manifest || !version) {
-        setDatasetError(`Dataset version "${versionId}" is not available in the manifest.`);
+        setDatasetError(t("Dataset version \"{version}\" is not available in the manifest.", { version: versionId }));
         return;
       }
 
@@ -151,7 +159,7 @@ export function FactoryPlannerApp() {
           refreshProjectRecipes(refreshed, migration);
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Dataset load failed.";
+        const message = error instanceof Error ? error.message : t("Dataset load failed.");
         setDatasetError(message);
       }
     },
@@ -256,7 +264,7 @@ export function FactoryPlannerApp() {
           return;
         }
 
-        const message = error instanceof Error ? error.message : "Dataset manifest load failed.";
+        const message = error instanceof Error ? error.message : t("Dataset manifest load failed.");
         setDatasetError(message);
       }
     }
@@ -467,6 +475,7 @@ function useCoveringPage(): "welcome" | "shelf" | undefined {
 }
 
 function ColumnWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
+  const t = useT();
   // While Welcome covers the board, the resource column (which reads the
   // hidden board's solve) folds to a blank strip WITHOUT writing the workspace
   // view, so it returns as it was.
@@ -502,13 +511,13 @@ function ColumnWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
         {workspace.leftPanelOpen ? (
           <ViewerAwareBrowser onLoadDatasetVersion={onLoadDatasetVersion} />
         ) : (
-          <PanelRail side="left" label="Items" />
+          <PanelRail side="left" label={t("Items")} />
         )}
         <BoardColumn />
         {rightPanelShown ? (
           <InspectorPanel />
         ) : covering || worksheet ? null : (
-          <PanelRail side="right" label="Resources" />
+          <PanelRail side="right" label={t("Resources")} />
         )}
       </main>
     </>
@@ -520,6 +529,7 @@ function ColumnWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
  * drawer at a time, so opening either closes the other.
  */
 function CompactWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
+  const t = useT();
   // The resource drawer reads the board's books; under a covering page it
   // is not there at all, handle included.
   const covering = useCoveringPage();
@@ -533,7 +543,7 @@ function CompactWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
       <BoardColumn />
       <PanelDrawer
         side="left"
-        label="items"
+        label={t("items")}
         open={workspace.leftPanelOpen}
         onOpen={openLeft}
         onClose={() => writeWorkspaceView({ leftPanelOpen: false })}
@@ -543,7 +553,7 @@ function CompactWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
       {covering || worksheet ? null : (
         <PanelDrawer
           side="right"
-          label="resources"
+          label={t("resources")}
           open={workspace.rightPanelOpen}
           onOpen={openRight}
           onClose={() => writeWorkspaceView({ rightPanelOpen: false })}
@@ -564,6 +574,7 @@ const RAIL_WIDTH = 26;
  * edge, which fires by accident whenever the mouse crosses it.
  */
 function PanelRail({ side, label }: { side: "left" | "right"; label: string }) {
+  const t = useT();
   const open = () =>
     writeWorkspaceView(side === "left" ? { leftPanelOpen: true } : { rightPanelOpen: true });
 
@@ -573,7 +584,7 @@ function PanelRail({ side, label }: { side: "left" | "right"; label: string }) {
     <button
       type="button"
       onClick={open}
-      aria-label={`Show ${label}`}
+      aria-label={t("Show {label}", { label })}
       className={[
         "flex h-full w-full flex-col items-center gap-2 bg-surface pt-1.5 text-fg-muted transition-colors hover:bg-[#2a2d33]",
         side === "left" ? "border-r border-line" : "border-l border-line",

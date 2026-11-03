@@ -1,6 +1,7 @@
 "use client";
 
 import { datasetVersionLabel, listSelectableDatasetVersions } from "@/lib/datasets/remote";
+import { useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 
 /**
@@ -23,6 +24,7 @@ interface AppIdentityProps {
  * plan, which is what loads the dataset; a plan viewed read-only keeps its own.
  */
 export function AppIdentity({ onLoadDatasetVersion }: AppIdentityProps) {
+  const t = useT();
   const manifest = useFactoryStore((state) => state.datasetManifest);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
   const isDatasetLoading = useFactoryStore((state) => state.isDatasetLoading);
@@ -32,10 +34,10 @@ export function AppIdentity({ onLoadDatasetVersion }: AppIdentityProps) {
   return (
     <label
       className="flex min-w-0 items-center gap-1.5"
-      title="Pack version"
+      title={t("Pack version")}
     >
       <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-fg-muted">
-        Game
+        {t("Game")}
       </span>
       <select
         value={selectedDatasetVersionId ?? ""}
@@ -54,7 +56,7 @@ export function AppIdentity({ onLoadDatasetVersion }: AppIdentityProps) {
             </option>
           ))
         ) : (
-          <option value="">No versions</option>
+          <option value="">{t("No versions")}</option>
         )}
       </select>
     </label>

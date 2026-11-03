@@ -12,6 +12,7 @@ import { snapNumericSetting, type MachineConfigTierControl } from "@/lib/model/r
 import type { MachineConfigTierOption, ResourceAmount } from "@/lib/model/types";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
+import { msg, td, useT } from "@/lib/i18n";
 
 /**
  * ONE TILE GRAMMAR for a card's machine settings.
@@ -59,22 +60,22 @@ export const STEPPER_MAX_RUNGS = 6;
  * the tile keeps the word a player says.
  */
 const CAPTIONS: Record<string, string> = {
-  heatingCoil: "Coil",
+  heatingCoil: msg("Coil"),
   // Two different blocks, so neither is a bare "Casing".
-  pipeCasing: "Fluid pipe",
-  itemPipeCasing: "Item pipe",
-  solenoidCoil: "Solenoid",
-  arcElectrode: "Electrode",
-  preciseCasing: "Unit casing",
-  cuttingSawblade: "Sawblade",
-  fluxElectromagnet: "Magnet",
-  laserSource: "Laser source",
-  "structure-tower-height": "Height",
-  steamPressure: "Pressure",
+  pipeCasing: msg("Fluid pipe"),
+  itemPipeCasing: msg("Item pipe"),
+  solenoidCoil: msg("Solenoid"),
+  arcElectrode: msg("Electrode"),
+  preciseCasing: msg("Unit casing"),
+  cuttingSawblade: msg("Sawblade"),
+  fluxElectromagnet: msg("Magnet"),
+  laserSource: msg("Laser source"),
+  "structure-tower-height": msg("Height"),
+  steamPressure: msg("Pressure"),
 };
 
 export function settingCaption(control: Pick<MachineConfigTierControl, "id" | "label">): string {
-  return CAPTIONS[control.id] ?? control.label;
+  return td(CAPTIONS[control.id] ?? control.label);
 }
 
 /**
@@ -93,6 +94,9 @@ const VALUE_TRIMS: Array<[RegExp, string]> = [
 ];
 
 export function settingValueLabel(option: Pick<MachineConfigTierOption, "label">): string {
+  // A translated rung shows whole: the trims below only know English suffixes.
+  const translated = td(option.label);
+  if (translated !== option.label) return translated;
   let label = option.label;
   for (const [pattern, replacement] of VALUE_TRIMS) {
     label = label.replace(pattern, replacement);
@@ -162,6 +166,7 @@ export function SettingTile({
   /** A small mark before the caption (the crop pips). */
   captionMark?: ReactNode;
 }) {
+  const t = useT();
   const wellRef = useRef<HTMLSpanElement>(null);
   const pressTimer = useRef<number | undefined>(undefined);
   const openList = () => {
@@ -203,7 +208,7 @@ export function SettingTile({
             event.stopPropagation();
             onStep(-1);
           }}
-          aria-label={`Previous ${caption}`}
+          aria-label={t("Previous {setting}", { setting: caption })}
         >
           <Minus className="h-3 w-3" />
         </button>
@@ -220,7 +225,7 @@ export function SettingTile({
           }
           role={onType ? "button" : undefined}
           tabIndex={onType && !disabled ? 0 : undefined}
-          aria-label={onType ? `Edit ${caption}` : undefined}
+          aria-label={onType ? t("Edit {setting}", { setting: caption }) : undefined}
           onKeyDown={onType ? (event) => {
             if (!disabled && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
@@ -240,7 +245,7 @@ export function SettingTile({
             event.stopPropagation();
             onStep(1);
           }}
-          aria-label={`Next ${caption}`}
+          aria-label={t("Next {setting}", { setting: caption })}
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -272,6 +277,7 @@ export function SettingListMenu({
   /** A filter box at the top, for lists picked by name. */
   searchable?: boolean;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
   const viewport = useDropdownViewport();
@@ -314,15 +320,15 @@ export function SettingListMenu({
                 onPick(shown[0].key);
               }
             }}
-            placeholder="Filter..."
-            aria-label="Filter options"
+            placeholder={t("Filter...")}
+            aria-label={t("Filter options")}
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--mc-ink-muted)]"
           />
         </label>
       ) : null}
       <div className="min-h-0 overflow-y-auto">
       {shown.length === 0 ? (
-        <div className="px-2 py-1.5 text-[12px] text-[var(--mc-ink-muted)]">No match.</div>
+        <div className="px-2 py-1.5 text-[12px] text-[var(--mc-ink-muted)]">{t("No match.")}</div>
       ) : null}
       {shown.map((row) => (
         <button
@@ -466,6 +472,7 @@ export function LadderTile({
   onSelect: (key: string) => void;
   help?: ReactNode | (() => ReactNode);
 }) {
+  useT();
   const [listAt, setListAt] = useState<DOMRect | undefined>();
   const index = Math.max(0, control.tiers.findIndex((tier) => tier.key === control.current.key));
   const faces = controlHasFaces(control);
@@ -532,6 +539,7 @@ function MachineNumberTile({ control, onSelect, help }: {
   onSelect: (key: string) => void;
   help?: ReactNode | (() => ReactNode);
 }) {
+  useT();
   const [draft, setDraft] = useState<string>();
   const finished = useRef(false);
   const shown = Number(control.current.key);
@@ -553,7 +561,7 @@ function MachineNumberTile({ control, onSelect, help }: {
   if (draft !== undefined) {
     return <div className={`${SETTING_TILE_CLASS} nodrag`} onPointerDown={(event) => event.stopPropagation()}>
       <div className={SETTING_TILE_CAPTION_CLASS}>{caption}</div>
-      <input autoFocus inputMode={step < 1 ? "decimal" : "numeric"} aria-label={control.label} value={draft}
+      <input autoFocus inputMode={step < 1 ? "decimal" : "numeric"} aria-label={td(control.label)} value={draft}
         onFocus={(event) => event.target.select()}
         onChange={(event) => setDraft(event.target.value)} onBlur={commit}
         onKeyDown={(event) => {

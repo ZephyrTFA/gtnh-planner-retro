@@ -11,6 +11,8 @@
  * pure edge darkening with no landmarks, so nothing about it can be seen to
  * "stick" during a pan.
  */
+import { msg } from "@/lib/i18n";
+
 export type CanvasThemeId =
   | "charcoal"
   | "slate"
@@ -34,6 +36,7 @@ export interface CanvasGrainLayer {
 
 export interface CanvasTheme {
   id: CanvasThemeId;
+  /** Interface text (msg); show it with td(). */
   name: string;
   /** The flat paper colour. Exports use this as their background. */
   base: string;
@@ -88,7 +91,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
     // The default: React Flow's own dark wrapper colour, a shade down from
     // Slate and well short of Void.
     id: "charcoal",
-    name: "Charcoal",
+    name: msg("Charcoal"),
     base: "#141414",
     patternColor: "#43464d",
     grain: LIGHT_GRAIN,
@@ -96,7 +99,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "slate",
-    name: "Slate",
+    name: msg("Slate"),
     base: "#1b1d21",
     patternColor: "#4a4d55",
     grain: LIGHT_GRAIN,
@@ -106,7 +109,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
     // The step between Slate and Graphite: cooler than one, dimmer than the
     // other.
     id: "gunmetal",
-    name: "Gunmetal",
+    name: msg("Gunmetal"),
     base: "#23262c",
     patternColor: "#5a5f6a",
     grain: LIGHT_GRAIN,
@@ -114,7 +117,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "midnight",
-    name: "Midnight",
+    name: msg("Midnight"),
     base: "#161a24",
     patternColor: "#485372",
     grain: LIGHT_GRAIN,
@@ -124,7 +127,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
     // Near-black and FLAT: a screen-space centre glow sits still while the
     // board pans and reads as a smudged monitor.
     id: "void",
-    name: "Void",
+    name: msg("Void"),
     base: "#0b0c0f",
     patternColor: "#303339",
     grain: [{ uri: GRAIN_LIGHT_URI, size: GRAIN_TILE, opacity: 0.55 }],
@@ -132,7 +135,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "blueprint",
-    name: "Blueprint",
+    name: msg("Blueprint"),
     base: "#152540",
     patternColor: "#48699c",
     grain: LIGHT_GRAIN,
@@ -145,7 +148,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
     // No streaks: diagonal haze in screen space slides against the board on
     // every pan.
     id: "chalkboard",
-    name: "Chalkboard",
+    name: msg("Chalkboard"),
     base: "#243329",
     patternColor: "#5d7465",
     grain: LIGHT_GRAIN,
@@ -154,7 +157,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "graphite",
-    name: "Graphite",
+    name: msg("Graphite"),
     base: "#272522",
     patternColor: "#5f5a4f",
     grain: LIGHT_GRAIN,
@@ -163,7 +166,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "parchment",
-    name: "Parchment",
+    name: msg("Parchment"),
     base: "#e7ddc4",
     patternColor: "#a4966e",
     // The soak blotches are paper too, so they ride the board with the grain.
@@ -174,7 +177,7 @@ export const CANVAS_THEMES: CanvasTheme[] = [
   },
   {
     id: "paper",
-    name: "Paper",
+    name: msg("Paper"),
     base: "#f3f1e8",
     patternColor: "#b4bac8",
     grain: [{ uri: GRAIN_DARK_URI, size: GRAIN_TILE, opacity: 0.8 }],

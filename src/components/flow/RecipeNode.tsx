@@ -126,6 +126,8 @@ import {
 } from "./SettingTile";
 import { PowerConfigPanel } from "./PowerConfigPanel";
 import { getPowerSource } from "@/lib/power/registry";
+import { powerDisplayInfo } from "@/lib/power/power-recipe";
+import { powerSourceBlurb } from "@/lib/power/types";
 import { getMachineStructureArt, getPowerStructureArt } from "@/lib/power/structure-art";
 import { getPowerMachineIcon } from "@/lib/power/planner-data";
 import type { PowerSelectSetting } from "@/lib/power/types";
@@ -184,6 +186,7 @@ import { playBoardSound, suppressBoardSound } from "@/lib/board-sounds";
 import { fetchRecipeTwins, recipeMayHaveTwins, type RecipeTwin } from "@/lib/datasets/recipe-twins";
 import { getRecipeDatasetRecipe } from "@/lib/datasets/browser-loader";
 import { DEFAULT_DATASET_MANIFEST_URL } from "@/lib/datasets/remote";
+import { msg, t, td, tPlural, useLanguage, useT } from "@/lib/i18n";
 
 // Full width so the crop config panel and stat grid line up with the recipe
 // canvas edge instead of forcing their own wider box.
@@ -212,6 +215,12 @@ const CUSTOM_RATE_UNIVERSAL_HANDLE_IDS: readonly string[] = [
  */
 
 
+/** A power card's hover line: its source's blurb in the interface language (the recipe's notes keep English). */
+function powerCardBlurb(recipe: Recipe): string {
+  const source = recipe.power ? getPowerSource(recipe.power.sourceId) : undefined;
+  return source ? powerSourceBlurb(source) : recipe.notes ?? recipe.name;
+}
+
 /** A port's resource name in the chosen item language (display only; the port keeps English). */
 function portName(port: Pick<RailPort, "resourceId" | "displayName">): string {
   return displayNameFor(port.resourceId, port.displayName);
@@ -227,6 +236,8 @@ export type RecipeFlowNode = Node<RecipeNodeData, "recipeNode">;
 
 function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEditor }: Pick<NodeProps<RecipeFlowNode>, "data" | "selected"> & { controlsOnly?: boolean; renderEditor?: (controls: ReactNode, picture: ReactNode, settings: ReactNode, tier: ReactNode) => ReactNode }) {
   const { projectNode, recipe, result } = data;
+  const t = useT();
+  const language = useLanguage((state) => state.language);
   const editorLocked = useFactoryStore((state) => state.isReadOnly || state.checklistMode);
   const [isCompareOpen, setCompareOpenState] = useState(false);
   // The machine menu's open and close SOUND, the search's leaf lifted and
@@ -511,7 +522,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
       // the raw recipe - the panel writes settings there, custom-rate style.
       powerInfo: recipe.power,
     };
-  }, [dataset, previewedNode, recipe]);
+    // The formula lines are text in the interface language.
+  }, [dataset, previewedNode, recipe, language]);
 
   const {
     machineHandlers: recipeMachineHandlers,
@@ -549,6 +561,11 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     powerInfo,
     machineFormulaLines,
   } = derived;
+  // A power card's stat lines in the interface language; the stored recipe keeps English.
+  const powerDisplay = useMemo(
+    () => (powerInfo && language !== "en_US" ? powerDisplayInfo(powerInfo.sourceId, projectNode.machineConfigTiers) : undefined) ?? powerInfo,
+    [powerInfo, projectNode.machineConfigTiers, language],
+  );
   // SHARED MACHINE (shared-machine.ts): a card running several recipes.
   // The machine list is what runs EVERY recipe on it; each extra recipe is
   // a section with rails of its own below the first.
@@ -910,14 +927,14 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
       ? [
           {
             id: "parallel",
-            caption: "Parallel",
+            caption: t("Parallel"),
             value: `×${formatMachineParallelMultiplier(effectiveParallels)}`,
             help: () => (
               <RecipeTooltip
                 view={{
-                  title: "Parallel operations",
-                  rows: [{ label: "Operations at once", value: formatMachineParallelMultiplier(effectiveParallels) }],
-                  reason: "Set by the machine and its configuration.",
+                  title: t("Parallel operations"),
+                  rows: [{ label: t("Operations at once"), value: formatMachineParallelMultiplier(effectiveParallels) }],
+                  reason: t("Set by the machine and its configuration."),
                 }}
               />
             ),
@@ -1056,7 +1073,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
         resolveRecipeAdd(pendingId);
       })
       .catch((error: unknown) => {
-        failRecipeAdd(pendingId, error instanceof Error ? error.message : "The recipe could not be loaded.");
+        failRecipeAdd(pendingId, error instanceof Error ? error.message : t("The recipe could not be loaded."));
       });
   };
   // A card whose machine can take another recipe: everything but the
@@ -1146,11 +1163,11 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           // budget. Each recipe's own story sits on its rule row.
           <RecipeTooltip
             view={{
-              title: "Machine power",
+              title: t("Machine power"),
               rows: [
-                { label: "Tier", value: powerReport.tier },
-                { label: "Supply per machine", value: `${formatPowerValue(powerDisplayFromEuT(powerReport.poolEuT))} ${powerDisplaySuffix()}` },
-                { label: "Recipes", value: String(1 + sectionRails.length) },
+                { label: t("Tier"), value: powerReport.tier },
+                { label: t("Supply per machine"), value: `${formatPowerValue(powerDisplayFromEuT(powerReport.poolEuT))} ${powerDisplaySuffix()}` },
+                { label: t("Recipes"), value: String(1 + sectionRails.length) },
               ],
             }}
           />
@@ -1167,8 +1184,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     >
     <div className="flex">
       <MinecraftTooltip content={() => <RecipeTooltip view={tierControl.fixed
-        ? { title: "Fusion reactor power", rows: [{ label: "Operating tier", value: tierControl.current }], reason: "Fixed by the reactor mark. Select a different controller to change overclocks." }
-        : { title: "Voltage tier", rows: [{ label: "Configured tier", value: tierControl.current }], actions: [{ gesture: "left", label: "Increase" }, { gesture: "right", label: "Decrease" }, { gesture: "wheel", label: "Adjust tier" }] }} />}>
+        ? { title: t("Fusion reactor power"), rows: [{ label: t("Operating tier"), value: tierControl.current }], reason: t("Fixed by the reactor mark. Select a different controller to change overclocks.") }
+        : { title: t("Voltage tier"), rows: [{ label: t("Configured tier"), value: tierControl.current }], actions: [{ gesture: "left", label: t("Increase") }, { gesture: "right", label: t("Decrease") }, { gesture: "wheel", label: t("Adjust tier") }] }} />}>
       <button
         type="button"
         aria-disabled={tierControl.fixed || undefined}
@@ -1200,7 +1217,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           color: tierColor.text,
           textShadow: `1px 1px 0 ${tierColor.shadow}`,
         }}
-        aria-label={`Tier ${tierControl.current}`}
+        aria-label={t("Tier {tier}", { tier: tierControl.current })}
       >
         {tierControl.current}
       </button>
@@ -1219,9 +1236,9 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
         <div className="pool-editor-controls pool-editor-heading">
           <div className="pool-machine-identity">
             {isCropFarmNode ? <div className="pool-crop-picker">
-              <MinecraftTooltip content={cropTitle ? "Change crop: " + cropTitle : "Pick a crop"}>
+              <MinecraftTooltip content={cropTitle ? t("Change crop: {crop}", { crop: cropTitle }) : t("Pick a crop")}>
                 <button type="button" className="pool-machine-icon-button pool-crop-button" data-crop-picker-toggle
-                  aria-label={cropTitle ? "Change crop: " + cropTitle : "Pick a crop"} aria-expanded={isCropMenuOpen}
+                  aria-label={cropTitle ? t("Change crop: {crop}", { crop: cropTitle }) : t("Pick a crop")} aria-expanded={isCropMenuOpen}
                   onClick={() => setCropMenuOpen((open) => !open)}>
                   {cropSeedResource ? <ResourceIcon resource={cropSeedResource} size="sm" className="!h-6 !w-6" iconPixelSize={24} bare showAmount={false} showConsumedState={false} tooltip={false} /> : <Sprout className="h-5 w-5" />}
                   <RefreshCw className="pool-machine-swap" aria-hidden="true" />
@@ -1230,9 +1247,9 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
               {isCropMenuOpen ? <CropPickerMenu nodeId={projectNode.id} onClose={() => setCropMenuOpen(false)} /> : null}
             </div> : null}
             {isEecNode ? <div className="pool-crop-picker">
-              <MinecraftTooltip content={"Change mob: " + recipeChoiceName(recipe.name)}>
+              <MinecraftTooltip content={t("Change mob: {mob}", { mob: recipeChoiceName(recipe.name) })}>
                 <button type="button" className="pool-machine-icon-button pool-crop-button" data-mob-picker-toggle
-                  aria-label={"Change mob: " + recipeChoiceName(recipe.name)} aria-expanded={isMobMenuOpen}
+                  aria-label={t("Change mob: {mob}", { mob: recipeChoiceName(recipe.name) })} aria-expanded={isMobMenuOpen}
                   onClick={() => setMobMenuOpen((open) => !open)}>
                   {mobSpawner ? <ResourceIcon resource={mobSpawner} size="sm" className="!h-6 !w-6" iconPixelSize={24} bare showAmount={false} showConsumedState={false} tooltip={false} /> : null}
                   <RefreshCw className="pool-machine-swap" aria-hidden="true" />
@@ -1259,7 +1276,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     );
     const settings = powerInfo || machineConfigPanel || passiveProductionPanel || (isCustomRateNode && customRateDial) ? (
       <fieldset disabled={editorLocked} className="pool-machine-settings min-w-0 border-0 p-0 text-[var(--mc-ink)]">
-        {powerInfo ? <PowerConfigPanel nodeId={projectNode.id} sourceId={powerInfo.sourceId} values={projectNode.machineConfigTiers} stats={powerInfo.stats} warnings={powerInfo.warnings} /> : null}
+        {powerInfo ? <PowerConfigPanel nodeId={projectNode.id} sourceId={powerInfo.sourceId} values={projectNode.machineConfigTiers} stats={powerDisplay?.stats ?? powerInfo.stats} warnings={powerDisplay?.warnings ?? powerInfo.warnings} /> : null}
         {machineConfigPanel}
         {machineFormulaLines.length > 0 ? <MachineFormulas lines={machineFormulaLines} /> : null}
         {passiveProductionPanel}
@@ -1269,7 +1286,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     const picture = (
       <div className="pool-machine-chooser" data-machine-editor-anchor>
         <button type="button" data-machine-menu-toggle className="pool-machine-icon-button"
-          aria-label={`Change machine: ${machineDisplayName}`} aria-expanded={isCompareOpen} aria-haspopup="listbox"
+          aria-label={t("Change machine: {machine}", { machine: machineDisplayName })} aria-expanded={isCompareOpen} aria-haspopup="listbox"
           disabled={editorLocked || (!hasMachinePicker && !canShareMachine && !mayHaveTwins)}
           onClick={() => setCompareOpen((open) => !open)}>
           {hasPowerPicture ? <PowerStructureWindow art={powerArt} icon={powerMachineIcon ?? previewMachineIcon} inline bare /> : <Cpu size={22} />}
@@ -1412,7 +1429,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           paintTint={nodeColor?.swatch}
           label={
             isCustomRateNode
-              ? (effectiveRecipe.name ?? "Custom rate")
+              ? (effectiveRecipe.name ?? t("Custom rate"))
               : `${projectNode.machineCount}× ${machineDisplayName ?? effectiveRecipe.machineType ?? effectiveRecipe.name}`
           }
           inputs={rails.inputs}
@@ -1521,8 +1538,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                 : powerReport.tier
               : steamReport
                 ? steamReport.highPressure
-                  ? "HP steam"
-                  : "Steam"
+                  ? t("HP steam")
+                  : t("Steam")
                 : undefined
           }
         />
@@ -1617,8 +1634,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                   deleteNode(projectNode.id);
                 }}
                 className="h-6 w-6 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-base leading-[16px] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:bg-red-700"
-                title="Delete node"
-                aria-label="Delete node"
+                title={t("Delete node")}
+                aria-label={t("Delete node")}
               >
                 -
               </button>
@@ -1629,8 +1646,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                   duplicateNode(projectNode.id);
                 }}
                 className="flex h-6 w-6 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:bg-[var(--mc-61)]"
-                title="Clone node"
-                aria-label="Clone node"
+                title={t("Clone node")}
+                aria-label={t("Clone node")}
               >
                 <Copy aria-hidden className="h-3.5 w-3.5" />
               </button>
@@ -1642,8 +1659,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                     beginRecipeRefactor(projectNode.id);
                   }}
                   className="flex h-6 w-6 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:bg-[var(--mc-61)]"
-                  title="Replace the recipe"
-                  aria-label="Refactor node"
+                  title={t("Replace the recipe")}
+                  aria-label={t("Refactor node")}
                 >
                   <RefreshCw aria-hidden className="h-3.5 w-3.5" />
                 </button>
@@ -1659,8 +1676,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                     browseMachineRecipes(projectNode.id);
                   }}
                   className="flex h-6 w-6 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:bg-[var(--mc-61)]"
-                  title="Add another recipe to this machine"
-                  aria-label="Add another recipe to this machine"
+                  title={t("Add another recipe to this machine")}
+                  aria-label={t("Add another recipe to this machine")}
                 >
                   <Plus aria-hidden className="h-3.5 w-3.5" />
                 </button>
@@ -1678,8 +1695,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                       setCropMenuOpen((open) => !open);
                     }}
                     className="flex h-6 w-6 items-center justify-center border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:bg-[var(--mc-61)]"
-                    title={cropTitle ? `${cropTitle}. Click to pick another crop.` : "Pick a crop"}
-                    aria-label="Pick a crop"
+                    title={cropTitle ? t("{crop}. Click to pick another crop.", { crop: cropTitle }) : t("Pick a crop")}
+                    aria-label={t("Pick a crop")}
                     aria-haspopup="dialog"
                     aria-expanded={isCropMenuOpen}
                   >
@@ -1698,28 +1715,28 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
               // list is what the pointer is there for.
               content={isCompareOpen ? undefined : () =>
                 isCropFarmPlaceholder ? (
-                  "Click to pick a crop"
+                  t("Click to pick a crop")
                 ) : isCustomRateNode ? (
                   customRateSlot ? (
                     customRateSlot.mode === "supply"
-                      ? `Makes ${resourceDisplayLabel(customRateSlot.resource)} at the dialed rate for anything that asks.`
-                      : `Constantly drains ${resourceDisplayLabel(customRateSlot.resource)} at the dialed rate.`
+                      ? t("Makes {resource} at the dialed rate for anything that asks.", { resource: resourceDisplayLabel(customRateSlot.resource) })
+                      : t("Constantly drains {resource} at the dialed rate.", { resource: resourceDisplayLabel(customRateSlot.resource) })
                   ) : (
-                    "Wire any port to this and it adopts that resource."
+                    t("Wire any port to this and it adopts that resource.")
                   )
                 ) : isPowerCard ? (
                   // A generator's stats live on the card (settings, stat
                   // lines); the machine tooltip's overclock story does not
                   // apply to it and would just be wrong here.
-                  (recipe.notes ?? recipe.name)
+                  powerCardBlurb(recipe)
                 ) : isSharedMachine ? (
                   // One recipe's stats would be the wrong story for a
                   // machine running several; the rows below carry each.
                   <RecipeTooltip
                     view={{
                       title: machineDisplayName,
-                      rows: [{ label: "Recipes", value: String(1 + sectionRails.length) }],
-                      reason: "Runs its recipes one at a time; each row says how its share goes.",
+                      rows: [{ label: t("Recipes"), value: String(1 + sectionRails.length) }],
+                      reason: t("Runs its recipes one at a time; each row says how its share goes."),
                     }}
                   />
                 ) : (
@@ -1786,12 +1803,12 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                     with the text it is measuring. */}
                 <span ref={titleRef} className="min-w-0 flex-1 truncate text-center">
                   {isCropFarmPlaceholder
-                    ? "Pick a crop..."
+                    ? t("Pick a crop...")
                     : isCustomRateNode
                       ? // The resource is already on the port right below,
                         // with its icon. Repeating its name in the title only
                         // ever made the card wider.
-                        "Custom Rate"
+                        t("Custom Rate")
                       : machineDisplayName}
                 </span>
               </div>
@@ -1812,7 +1829,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                 mapIcons={recipeMapIcons}
                 onUseTwin={useTwin}
                 figures={!isSharedMachine && !isCropProductionRecipe(recipe)}
-                title={isSharedMachine ? "Machines that run every recipe on this card" : undefined}
+                title={isSharedMachine ? t("Machines that run every recipe on this card") : undefined}
                 onAddRecipe={
                   canShareMachine
                     ? () => {
@@ -1869,7 +1886,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
               }}
               className="mx-auto my-0 flex h-[80px] w-[240px] items-center justify-center gap-2 border-2 border-dashed border-[var(--mc-33)] bg-[var(--mc-71)] text-[14px] font-bold text-[var(--mc-ink)] hover:bg-[var(--mc-85)]"
             >
-              <Sprout className="h-5 w-5" /> Pick a crop
+              <Sprout className="h-5 w-5" /> {t("Pick a crop")}
               {/* The picker hangs under this button while there is no crop
                   tile yet to hang it from. */}
               {isCropMenuOpen ? (
@@ -1925,7 +1942,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
             ].join(" ")}
           >
             {showNoInputRow ? (
-              <NoFlowRow label="No input" side="input" />
+              <NoFlowRow label={t("No input")} side="input" />
             ) : (
               <PortRail
                 nodeId={projectNode.id}
@@ -1958,7 +1975,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
             {/* A generator's EU is an ordinary output row (kind "power",
                 first on the rail): it wires, it solves, it reads EU/t. */}
             {showNoOutputRow ? (
-              <NoFlowRow label="No output" side="output" />
+              <NoFlowRow label={t("No output")} side="output" />
             ) : (
               <PortRail
                 nodeId={projectNode.id}
@@ -2001,8 +2018,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                   nodeId={projectNode.id}
                   sourceId={powerInfo.sourceId}
                   values={projectNode.machineConfigTiers}
-                  stats={powerInfo.stats}
-                  warnings={powerInfo.warnings}
+                  stats={powerDisplay?.stats ?? powerInfo.stats}
+                  warnings={powerDisplay?.warnings ?? powerInfo.warnings}
                 />
               ) : null}
               {calmMode ? null : machineConfigPanel}
@@ -2029,11 +2046,11 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                       ×{" "}
                       {isCropProductionNode
                         ? projectNode.machineCount === 1 && !solveMode
-                          ? "Seed"
-                          : "Seeds"
+                          ? t("Seed")
+                          : t("Seeds")
                         : projectNode.machineCount === 1 && !solveMode
-                          ? "Machine"
-                          : "Machines"}
+                          ? t("Machine")
+                          : t("Machines")}
                     </span>
                     {programmedCircuit && !isSharedMachine ? <CircuitChip circuit={programmedCircuit} /> : null}
                   </div>
@@ -2098,7 +2115,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                             // plain ink. Red implied a problem where there
                             // is only a bill.
                             <Stat
-                              label="Power"
+                              label={t("Power")}
                               value={`${formatPowerValue(powerDisplayFromEuT(
                                   Math.abs(powerInfo.euPerTick) *
                                     projectNode.machineCount *
@@ -2135,19 +2152,19 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                             // language: the POWER cell, riding the PEAK/AVG
                             // switch like every draw figure on the board.
                             <Stat
-                              label="Power"
+                              label={t("Power")}
                               value={`${formatPowerValue(powerDisplayFromEuT(cropDrawEuT * drawScale))} ${powerDisplaySuffix()}`}
                             />
                           ) : null}
                           {machineParallelMultiplier > 1 && !parallelChipLifts ? (
                             <Stat
-                              label="Parallel"
+                              label={t("Parallel")}
                               value={`×${formatMachineParallelMultiplier(machineParallelMultiplier)}`}
                             />
                           ) : null}
                           {solveMode ? (
                             <SolvedMachinesStat
-                              label={isCropProductionNode ? "Seeds" : "Machines"}
+                              label={isCropProductionNode ? t("Seeds") : t("Machines")}
                               // A shared machine's count is the sum of its
                               // sections' time shares.
                               needed={
@@ -2164,7 +2181,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                           ) : (
                             <MachineCountStat
                               key={fullFarms ? "full-farms" : "seeds"}
-                              label={fullFarms ? "Farms" : isCropProductionNode ? "Seeds" : "Machines"}
+                              label={fullFarms ? t("Farms") : isCropProductionNode ? t("Seeds") : t("Machines")}
                               machineCount={fullFarms ? projectNode.cropFullFarmCount! : projectNode.machineCount}
                               fullFarms={fullFarmCapacity !== undefined ? fullFarms : undefined}
                               onFullFarmsChange={(checked) => updateNode(projectNode.id, {
@@ -2227,12 +2244,13 @@ export function RecipeNodeEditor({ data, render }: { data: RecipeNodeData; rende
  */
 export function CircuitChip({ circuit, small = false, bare = false }: { circuit: RecipeProgrammedCircuit; small?: boolean; bare?: boolean }) {
   const { setting, resource } = circuit;
+  const t = useT();
   return (
     <MinecraftTooltip
-      content={() => <RecipeTooltip view={{ title: "Programmed circuit", rows: setting ? [{ label: "Required setting", value: String(setting) }] : [], reason: setting ? "Not consumed." : "No circuit setting required." }} />}
+      content={() => <RecipeTooltip view={{ title: t("Programmed circuit"), rows: setting ? [{ label: t("Required setting"), value: String(setting) }] : [], reason: setting ? t("Not consumed.") : t("No circuit setting required.") }} />}
     >
       <div
-        aria-label={setting ? `Programmed circuit ${setting}` : "No circuit setting"}
+        aria-label={setting ? t("Programmed circuit {setting}", { setting }) : t("No circuit setting")}
         // Square, and as tall as the stat tiles beside it — self-stretch takes
         // the row's height and w-9 answers it, so the slot stays a slot however
         // the footer's type is measured.
@@ -2458,6 +2476,7 @@ function EnergyReading({
 /** One chip of the hover reveal, in the card's own chip clothes. */
 function GlanceIoRow({ port }: { port: RailPort }) {
   useItemNamesVersion();
+  const t = useT();
   return (
     <span className="flex items-center gap-1.5 border-2 border-[var(--mc-47)] bg-[var(--mc-71)] px-1 py-0.5 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
       {/* Same whole-item fit and shadow as the port rows. */}
@@ -2493,8 +2512,9 @@ function GlanceIoRow({ port }: { port: RailPort }) {
           ].join(" ")}
         >
           {port.free ? (
-            "free"
+            t("free")
           ) : portReadsEnergy(port) ? (
+
             <EnergyReading euPerUnit={port.energyPerUnit!} kind={port.kind} unitSize={10} />
           ) : (
             formatPortRate(port, port.currentPerSecond)
@@ -2525,48 +2545,48 @@ function verdictWord(
   // A build the game would refuse outranks every flow story: whatever the
   // wires say, the reason nothing moves is the power setup.
   if (powerStalled) {
-    return { word: "no power", tone: "unwired" };
+    return { word: t("no power"), tone: "unwired" };
   }
   switch (verdict.kind) {
     case "starved":
-      return { word: "starved", tone: "starved" };
+      return { word: t("starved"), tone: "starved" };
     // Its own colour, and deliberately not a red one: nothing here is broken.
     // The machine is doing the only thing it can with a surplus nobody wants.
     case "clogged":
-      return { word: "clogged", tone: "clogged" };
+      return { word: t("clogged"), tone: "clogged" };
     case "blocked":
-      return { word: "blocked", tone: "blocked" };
+      return { word: t("blocked"), tone: "blocked" };
     case "bottleneck":
-      return { word: "bottleneck", tone: "bottleneck" };
+      return { word: t("bottleneck"), tone: "bottleneck" };
     // Red, like a bottleneck, and for the same reason: this is a place the
     // chain of blame STOPS. Any machine in the ring is a valid place to act.
     case "dead-loop":
-      return { word: "dead loop", tone: "bottleneck" };
+      return { word: t("dead loop"), tone: "bottleneck" };
     // Blue, the clog family's colour: nothing is broken or starving, the
     // line is FULL. Its own word, because the fix is a drawer, not a feeder.
     case "clog-lock":
-      return { word: "clog lock", tone: "clogged" };
+      return { word: t("clog lock"), tone: "clogged" };
     case "demand-set":
       return verdict.pct <= 0.05
-        ? { word: "unused", tone: "fine" }
-        : { word: isCustomRate ? "under the dial" : "on demand", tone: "fine" };
+        ? { word: t("unused"), tone: "fine" }
+        : { word: isCustomRate ? t("under the dial") : t("on demand"), tone: "fine" };
     // Calm on purpose: inputs covered, nothing jammed, the machines around
     // it set the speed. Nothing here needs fixing.
     case "paced":
-      return { word: "paced", tone: "fine" };
+      return { word: t("paced"), tone: "fine" };
     // The rest of the machine's time went to its other recipes: nothing is
     // short and nothing is jammed, so it wears the plain tone. Two recipes
     // at 50% each is the machine doing exactly its job.
     case "busy":
-      return { word: "sharing", tone: "fine" };
+      return { word: t("sharing"), tone: "fine" };
     case "balanced":
-      return { word: isCustomRate ? "at the dial" : "full", tone: "fine" };
+      return { word: isCustomRate ? t("at the dial") : t("full"), tone: "fine" };
     case "unwired":
-      return { word: "no wires", tone: isCustomRate ? "fine" : "unwired" };
+      return { word: t("no wires"), tone: isCustomRate ? "fine" : "unwired" };
     case "off":
-      return { word: "off", tone: "fine" };
+      return { word: t("off"), tone: "fine" };
     case "no-recipe":
-      return { word: "no recipe", tone: "fine" };
+      return { word: t("no recipe"), tone: "fine" };
   }
 }
 
@@ -2664,6 +2684,7 @@ function UsageStat({
    */
   shares?: Array<{ name: string; pct: number }>;
 }) {
+  const t = useT();
   const stalled = powerStall !== undefined && powerStall.state !== "ok";
   const state = verdictWord(verdict, isCustomRate, stalled);
   const showPct = verdict.kind !== "off" && verdict.kind !== "no-recipe";
@@ -2674,9 +2695,9 @@ function UsageStat({
         shares ? (
           <RecipeTooltip
             view={{
-              title: "Machine time",
+              title: t("Machine time"),
               rows: shares.map((share) => ({ label: share.name, value: formatPct(share.pct) + "%" })),
-              reason: `${formatPct(Math.min(100, shares.reduce((sum, share) => sum + share.pct, 0)))}% of the machine's time is spent. Each recipe's row says why it runs at its share.`,
+              reason: t("{pct}% of the machine's time is spent. Each recipe's row says why it runs at its share.", { pct: formatPct(Math.min(100, shares.reduce((sum, share) => sum + share.pct, 0))) }),
             }}
           />
         ) : stalled && powerStall ? (
@@ -2684,7 +2705,7 @@ function UsageStat({
           // the wires would say, nothing runs until the power fits.
           <RecipeTooltip
             view={{
-              title: powerStall.state === "under-powered" ? "Insufficient energy supply" : "Tier too low for recipe",
+              title: powerStall.state === "under-powered" ? t("Insufficient energy supply") : t("Tier too low for recipe"),
               rows: [],
               reason: describePowerStall(powerStall),
             }}
@@ -2699,7 +2720,7 @@ function UsageStat({
       <div className="flow-usage-stat flex min-w-0 border border-[var(--mc-47)] bg-[var(--mc-71)] shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
         <div className="min-w-0 px-1.5">
           <div className="text-[11px] uppercase leading-[13px] text-[var(--mc-ink-muted)]">
-            Usage
+            {t("Usage")}
           </div>
           <div className="text-[17px] font-bold leading-5 tabular-nums">
             {showPct ? (
@@ -2729,7 +2750,7 @@ function UsageStat({
             label and all, not just the word inside it. */}
         <div className="verdict-reason-cell min-w-0 px-1.5">
           <div className="text-[11px] uppercase leading-[13px] text-[var(--mc-ink-muted)]">
-            Reason
+            {t("Reason")}
           </div>
           <div
             className={[
@@ -2940,13 +2961,14 @@ function PortRail({
  */
 function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
   useItemNamesVersion();
+  const t = useT();
   // A controller-slot item (the EEC's spawner) sits in the machine for good,
   // and swapping it is how the card changes mob.
   if (port.resource && isControllerSlotInput(port.resource)) {
     return <ControllerSlotRow nodeId={nodeId} port={port} />;
   }
   return (
-    <MinecraftTooltip content={() => <RecipeTooltip view={{ title: portName(port), subtitle: "Free input", rows: [], reason: "No supply connection required." }} />}>
+    <MinecraftTooltip content={() => <RecipeTooltip view={{ title: portName(port), subtitle: t("Free input"), rows: [], reason: t("No supply connection required.") }} />}>
     <div
       className="flow-port relative flex h-[40px] w-full flex-none items-center gap-1 px-0.5 py-0 opacity-60"
       data-free-input="true"
@@ -2972,7 +2994,7 @@ function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
         {/* Same dress as a port's rate line, so the word sits where the
             number would and reads as its stand-in. */}
         <span className="block truncate text-[9px] leading-[9px] tabular-nums text-[var(--mc-ink-muted)] opacity-80">
-          free
+          {t("free")}
         </span>
       </span>
     </div>
@@ -2987,24 +3009,25 @@ function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
  */
 function ControllerSlotRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
   useItemNamesVersion();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const locked = useFactoryStore((state) => state.isReadOnly || state.checklistMode);
   return (
     <div className="relative">
       <MinecraftTooltip content={() => <RecipeTooltip view={{
         title: portName(port),
-        subtitle: "Controller slot",
+        subtitle: t("Controller slot"),
         rows: [],
         reason: locked
-          ? "Goes in the machine's controller slot. Never used up."
-          : "Goes in the machine's controller slot. Never used up. Click to put in another mob.",
+          ? t("Goes in the machine's controller slot. Never used up.")
+          : t("Goes in the machine's controller slot. Never used up. Click to put in another mob."),
       }} />}>
         <button
           type="button"
           data-free-input="true"
           data-mob-picker-toggle
           disabled={locked}
-          aria-label={`Change mob: ${portName(port)}`}
+          aria-label={t("Change mob: {mob}", { mob: portName(port) })}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={(event) => {
@@ -3032,7 +3055,7 @@ function ControllerSlotRow({ nodeId, port }: { nodeId: string; port: RailPort })
               {portName(port)}
             </span>
             <span className="block truncate text-[9px] leading-[9px] tabular-nums text-[var(--mc-ink-muted)] opacity-80">
-              in controller
+              {t("in controller")}
             </span>
           </span>
           {locked ? null : (
@@ -3078,6 +3101,7 @@ function SharedMachineRails({
   /** Swap the recipe with its neighbour above (-1) or below (+1). */
   onMove: (section: number, direction: -1 | 1) => void;
 }) {
+  const t = useT();
   const last = sections.length - 1;
   // A bare key in the reading's row: the arrows sit together, the x a
   // little apart from them, so a hand aiming to reorder never lands on
@@ -3153,9 +3177,9 @@ function SharedMachineRails({
       {withKey && entry.circuit ? <span className="absolute bottom-px left-0 z-10"><CircuitChip circuit={entry.circuit} small /></span> : null}
       {withKey ? (
         <span className="ml-auto flex items-center">
-          {key("Move this recipe up", <ChevronUp className="h-3.5 w-3.5" />, () => onMove(entry.section, -1), entry.section === 0)}
-          {key("Move this recipe down", <ChevronDown className="h-3.5 w-3.5" />, () => onMove(entry.section, 1), entry.section === last)}
-          {key("Take this recipe off the machine", <X className="h-3 w-3" />, () => onRemove(entry.section), false, "ml-2")}
+          {key(t("Move this recipe up"), <ChevronUp className="h-3.5 w-3.5" />, () => onMove(entry.section, -1), entry.section === 0)}
+          {key(t("Move this recipe down"), <ChevronDown className="h-3.5 w-3.5" />, () => onMove(entry.section, 1), entry.section === last)}
+          {key(t("Take this recipe off the machine"), <X className="h-3 w-3" />, () => onRemove(entry.section), false, "ml-2")}
         </span>
       ) : null}
     </div>
@@ -3170,7 +3194,7 @@ function SharedMachineRails({
               {entry.rails.inputs.length > 0 ? (
                 <PortRail nodeId={nodeId} side="input" ports={entry.rails.inputs} pending={pending} />
               ) : (
-                <NoFlowRow label="No input" side="input" />
+                <NoFlowRow label={t("No input")} side="input" />
               )}
             </div>
           </Fragment>
@@ -3193,7 +3217,7 @@ function SharedMachineRails({
               {entry.rails.outputs.length > 0 ? (
                 <PortRail nodeId={nodeId} side="output" ports={entry.rails.outputs} pending={pending} />
               ) : (
-                <NoFlowRow label="No output" side="output" />
+                <NoFlowRow label={t("No output")} side="output" />
               )}
             </div>
           </Fragment>
@@ -3359,7 +3383,7 @@ function PowerTierChip({
       <span
         className="flex h-6 w-[50px] items-center justify-center border-2 px-1 pb-[3px] font-bold leading-none shadow-[inset_2px_2px_0_rgba(255,255,255,0.55),inset_-2px_-2px_0_rgba(0,0,0,0.45)]"
         style={chipStyle}
-        title={`Unlocks at ${shownTier}`}
+        title={t("Unlocks at {tier}", { tier: shownTier })}
       >
         {shownTier}
       </span>
@@ -3394,8 +3418,8 @@ function PowerTierChip({
       }}
       className="nowheel flex h-6 w-[50px] items-center justify-center border-2 px-1 pb-[3px] text-[11px] font-bold leading-none shadow-[inset_2px_2px_0_rgba(255,255,255,0.55),inset_-2px_-2px_0_rgba(0,0,0,0.45)] hover:brightness-110"
       style={chipStyle}
-      title={`Tier ${shownTier}`}
-      aria-label={`Tier ${shownTier}`}
+      title={t("Tier {tier}", { tier: shownTier })}
+      aria-label={t("Tier {tier}", { tier: shownTier })}
     >
       {shownTier}
     </button>
@@ -3416,6 +3440,7 @@ export function OutputSocketRow({
   port: RailPort;
   pending: ReturnType<typeof useFactoryStore.getState>["pendingResourceConnection"];
 }) {
+  const t = useT();
   const setHoveredFlowScope = useFactoryStore((state) => state.setHoveredFlowScope);
   // SOLVE and POOL cover every asker by construction: the coupling's
   // percent is always 100, so the socket stays blank.
@@ -3448,12 +3473,12 @@ export function OutputSocketRow({
         <MinecraftTooltip
           label={
             solveMode
-              ? "Every taker is covered: the machines are sized to what is asked."
+              ? t("Every taker is covered: the machines are sized to what is asked.")
               : port.nameplatePerSecond <= 0
-              ? "Empty socket: nothing plugged in."
+              ? t("Empty socket: nothing plugged in.")
               : port.boundaryFree
-                ? "Pool mode banks the surplus by itself."
-                : "Nothing takes this, so it backs up and the machine stops. Wire it to a machine that wants it, a DRAIN drawer, or a trash can."
+                ? t("Pool mode banks the surplus by itself.")
+                : t("Nothing takes this, so it backs up and the machine stops. Wire it to a machine that wants it, a DRAIN drawer, or a trash can.")
           }
         >
           {/* The mirror of an input's NO SUPPLY: an output nothing takes
@@ -3462,7 +3487,7 @@ export function OutputSocketRow({
             <PlugDragHandle nodeId={nodeId} port={port} />
             {port.nameplatePerSecond > 0 && !port.boundaryFree && !solveMode ? (
               <span className="text-[7px] font-black leading-3 tracking-[0.5px] text-[var(--verdict-unwired-ink)]">
-                NO TAKER
+                {t("NO TAKER")}
               </span>
             ) : (
               "—"
@@ -3481,6 +3506,7 @@ export function OutputSocketRow({
  * React Flow's handle bounds.
  */
 function PlugDragHandle({ nodeId, port }: { nodeId: string; port: RailPort }) {
+  const t = useT();
   return (
     <Handle
       id={port.handleId}
@@ -3489,7 +3515,7 @@ function PlugDragHandle({ nodeId, port }: { nodeId: string; port: RailPort }) {
       data-resource-handle="true"
       data-resource-node-id={nodeId}
       data-resource-handle-id={port.handleId}
-      title={`Drag to wire ${portName(port)}`}
+      title={t("Drag to wire {resource}", { resource: portName(port) })}
       className={[
         "resource-slot-handle nodrag !absolute !left-0 !right-auto !top-0 !z-10 !h-full !w-full !min-w-0 !translate-x-0 !translate-y-0",
         "!rounded-none !border-0 !bg-transparent !opacity-0 cursor-crosshair",
@@ -3502,9 +3528,9 @@ function PlugDragHandle({ nodeId, port }: { nodeId: string; port: RailPort }) {
 // A dead-end drawer reads DRAIN, the same word its own card wears, so the
 // plug and the thing it points at cannot be read as two different ideas.
 const PLUG_DUMP_WORD: Record<"trash" | "tank" | "store", string> = {
-  trash: "TRASH",
-  tank: "DRAIN",
-  store: "DRAIN",
+  trash: msg("TRASH"),
+  tank: msg("DRAIN"),
+  store: msg("DRAIN"),
 };
 
 // No brightness filter here or on the port row below: a CSS filter also applies
@@ -3522,6 +3548,7 @@ const PLUG_GLOW_STYLE: CSSProperties = {
  */
 function PlugBlock({ nodeId, port }: { nodeId: string; port: RailPort }) {
   useItemNamesVersion();
+  const t = useT();
   const plug = port.plug!;
   const isFlowScopeLit = useFactoryStore((state) =>
     Boolean(state.hoveredFlowScope?.ports[`${nodeId}|${port.handleId}`]),
@@ -3529,7 +3556,7 @@ function PlugBlock({ nodeId, port }: { nodeId: string; port: RailPort }) {
   const coveredPct = Math.round(Math.min(Math.max(plug.coveredFraction, 0), 1) * 100);
   return (
     <MinecraftTooltip
-      label={`${portName(port)}: who takes it`}
+      label={t("{resource}: who takes it", { resource: portName(port) })}
       content={() => renderPlugHoverContent(port, nodeId)}
     >
       <span
@@ -3545,7 +3572,7 @@ function PlugBlock({ nodeId, port }: { nodeId: string; port: RailPort }) {
           // end it reaches; a generic "DUMP" would read as destruction even
           // when the flow goes somewhere safe.
           <span className="flow-plug-top">
-            <b>{PLUG_DUMP_WORD[plug.dumpKind ?? "store"]}</b>
+            <b>{td(PLUG_DUMP_WORD[plug.dumpKind ?? "store"])}</b>
           </span>
         ) : (
           <>
@@ -3584,6 +3611,7 @@ export function PortChip({
   plugRow?: boolean;
 }) {
   useItemNamesVersion();
+  const t = useT();
   const isInput = port.side === "input";
   const { calmMode: calmView } = useBoardView();
   // SOLVE and POOL: every fed port is at nameplate by construction, so the
@@ -3823,7 +3851,7 @@ export function PortChip({
               <HatchSupplyButton nodeId={nodeId} port={port} />
             ) : port.unsupplied ? (
               <span className="block text-[7px] font-black leading-[8px] tracking-[0.5px] text-[var(--verdict-blocked-ink)]">
-                NO SUPPLY
+                {t("NO SUPPLY")}
               </span>
             ) : (
               <span className="mt-0.5 flex items-center gap-0.5">
@@ -3864,7 +3892,11 @@ export function PortChip({
           data-resource-handle-id={port.handleId}
           // No native title: GlobalTitleTooltip would stamp the handle as a
           // tooltip STOP and the rich port panel would yield to it.
-          aria-label={`${isInput ? "Input" : "Output"}: ${portName(port)}${readOnly ? "" : ". Left click or R for recipes, right click or U for uses, drag to connect"}`}
+          aria-label={readOnly
+            ? isInput ? t("Input: {resource}", { resource: portName(port) }) : t("Output: {resource}", { resource: portName(port) })
+            : isInput
+              ? t("Input: {resource}. Left click or R for recipes, right click or U for uses, drag to connect", { resource: portName(port) })
+              : t("Output: {resource}. Left click or R for recipes, right click or U for uses, drag to connect", { resource: portName(port) })}
           className={[
             "resource-slot-handle nodrag !absolute !left-0 !right-auto !top-0 !z-30 !h-full !w-full !min-w-0 !translate-x-0 !translate-y-0",
             "!rounded-none !border-0 !bg-transparent !opacity-0",
@@ -3878,12 +3910,13 @@ export function PortChip({
 }
 
 function HatchSupplyButton({ nodeId, port }: { nodeId: string; port: RailPort }) {
+  const t = useT();
   const locked = useFactoryStore((state) => state.checklistMode || state.isReadOnly);
   return (
     <button
       type="button"
       aria-pressed={port.hatchSupplied === true}
-      aria-label={`${port.supplyHatch} for ${portName(port)}`}
+      aria-label={t("{hatch} for {resource}", { hatch: port.supplyHatch ?? "", resource: portName(port) })}
       disabled={locked}
       data-viewer-disabled="true"
       style={{ fontSize: 7, lineHeight: "10px", fontWeight: 700 }}
@@ -3914,17 +3947,18 @@ function HatchSupplyButton({ nodeId, port }: { nodeId: string; port: RailPort })
 // connect handlers in FactoryFlow spot the `custom-any` resource id and adopt
 // whatever resource the far end carries (the machine side decides direction).
 function CustomRateUniversalPorts({ nodeId }: { nodeId: string }) {
+  const t = useT();
   return (
     // Four cells: one row of sockets over one line of explanation. The dial
     // sits under this block and takes two more, so an empty card is the same
     // height as a card with one port on it.
     <div className="flex h-[80px] flex-col gap-0">
       <div className="flex h-[40px] items-center justify-between gap-3">
-        <UniversalPortChip nodeId={nodeId} side="input" label="Drain any" />
-        <UniversalPortChip nodeId={nodeId} side="output" label="Supply any" />
+        <UniversalPortChip nodeId={nodeId} side="input" label={t("Drain any")} />
+        <UniversalPortChip nodeId={nodeId} side="output" label={t("Supply any")} />
       </div>
       <p className="mx-auto flex max-w-[320px] flex-1 items-center text-center text-[11px] leading-tight text-[var(--mc-ink-muted)]">
-        Wire either socket to a machine and this card becomes that resource.
+        {t("Wire either socket to a machine and this card becomes that resource.")}
       </p>
     </div>
   );
@@ -3939,6 +3973,7 @@ function UniversalPortChip({
   side: "input" | "output";
   label: string;
 }) {
+  const t = useT();
   const isInput = side === "input";
   const handleId = makeResourceHandleId(side, { kind: "item", id: CUSTOM_RATE_ANY_RESOURCE_ID });
   return (
@@ -3958,8 +3993,8 @@ function UniversalPortChip({
         data-resource-handle-id={handleId}
         title={
           isInput
-            ? "Request side: wire a machine output (or tank) here"
-            : "Supply side: wire a machine input (or tank) here"
+            ? t("Request side: wire a machine output (or tank) here")
+            : t("Supply side: wire a machine input (or tank) here")
         }
         className={[
           "resource-slot-handle nodrag !absolute !left-0 !right-auto !top-0 !z-30 !h-full !w-full !min-w-0 !translate-x-0 !translate-y-0",
@@ -3984,6 +4019,7 @@ function CustomRatePanel({
   kind: ResourceAmount["kind"];
   perSecond: number;
 }) {
+  const t = useT();
   const setCustomRateConfig = useFactoryStore((state) => state.setCustomRateConfig);
   // Subscribe so the shown value re-derives when the board unit flips.
   useFactoryStore((state) => state.rateUnit);
@@ -4029,9 +4065,9 @@ function CustomRatePanel({
           }}
           onPointerDown={(event) => event.stopPropagation()}
           className={modeButtonClassName(mode === "supply")}
-          title="Supply"
+          title={t("Supply")}
         >
-          Supply
+          {t("Supply")}
         </button>
         <button
           type="button"
@@ -4041,9 +4077,9 @@ function CustomRatePanel({
           }}
           onPointerDown={(event) => event.stopPropagation()}
           className={modeButtonClassName(mode === "request")}
-          title="Request"
+          title={t("Request")}
         >
-          Request
+          {t("Request")}
         </button>
       </div>
       <input
@@ -4062,8 +4098,9 @@ function CustomRatePanel({
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
         inputMode="decimal"
-        aria-label="Rate"
-        title="Rate"
+        aria-label={t("Rate")}
+        title={t("Rate")}
+
         // Sized to the number, not the row (`flex-1` would claim every spare
         // pixel). In `ch` on a mono font this is exactly the typed digits.
         style={{ width: `${Math.min(Math.max(draft.length + 2, 5), 16)}ch` }}
@@ -4314,6 +4351,7 @@ function PassiveProductionConfigPanel({
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }) {
+  const t = useT();
   if (controls.length === 0) {
     return null;
   }
@@ -4349,14 +4387,14 @@ function PassiveProductionConfigPanel({
             // it. Folded, it is the whole panel and centres on its own.
             isFolded ? "" : "mb-1",
           ].join(" ")}
-          title={isFolded ? `Show ${title} settings` : `Hide ${title} settings`}
+          title={isFolded ? t("Show {title} settings", { title: title ?? "" }) : t("Hide {title} settings", { title: title ?? "" })}
           aria-expanded={!isFolded}
         >
           <ChevronDown
             aria-hidden
             className={["h-3 w-3 shrink-0", isFolded ? "-rotate-90" : ""].join(" ")}
           />
-          <span className="min-w-0 truncate">{title} Settings</span>
+          <span className="min-w-0 truncate">{t("{title} Settings", { title: title ?? "" })}</span>
         </button>
       ) : null}
       {isFolded ? null : (
@@ -4365,16 +4403,16 @@ function PassiveProductionConfigPanel({
             <MinecraftTooltip key={control.id} content={getControlHelp?.(control.id)}>
             <label className="min-w-0">
               <span className="mb-0.5 block truncate text-[10px] font-bold uppercase leading-4 text-[var(--mc-ink-muted)]">
-                {control.label}
+                {td(control.label)}
               </span>
               <MinecraftSelect
                 value={control.current.key}
-                options={control.tiers}
+                options={control.tiers.map((tier) => ({ key: tier.key, label: td(tier.label) }))}
                 onSelect={(key) => onSelect(control.id, key)}
                 disabled={control.tiers.length <= 1}
                 // No native title: it would stop the rich hover above and
                 // show the bare value when the pointer reaches the select.
-                ariaLabel={control.label}
+                ariaLabel={td(control.label)}
               />
             </label>
             </MinecraftTooltip>
@@ -4461,6 +4499,7 @@ function CropStepperRow({
   onStep: (next: number) => void;
   help?: ReactNode;
 }) {
+  const t = useT();
   const step = (direction: -1 | 1) => {
     const next = Math.max(min, Math.min(max, value + direction));
     if (next !== value) {
@@ -4505,7 +4544,7 @@ function CropStepperRow({
             step(-1);
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={`Fewer ${label}`}
+          aria-label={t("Fewer {label}", { label })}
         >
           <Minus className="h-3 w-3" />
         </button>
@@ -4521,7 +4560,7 @@ function CropStepperRow({
             step(1);
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={`More ${label}`}
+          aria-label={t("More {label}", { label })}
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -4548,6 +4587,7 @@ function CropCycleRow({
   onPick: (option: MachineConfigTierOption, index: number) => void;
   help?: ReactNode;
 }) {
+  const t = useT();
   const index = Math.max(
     0,
     options.findIndex((option) => option.key === currentKey),
@@ -4562,7 +4602,7 @@ function CropCycleRow({
   const row = (
     <div
       className={CROP_TILE_CLASS}
-      title={`${label}: ${current.label}`}
+      title={`${label}: ${td(current.label)}`}
       onWheel={(event) => {
         if (checklistLocked()) return;
         event.stopPropagation();
@@ -4582,12 +4622,12 @@ function CropCycleRow({
             step(-1);
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={`Previous ${label}`}
+          aria-label={t("Previous {label}", { label })}
         >
           <Minus className="h-3 w-3" />
         </button>
         <span className="h-5 w-0 min-w-0 flex-1 overflow-hidden whitespace-nowrap border border-[var(--mc-47)] bg-[var(--mc-85)] px-0.5 text-center text-[10px] font-medium leading-[18px] text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-100),inset_-1px_-1px_0_var(--mc-54)]">
-          {current.label}
+          {td(current.label)}
         </span>
         <button
           type="button"
@@ -4598,7 +4638,7 @@ function CropCycleRow({
             step(1);
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={`Next ${label}`}
+          aria-label={t("Next {label}", { label })}
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -4619,6 +4659,7 @@ function CropTierChip({
   control: MachineConfigTierControl;
   onPick: (key: string) => void;
 }) {
+  const t = useT();
   const index = Math.max(
     0,
     control.tiers.findIndex((tier) => tier.key === control.current.key),
@@ -4665,8 +4706,8 @@ function CropTierChip({
               color: "#fff",
             }
       }
-      title={`${control.label}: ${control.current.label}. Click for the next tier, right-click for the previous, wheel for both.`}
-      aria-label={`${control.label} tier`}
+      title={t("{control}: {current}. Click for the next tier, right-click for the previous, wheel for both.", { control: td(control.label), current: control.current.label })}
+      aria-label={t("{control} tier", { control: td(control.label) })}
     >
       {control.current.label}
     </button>
@@ -4709,6 +4750,7 @@ function CropConfigPanel({
   onSelectMany: (patch: Record<string, string>) => void;
   getControlHelp?: (controlId: string) => ReactNode;
 }) {
+  const t = useT();
   const [formulasOpen, setFormulasOpen] = useState(readCropFormulasOpen);
   const onToggleFormulas = () => {
     setFormulasOpen((open) => {
@@ -4766,7 +4808,7 @@ function CropConfigPanel({
   ) => (
     <CropStepperRow
       key={control.id}
-      label={control.label}
+      label={td(control.label)}
       effect={effect}
       value={value}
       min={min}
@@ -4799,8 +4841,8 @@ function CropConfigPanel({
           1,
           31,
           control.id === CROP_GROWTH_STAT_CONTROL_ID
-            ? "Higher ripens sooner"
-            : "Higher drops more per harvest",
+            ? t("Higher ripens sooner")
+            : t("Higher drops more per harvest"),
         );
       }
       case CROP_IF_GROWTH_UNIT_CONTROL_ID:
@@ -4810,9 +4852,9 @@ function CropConfigPanel({
           0,
           setup.overclocks > 0 ? 0 : setup.growthUnits + remaining,
           setup.overclocks > 0
-            ? "The Overclocked unit replaces these"
-            : `+${setup.growthUnits * 100}% growth speed`,
-          setup.overclocks > 0 ? "The Overclocked unit replaces these" : "No free upgrade slot",
+            ? t("The Overclocked unit replaces these")
+            : t("+{percent}% growth speed", { percent: setup.growthUnits * 100 }),
+          setup.overclocks > 0 ? t("The Overclocked unit replaces these") : t("No free upgrade slot"),
         );
       case CROP_IF_FERTILIZER_UNIT_CONTROL_ID:
         return stepperRow(
@@ -4820,8 +4862,8 @@ function CropConfigPanel({
           setup.fertilizerUnits,
           0,
           Math.min(1, setup.fertilizerUnits + remaining),
-          setup.fertilizerUnits > 0 ? "×1.5 speed · +0.5 harvest rounds" : "Feeds enriched fertilizer",
-          remaining === 0 && setup.fertilizerUnits === 0 ? "No free upgrade slot" : "The farm fits one",
+          setup.fertilizerUnits > 0 ? t("×1.5 speed · +0.5 harvest rounds") : t("Feeds enriched fertilizer"),
+          remaining === 0 && setup.fertilizerUnits === 0 ? t("No free upgrade slot") : t("The farm fits one"),
         );
       case CROP_IF_HARVEST_UNIT_CONTROL_ID:
         return stepperRow(
@@ -4829,8 +4871,8 @@ function CropConfigPanel({
           setup.harvestUnits,
           0,
           Math.min(2, setup.harvestUnits + remaining),
-          `×${(1 + setup.harvestUnits * 0.2).toFixed(1)} harvest rounds`,
-          remaining === 0 && setup.harvestUnits < 2 ? "No free upgrade slot" : "The farm fits two",
+          t("×{rounds} harvest rounds", { rounds: (1 + setup.harvestUnits * 0.2).toFixed(1) }),
+          remaining === 0 && setup.harvestUnits < 2 ? t("No free upgrade slot") : t("The farm fits two"),
         );
       case CROP_IF_ENVIRONMENT_UNIT_CONTROL_ID: {
         // A card adds a liked biome TAG, which stacks with the biome's own
@@ -4847,8 +4889,8 @@ function CropConfigPanel({
           setup.environmentUnits,
           0,
           Math.min(2, setup.environmentUnits + remaining),
-          `+${withCards.biomeBonus - withoutCards.biomeBonus} biome score in this biome`,
-          remaining === 0 && setup.environmentUnits < 2 ? "No free upgrade slot" : "The farm fits two",
+          t("+{score} biome score in this biome", { score: withCards.biomeBonus - withoutCards.biomeBonus }),
+          remaining === 0 && setup.environmentUnits < 2 ? t("No free upgrade slot") : t("The farm fits two"),
         );
       }
       case CROP_IF_OVERCLOCK_CONTROL_ID: {
@@ -4860,16 +4902,16 @@ function CropConfigPanel({
           0,
           belowZpm || noSlot ? setup.overclocks : 6,
           setup.overclocks > 0
-            ? `×${2 ** setup.overclocks} output · ×${4 ** setup.overclocks} EU`
-            : "Doubles output, quadruples EU, per step",
-          belowZpm ? "Needs a ZPM seed bed or better" : "No free upgrade slot",
+            ? t("×{output} output · ×{eu} EU", { output: 2 ** setup.overclocks, eu: 4 ** setup.overclocks })
+            : t("Doubles output, quadruples EU, per step"),
+          belowZpm ? t("Needs a ZPM seed bed or better") : t("No free upgrade slot"),
         );
       }
       default:
         return (
           <CropCycleRow
             key={control.id}
-            label={control.label}
+            label={td(control.label)}
             options={control.tiers}
             currentKey={control.current.key}
             onPick={(next, index) => pickWithSound(control.id, next.key, index)}
@@ -4903,7 +4945,7 @@ function CropConfigPanel({
       className="mt-0.5 flex h-[14px] items-center text-[10px] leading-[12px] text-[var(--mc-ink-muted)]"
     >
       <span className="truncate">
-        {crops.toLocaleString()} planted / {capacity.toLocaleString()} per machine
+        {t("{planted} planted / {capacity} per machine", { planted: crops.toLocaleString(), capacity: capacity.toLocaleString() })}
       </span>
       <span className="ml-auto shrink-0 text-[var(--mc-ink)]">
         ×{machines.toLocaleString()} {isFarm ? "Industrial Farm" : "Crop Manager"}
@@ -4930,7 +4972,7 @@ function CropConfigPanel({
           onToggleFormulas();
         }}
         aria-expanded={formulasOpen}
-        title={formulasOpen ? "Hide the worked formulas" : "Show the worked formulas"}
+        title={formulasOpen ? t("Hide the worked formulas") : t("Show the worked formulas")}
       >
         <ChevronDown
           aria-hidden
@@ -4940,7 +4982,7 @@ function CropConfigPanel({
             formulasOpen ? "" : "-rotate-90",
           ].join(" ")}
         />
-        <span className="text-[9px] leading-[11px]">Formulas</span>
+        <span className="text-[9px] leading-[11px]">{t("Formulas")}</span>
       </button>
     );
     if (!formulasOpen) {
@@ -5006,24 +5048,24 @@ function CropConfigPanel({
     const outPerSec = rate > 0 ? (itemsPerHarvest / harvestSec) * crops : 0;
     const lines: ReactNode[] = [
       line(
-        "food",
-        <>(5+{waterBonus}+{fertBonus}+{skyBonus}+{env.biomeBonus})·5 vs {cropStats.tier}·10</>,
+        t("food"),
+        <>(5+{waterBonus}+{fertBonus}+{skyBonus}+{env.biomeBonus})·5 {t("vs")} {cropStats.tier}·10</>,
         <>
-          {supply} vs {demand}{" "}
+          {supply} {t("vs")} {demand}{" "}
           <span style={{ color: supply >= demand ? "#7fd94a" : "#e06060" }}>
             → {surplusPct}%
           </span>
         </>,
       ),
       line(
-        "grows",
+        t("grows"),
         <>(6+{env.growth})·{surplusPct}%</>,
         <>
-          {rate} pts per {formatCompact(cycleSec)}s
+          {t("{points} pts per {seconds}s", { points: rate, seconds: formatCompact(cycleSec) })}
         </>,
       ),
       line(
-        "harvest",
+        t("harvest"),
         rate > 0 ? (
           // Every term stays put whatever the knobs say, and every unit
           // count stands IN the equation wearing its own colour - so when a
@@ -5039,12 +5081,12 @@ function CropConfigPanel({
             </>
           )
         ) : (
-          <>too hungry to grow</>
+          <>{t("too hungry to grow")}</>
         ),
-        rate > 0 ? <>{formatCompact(harvestSec)}s</> : <span style={{ color: "#e06060" }}>never</span>,
+        rate > 0 ? <>{formatCompact(harvestSec)}s</> : <span style={{ color: "#e06060" }}>{t("never")}</span>,
       ),
       line(
-        "drops",
+        t("drops"),
         isFarm ? (
           <>
             {formatCompact(cropStats.dropChance)}·1.03<sup>{env.gain}</sup>·(1+0.2·
@@ -5059,9 +5101,9 @@ function CropConfigPanel({
         <>{formatCompact(itemsPerHarvest)}</>,
       ),
       line(
-        "output",
+        t("output"),
         <>
-          {formatCompact(itemsPerHarvest)} ÷ {formatCompact(harvestSec)}s · {crops.toLocaleString()} seeds
+          {formatCompact(itemsPerHarvest)} ÷ {formatCompact(harvestSec)}s · {tPlural(crops, "{count} seeds", "{count} seeds", { count: crops.toLocaleString() })}
         </>,
         <>{formatCompact(outPerSec)}/s</>,
       ),
@@ -5075,7 +5117,7 @@ function CropConfigPanel({
       const baseEu = Math.round(farmEu / (unitPowerFactor * 4 ** setup.overclocks));
       lines.push(
         line(
-          "power",
+          t("power"),
           <>
             {baseEu}·(1+1.25·{growthN}+0.5·({fertN}+{harvestN}+{biomeN}))·4
             <sup>{ocN}</sup>·{machines}
@@ -5087,8 +5129,8 @@ function CropConfigPanel({
       const euPerHarvest = cropsNhManagerEuPerHarvest(setup);
       lines.push(
         line(
-          "power",
-          <>{(euPerHarvest * 8).toLocaleString()}/8 per crop picked</>,
+          t("power"),
+          <>{t("{eu}/8 per crop picked", { eu: (euPerHarvest * 8).toLocaleString() })}</>,
           <>{euPerHarvest.toLocaleString()} EU</>,
         ),
       );
@@ -5141,7 +5183,7 @@ function CropConfigPanel({
         {unitCells.length > 0 ? (
           <div className={cropCells.length > 0 ? "mt-1" : ""}>
             {sectionHead(
-              "Upgrades",
+              t("Upgrades"),
               <>
                 <span className="flex items-center gap-[3px]">
                   {Array.from({ length: slots }, (_unused, index) => (
@@ -5153,7 +5195,7 @@ function CropConfigPanel({
                   ))}
                 </span>
                 <span className="ml-auto tabular-nums">
-                  {used}/{slots} slots
+                  {t("{used}/{slots} slots", { used, slots })}
                 </span>
               </>,
             )}
@@ -5185,27 +5227,39 @@ function CropHelpPanel({
   /** Shared "how feeding works" footer for the environment knobs. */
   feeding?: { tier: number };
 }) {
+  const t = useT();
   return (
     <div className="w-[400px]">
       <p className="text-[18px] font-semibold leading-snug text-amber-300">{title}</p>
       <div className="mt-1.5 space-y-2 text-[16px] leading-relaxed text-slate-100">{children}</div>
       {feeding ? (
         <p className="mt-2.5 border-t border-white/10 pt-2 text-[16px] leading-relaxed text-slate-100">
-          Feeding basics: this crop is Tier {feeding.tier}, so it wants{" "}
-          <span className="text-white">{feeding.tier * 10}</span> food out of a possible 275. Every
-          point of extra food makes it grow{" "}
-          <span style={{ color: CROP_HELP_GOOD }}>a little faster</span>; every missing point slows
-          it <span style={{ color: CROP_HELP_BAD }}>four times as hard</span>. If it is 25 or more
-          short, it <span style={{ color: CROP_HELP_BAD }}>stops growing completely</span>.
+          {richText(
+            t("Feeding basics: this crop is Tier {tier}, so it wants {food} food out of a possible 275. Every point of extra food makes it grow {faster}; every missing point slows it {harder}. If it is 25 or more short, it {stops}.", { tier: feeding.tier }),
+            {
+              food: <span className="text-white">{feeding.tier * 10}</span>,
+              faster: <span style={{ color: CROP_HELP_GOOD }}>{t("a little faster")}</span>,
+              harder: <span style={{ color: CROP_HELP_BAD }}>{t("four times as hard")}</span>,
+              stops: <span style={{ color: CROP_HELP_BAD }}>{t("stops growing completely")}</span>,
+            },
+          )}
         </p>
       ) : null}
       {finePrint ? (
         <p className="mt-2 border-t border-white/10 pt-1.5 text-[13px] leading-relaxed text-slate-400">
-          Formula: {finePrint}
+          {richText(t("Formula: {formula}"), { formula: finePrint })}
         </p>
       ) : null}
     </div>
   );
+}
+
+/** Fills `{name}` slots of translated text with React nodes (a coloured word, a figure). */
+function richText(text: string, parts: Record<string, ReactNode>): ReactNode {
+  return text.split(/(\{\w+\})/).map((piece, index) => {
+    const name = /^\{(\w+)\}$/.exec(piece)?.[1];
+    return name !== undefined && name in parts ? <Fragment key={index}>{parts[name]}</Fragment> : piece;
+  });
 }
 
 /**
@@ -5226,118 +5280,106 @@ function cropControlHelp(recipe: Recipe, controlId: string): ReactNode {
     case "cropGrowthStat":
       return (
         <CropHelpPanel
-          title="Growth"
+          title={t("Growth")}
           finePrint={
             <>
-              every 12.8 s the plant gains (6 + Growth) points, scaled by feeding. This crop is
-              ripe at {stats.growthPoints.toLocaleString()} points and restarts from 0 after each
-              harvest.
+              {t("every 12.8 s the plant gains (6 + Growth) points, scaled by feeding. This crop is ripe at {points} points and restarts from 0 after each harvest.", { points: stats.growthPoints.toLocaleString() })}
             </>
           }
         >
           <p>
-            The higher the Growth stat, the sooner each harvest comes around. A 31-Growth plant
-            regrows {good("about five times faster")} than a 1-Growth one.
+            {richText(t("The higher the Growth stat, the sooner each harvest comes around. A 31-Growth plant regrows {faster} than a 1-Growth one."), { faster: good(t("about five times faster")) })}
           </p>
           <p className="text-slate-300">
-            In the game you raise Growth by cross-breeding crops between double crop sticks.
+            {t("In the game you raise Growth by cross-breeding crops between double crop sticks.")}
           </p>
         </CropHelpPanel>
       );
     case "cropGainStat":
       return (
         <CropHelpPanel
-          title="Gain"
+          title={t("Gain")}
           finePrint={
             <>
-              drop rounds = {stats.dropChance.toFixed(3)} × 1.03^Gain, and every successful drop
-              has a (Gain + 1)% chance of one bonus item.
+              {t("drop rounds = {chance} × 1.03^Gain, and every successful drop has a (Gain + 1)% chance of one bonus item.", { chance: stats.dropChance.toFixed(3) })}
             </>
           }
         >
           <p>
-            The higher the Gain stat, the more items each harvest gives. At 31 you collect{" "}
-            {good("roughly 2.5× as much")} as at 1.
+            {richText(t("The higher the Gain stat, the more items each harvest gives. At 31 you collect {more} as at 1."), { more: good(t("roughly 2.5× as much")) })}
           </p>
           <p className="text-slate-300">
-            Like Growth, it&apos;s raised by cross-breeding. It never changes how fast the plant
-            grows, only how much it drops.
+            {t("Like Growth, it's raised by cross-breeding. It never changes how fast the plant grows, only how much it drops.")}
           </p>
         </CropHelpPanel>
       );
     case "cropWater":
       return (
         <CropHelpPanel
-          title="Water"
+          title={t("Water")}
           feeding={{ tier: stats.tier }}
-          finePrint={<>water bonus = floor((water + 9) ÷ 10): 0 → +1, 50 → +5, 100 → +10.</>}
+          finePrint={<>{t("water bonus = floor((water + 9) ÷ 10): 0 → +1, 50 → +5, 100 → +10.")}</>}
         >
           <p>
-            Full water is {good("+10 food")}, one of the two biggest boosts you control.
+            {richText(t("Full water is {food}, one of the two biggest boosts you control."), { food: good(t("+10 food")) })}
           </p>
           <p className="text-slate-300">
-            A Crop Manager keeps water at full automatically, so &quot;Full&quot; matches an
-            automated farm.
+            {t("A Crop Manager keeps water at full automatically, so \"Full\" matches an automated farm.")}
           </p>
         </CropHelpPanel>
       );
     case "cropFertilizer":
       return (
         <CropHelpPanel
-          title="Fertilizer"
+          title={t("Fertilizer")}
           feeding={{ tier: stats.tier }}
-          finePrint={<>fertilizer bonus = floor((fertilizer + 9) ÷ 10): 0 → +1, 50 → +5, 100 → +10.</>}
+          finePrint={<>{t("fertilizer bonus = floor((fertilizer + 9) ÷ 10): 0 → +1, 50 → +5, 100 → +10.")}</>}
         >
           <p>
-            Fertilizer works like water: keeping it full is {good("+10 food")}. Without it a
-            high-tier crop {bad("slows down or stops")}.
+            {richText(t("Fertilizer works like water: keeping it full is {food}. Without it a high-tier crop {slows}."), { food: good(t("+10 food")), slows: bad(t("slows down or stops")) })}
           </p>
           <p className="text-slate-300">
-            Crop Managers and Industrial Farms can supply it for you.
+            {t("Crop Managers and Industrial Farms can supply it for you.")}
           </p>
         </CropHelpPanel>
       );
     case "cropSky":
       return (
         <CropHelpPanel
-          title="Sky"
+          title={t("Sky")}
           feeding={{ tier: stats.tier }}
-          finePrint={<>sky bonus = +2 when the block above the crop can see the sky.</>}
+          finePrint={<>{t("sky bonus = +2 when the block above the crop can see the sky.")}</>}
         >
           <p>
-            Plants under open sky get a small {good("+2 food")} bonus. Roofed or underground farms
-            lose it. That only matters when the crop is close to being underfed.
+            {richText(t("Plants under open sky get a small {food} bonus. Roofed or underground farms lose it. That only matters when the crop is close to being underfed."), { food: good(t("+2 food")) })}
           </p>
         </CropHelpPanel>
       );
     case "cropBiome":
       return (
         <CropHelpPanel
-          title="Biome"
+          title={t("Biome")}
           feeding={{ tier: stats.tier }}
           finePrint={
             <>
-              biome bonus = max(humidity, likes): each matching tag +14, capped at 2 tags; humidity
-              scales 0–14 between 50% and 80% biome humidity.
+              {t("biome bonus = max(humidity, likes): each matching tag +14, capped at 2 tags; humidity scales 0–14 between 50% and 80% biome humidity.")}
             </>
           }
         >
           <p>
             {biomeTags.length > 0 ? (
               <>
-                This crop likes{" "}
-                <span className="text-white">{biomeTags.join(" and ").toLowerCase()}</span> places.
+                {richText(t("This crop likes {tags} places."), {
+                  tags: <span className="text-white">{biomeTags.join(` ${t("and")} `).toLowerCase()}</span>,
+                })}
               </>
             ) : (
-              <>This crop has no favourite biome.</>
+              <>{t("This crop has no favourite biome.")}</>
             )}{" "}
-            Each matching like is {good("+14 food")}, so matching both is {good("+28")}, the
-            biggest feeding boost there is.
+            {richText(t("Each matching like is {like}, so matching both is {both}, the biggest feeding boost there is."), { like: good(t("+14 food")), both: good("+28") })}
           </p>
           <p className="text-slate-300">
-            Without a matching biome, humidity stands in for one like: the percent options are the
-            biome&apos;s humidity, worth +4 at 60%, +9 at 70% and the full +14 at 80% or wetter
-            (a swamp or jungle). It never stacks with real likes.
+            {t("Without a matching biome, humidity stands in for one like: the percent options are the biome's humidity, worth +4 at 60%, +9 at 70% and the full +14 at 80% or wetter (a swamp or jungle). It never stacks with real likes.")}
           </p>
         </CropHelpPanel>
       );
@@ -5435,6 +5477,7 @@ export function SolvedMachinesStat({
   onPin: (machines: number | undefined) => void;
   inline?: boolean;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const isPinned = pinned !== undefined && pinned > 0;
@@ -5450,7 +5493,7 @@ export function SolvedMachinesStat({
     }
   };
   return (
-    <MinecraftTooltip content={() => <RecipeTooltip view={{ ...buildCountTooltip(needed, pinned), ...(editing ? { actions: [], reason: "Clear the field to unpin." } : {}) }} />} >
+    <MinecraftTooltip content={() => <RecipeTooltip view={{ ...buildCountTooltip(needed, pinned), ...(editing ? { actions: [], reason: t("Clear the field to unpin.") } : {}) }} />} >
     <div
       className={`min-w-0 border border-[var(--mc-47)] bg-[var(--mc-71)] px-1 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)] ${inline ? "flex h-6 items-center gap-2 whitespace-nowrap" : ""}`}
     >
@@ -5478,7 +5521,7 @@ export function SolvedMachinesStat({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           inputMode="decimal"
-          aria-label="Pinned machine count"
+          aria-label={t("Pinned machine count")}
           className={`nodrag h-5 ${inline ? "w-16" : "w-full"} min-w-0 border border-[var(--mc-47)] bg-[var(--mc-85)] px-1 text-center text-[13px] font-medium leading-4 text-[var(--mc-ink)] outline-none focus:border-cyan-700 focus:ring-1 focus:ring-cyan-400`}
         />
       ) : (
@@ -5490,7 +5533,7 @@ export function SolvedMachinesStat({
             setEditing(true);
           }}
           onPointerDown={(event) => event.stopPropagation()}
-          aria-label={isPinned ? "Change the pinned machine count" : "Pin a machine count"}
+          aria-label={isPinned ? t("Change the pinned machine count") : t("Pin a machine count")}
           className={`group/pin flex ${inline ? "w-auto shrink-0" : "w-full"} min-w-0 items-center gap-[3px] text-left`}
         >
           <span
@@ -5577,6 +5620,7 @@ function PowerStat({
    */
   sharedDraw?: { peakEuT: number; avgEuT: number; recipes: number };
 }) {
+  const t = useT();
   const stalled = report.state !== "ok";
   // Always EU/t, whatever the board's rate unit: power is a per-tick fact in
   // GT and reads as noise in any other clock. The unit itself is rendered as
@@ -5596,13 +5640,13 @@ function PowerStat({
         powerReadout ? () => <PowerReadout {...powerReadout} /> : sharedDraw ? (
           <RecipeTooltip
             view={{
-              title: "Power",
+              title: t("Power"),
               rows: [
-                { label: "Peak", value: `${formatPowerValue(powerDisplayFromEuT(sharedDraw.peakEuT))} ${powerDisplaySuffix()}` },
-                { label: "Average", value: `${formatPowerValue(powerDisplayFromEuT(sharedDraw.avgEuT))} ${powerDisplaySuffix()}` },
-                { label: "Supply per machine", value: `${formatPowerValue(powerDisplayFromEuT(report.poolEuT))} ${powerDisplaySuffix()}` },
+                { label: t("Peak"), value: `${formatPowerValue(powerDisplayFromEuT(sharedDraw.peakEuT))} ${powerDisplaySuffix()}` },
+                { label: t("Average"), value: `${formatPowerValue(powerDisplayFromEuT(sharedDraw.avgEuT))} ${powerDisplaySuffix()}` },
+                { label: t("Supply per machine"), value: `${formatPowerValue(powerDisplayFromEuT(report.poolEuT))} ${powerDisplaySuffix()}` },
               ],
-              reason: `${sharedDraw.recipes} recipes share this machine. Peak is the hungriest recipe's draw; average weights each by its share of the time.`,
+              reason: tPlural(sharedDraw.recipes, "{count} recipes share this machine. Peak is the hungriest recipe's draw; average weights each by its share of the time.", "{count} recipes share this machine. Peak is the hungriest recipe's draw; average weights each by its share of the time.", { count: sharedDraw.recipes }),
             }}
           />
         ) : (
@@ -5631,14 +5675,14 @@ function PowerStat({
             stalled ? "text-red-400" : "text-[var(--mc-ink-muted)]",
           ].join(" ")}
         >
-          Power
+          {t("Power")}
         </div>
         <div className="truncate font-medium tabular-nums">
           {stalled ? (
             report.state === "under-powered" ? (
-              "LOW!"
+              t("LOW!")
             ) : (
-              "TIER!"
+              t("TIER!")
             )
           ) : (
             <>
@@ -5690,6 +5734,7 @@ function SteamStat({
   /** A shared machine's litres: peak is the hungriest recipe's, average weighted by share. */
   sharedLitres?: { peak: number; avg: number; recipes: number };
 }) {
+  const t = useT();
   // Same rule as the POWER cell: the figure follows the PEAK/AVG switch;
   // the hover still quotes the per-machine burn.
   const drawLitresPerSecond = sharedLitres
@@ -5703,17 +5748,17 @@ function SteamStat({
   return (
     <MinecraftTooltip
       content={() => <RecipeTooltip view={{
-        title: "Steam",
+        title: t("Steam"),
         rows: [
-          { label: "Draw per active machine", value: formatCompact(perMachine) + " L/s" },
-          { label: average ? "Card average" : "Card peak", value: formatCompact(drawLitresPerSecond) + " L/s" },
-          ...(report.parallels > 1 ? [{ label: "Parallel operations", value: String(report.parallels) }] : []),
+          { label: t("Draw per active machine"), value: formatCompact(perMachine) + " L/s" },
+          { label: average ? t("Card average") : t("Card peak"), value: formatCompact(drawLitresPerSecond) + " L/s" },
+          ...(report.parallels > 1 ? [{ label: t("Parallel operations"), value: String(report.parallels) }] : []),
         ],
       }} />}
     >
       <div className="min-w-0 border border-[var(--mc-47)] bg-[var(--mc-71)] px-1 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
         <div className="truncate text-[11px] uppercase leading-[13px] text-[var(--mc-ink-muted)]">
-          Steam
+          {t("Steam")}
         </div>
         <div className="truncate font-medium tabular-nums">
           <MotionNumberText
@@ -5740,38 +5785,40 @@ function PowerStoryContent({ report, utilization, machines = 1, recipe, node, ac
   recipe?: Recipe; node?: FactoryNode;
   actions?: readonly TooltipAction[];
 }) {
+  const t = useT();
   const mode = useFactoryStore((state) => tooltipMode(state.project));
+  const language = useLanguage((state) => state.language);
   const peak = report.drawEuT * machines;
   // The calculator's working, on hover only: the scan behind the next win
-  // samples the report a few hundred times.
+  // samples the report a few hundred times. Its text is in the interface language.
   const working = useMemo(
     () => (report.isMultiblock && recipe && node && !getFusionMachine(applyMachineHandlerToRecipe(recipe, node).machineType) ? describePowerWorking(recipe, node, report.poolEuT) : undefined),
-    [report.isMultiblock, report.poolEuT, recipe, node],
+    [report.isMultiblock, report.poolEuT, recipe, node, language],
   );
   const rows = working
     ? [
-        ...(working.nextWin ? [{ label: "Next", value: `+${formatCompact(working.nextWin.euT - report.poolEuT)} EU/t for ${working.nextWin.gain}` }] : []),
+        ...(working.nextWin ? [{ label: t("Next"), value: t("+{eut} EU/t for {gain}", { eut: formatCompact(working.nextWin.euT - report.poolEuT), gain: working.nextWin.gain }) }] : []),
       ]
     : [
-        { label: "Configured tier", value: report.tier },
-        { label: "Supply per machine", value: `${formatCompact(report.poolEuT)} EU/t` },
-        { label: "Draw per active machine", value: `${formatCompact(report.drawEuT)} EU/t` },
-        ...(report.parallels > 1 ? [{ label: "Parallel operations", value: String(report.parallels) }] : []),
-        { label: "Overclock steps", value: String(report.overclockSteps) },
+        { label: t("Configured tier"), value: report.tier },
+        { label: t("Supply per machine"), value: `${formatCompact(report.poolEuT)} EU/t` },
+        { label: t("Draw per active machine"), value: `${formatCompact(report.drawEuT)} EU/t` },
+        ...(report.parallels > 1 ? [{ label: t("Parallel operations"), value: String(report.parallels) }] : []),
+        { label: t("Overclock steps"), value: String(report.overclockSteps) },
       ];
   return <RecipeTooltip view={{
-    title: "Power", mode,
-    subtitle: working ? `${formatCompact(report.poolEuT)} EU/t supplied, ${working.readAs}` : undefined,
+    title: t("Power"), mode,
+    subtitle: working ? t("{eut} EU/t supplied, {readAs}", { eut: formatCompact(report.poolEuT), readAs: working.readAs }) : undefined,
     table: working
       ? {
-          head: ["", "Recipe", `With ${formatCompact(report.poolEuT)}`],
+          head: ["", t("Recipe"), t("With {eut}", { eut: formatCompact(report.poolEuT) })],
           rows: working.rows.map((row) => ({ label: row.label, before: row.recipe, after: row.supplied, emphasis: row.emphasis })),
         }
       : undefined,
     rows: [
       ...rows,
-      { label: "Card peak", value: `${formatCompact(peak)} EU/t` },
-      ...(utilization === undefined ? [] : [{ label: "Card average", value: `${formatCompact(peak * Math.min(1, Math.max(0, utilization)))} EU/t` }]),
+      { label: t("Card peak"), value: `${formatCompact(peak)} EU/t` },
+      ...(utilization === undefined ? [] : [{ label: t("Card average"), value: `${formatCompact(peak * Math.min(1, Math.max(0, utilization)))} EU/t` }]),
     ],
     reason: report.state === "ok" ? working?.hint : describePowerStall(report),
     actions,
@@ -5791,6 +5838,7 @@ function MachineCountStat({
   onFullFarmsChange?: (checked: boolean) => void;
   onChange: (machineCount: number) => void;
 }) {
+  const t = useT();
   const machineCountText = String(machineCount);
   const [draftState, setDraftState] = useState({
     machineCount,
@@ -5846,10 +5894,10 @@ function MachineCountStat({
       {fullFarms !== undefined ? (
         <label className="nodrag flex items-center gap-1 whitespace-nowrap text-[11px] leading-[13px] text-[var(--mc-ink-muted)]"
           onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
-          <input type="checkbox" checked={fullFarms} aria-label="Full farms"
+          <input type="checkbox" checked={fullFarms} aria-label={t("Full farms")}
             className="h-3 w-3 accent-cyan-700"
             onChange={(event) => { if (!checklistLocked()) onFullFarmsChange?.(event.target.checked); }} />
-          Full farms{!fullFarms ? " · Seeds" : ""}
+          {t("Full farms")}{!fullFarms ? ` · ${t("Seeds")}` : ""}
         </label>
       ) : <div className="truncate text-[11px] uppercase leading-[13px] text-[var(--mc-ink-muted)]">{label}</div>}
       <div className="flex min-w-0 items-center gap-0.5">
@@ -5861,12 +5909,12 @@ function MachineCountStat({
           }}
           onPointerDown={(event) => event.stopPropagation()}
           className={stepButtonClassName}
-          title="Remove 1"
-          aria-label={`Decrease ${label.toLowerCase()} count`}
+          title={t("Remove 1")}
+          aria-label={t("Decrease {label} count", { label: label.toLowerCase() })}
         >
           <Minus className="h-3 w-3" />
         </button>
-        <MinecraftTooltip content={() => <RecipeTooltip view={{ title: "Installed " + label.toLowerCase(), rows: [{ label: "Count", value: String(machineCount) }], actions: [{ gesture: "left", label: "Edit count" }, { gesture: "wheel", label: "Adjust count" }] }} />}>
+        <MinecraftTooltip content={() => <RecipeTooltip view={{ title: t("Installed {label}", { label: label.toLowerCase() }), rows: [{ label: t("Count"), value: String(machineCount) }], actions: [{ gesture: "left", label: t("Edit count") }, { gesture: "wheel", label: t("Adjust count") }] }} />}>
         <input
           value={draft}
           onChange={(event) => {
@@ -5882,7 +5930,7 @@ function MachineCountStat({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           inputMode="numeric"
-          aria-label={`${label} count`}
+          aria-label={t("{label} count", { label })}
           className="nodrag h-[21px] w-0 min-w-0 flex-1 border border-[var(--mc-47)] bg-[var(--mc-85)] px-1 text-center text-[14px] font-medium leading-4 text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-100),inset_-1px_-1px_0_var(--mc-54)] outline-none focus:border-cyan-700 focus:bg-[var(--mc-100)] focus:ring-1 focus:ring-cyan-400"
         />
         </MinecraftTooltip>
@@ -5894,8 +5942,9 @@ function MachineCountStat({
           }}
           onPointerDown={(event) => event.stopPropagation()}
           className={stepButtonClassName}
-          title="Add 1"
-          aria-label={`Increase ${label.toLowerCase()} count`}
+          title={t("Add 1")}
+          aria-label={t("Increase {label} count", { label: label.toLowerCase() })}
+
         >
           <Plus className="h-3 w-3" />
         </button>

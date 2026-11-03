@@ -21,6 +21,7 @@ import { sectionOwnerId } from "@/lib/model/shared-machine";
 import { getInputSupplyHatch, isHatchSuppliedInput } from "@/lib/model/hatch-supply";
 import { getSetupRules, type ResolvedSetupRules } from "@/lib/model/setup-rules";
 import { energyPerUnit } from "@/lib/model/rate-unit";
+import { t, tPlural } from "@/lib/i18n";
 
 type ProjectEdge = FactoryProject["edges"][number];
 
@@ -626,7 +627,7 @@ function takerDisplayName(
   if (recipe?.name && sectionOwnerId(takerId) === sectionOwnerId(askerId)) {
     const colon = recipe.name.lastIndexOf(": ");
     const product = colon >= 0 ? recipe.name.slice(colon + 2) : recipe.name;
-    return `The ${product} recipe on this machine`;
+    return t("The {product} recipe on this machine", { product });
   }
   return recipe?.machineType ?? recipe?.name ?? fallback;
 }
@@ -1079,7 +1080,7 @@ function findBusySharer(
     total += share;
     if (!top || share > top.share) {
       const recipe = recipesById.get(member.recipeId);
-      top = { name: recipe?.name ?? "another recipe", share };
+      top = { name: recipe?.name ?? t("another recipe"), share };
     }
   }
   if (total < 1 - VERDICT_EPSILON || !top) {
@@ -1551,7 +1552,7 @@ function findUpstreamCulprit(
     return undefined;
   }
   if (pick.source === nodeId) {
-    return { name: "its own loop", kind: "loop", pct: 100, atFullSpeed: false, hasHeadroom: false };
+    return { name: t("its own loop"), kind: "loop", pct: 100, atFullSpeed: false, hasHeadroom: false };
   }
 
   const storage = (project.storages ?? []).find((entry) => entry.id === pick.source);
@@ -1806,12 +1807,12 @@ export function buildRailPorts(
   const machineNameOf = (id: string): string => {
     const node = nodesById.get(id);
     const recipe = node ? recipesById.get(node.recipeId) : undefined;
-    return recipe?.machineType ?? recipe?.name ?? "Machine";
+    return recipe?.machineType ?? recipe?.name ?? t("Machine");
   };
   const storageRoles = getStorageRoles(project);
   const storageNameOf = (id: string): string => {
     const storage = storagesById.get(id);
-    return storage ? describeStorage(storage, storageRoles.get(id)) : "Drawer";
+    return storage ? describeStorage(storage, storageRoles.get(id)) : t("Drawer");
   };
   const rules = getSetupRules(project);
   const buildSide = (side: "input" | "output"): RailPort[] => {
@@ -1998,16 +1999,18 @@ export function buildRailPorts(
             machineTargets.size === 1 && relayTargets.size === 0
               ? machineNameOf([...machineTargets][0]!)
               : machineTargets.size === 0 && relayTargets.size === 1
-                ? `via ${storageNameOf([...relayTargets][0]!)}`
+                ? t("via {name}", { name: storageNameOf([...relayTargets][0]!) })
                 : demanders > 0
-                  ? `${demanders} takers`
+                  ? tPlural(demanders, "{count} taker", "{count} takers", { count: demanders })
                   : trashTargets.size > 0 && dumpTargets.size === 0
                     ? trashTargets.size === 1
                       ? "Trash Can"
-                      : `${trashTargets.size} trash cans`
+                      : tPlural(trashTargets.size, "{count} trash can", "{count} trash cans", { count: trashTargets.size })
                     : dumpTargets.size === 1 && trashTargets.size === 0
                       ? storageNameOf([...dumpTargets][0]!)
-                      : `${dumpTargets.size + trashTargets.size} dead ends`,
+                      : tPlural(dumpTargets.size + trashTargets.size, "{count} dead end", "{count} dead ends", {
+                          count: dumpTargets.size + trashTargets.size,
+                        }),
           askerMachines: machineTargets.size,
           askPerSecond: ask,
           getPerSecond: get,
@@ -2151,7 +2154,7 @@ export function buildLimitLadder(
   const recipe = project.recipes.find((entry) => entry.id === node.recipeId);
   rungs.push({
     pct: 100,
-    label: isCustomRateRecipe(recipe) ? "dialed rate" : "machine count",
+    label: isCustomRateRecipe(recipe) ? t("dialed rate") : t("machine count"),
     now: false,
   });
 
@@ -2167,7 +2170,7 @@ export function buildLimitLadder(
     if (edges.length === 0) {
       rungs.push({
         pct: 0,
-        label: `${flow.displayName ?? flow.resourceId} has no supply`,
+        label: t("{name} has no supply", { name: flow.displayName ?? flow.resourceId }),
         now: false,
       });
       continue;
@@ -2189,7 +2192,7 @@ export function buildLimitLadder(
     }
     rungs.push({
       pct,
-      label: `${flow.displayName ?? flow.resourceId} supply`,
+      label: t("{name} supply", { name: flow.displayName ?? flow.resourceId }),
       now: false,
     });
   }
@@ -2203,7 +2206,7 @@ export function buildLimitLadder(
     if (!outgoing.some((edge) => makeResourceKey(edge.resourceKind, edge.resourceId) === key)) {
       rungs.push({
         pct: 0,
-        label: `${flow.displayName ?? flow.resourceId} has nowhere to go`,
+        label: t("{name} has nowhere to go", { name: flow.displayName ?? flow.resourceId }),
         now: false,
       });
       continue;
@@ -2226,7 +2229,7 @@ export function buildLimitLadder(
   if (demandRatio !== undefined) {
     rungs.push({
       pct: demandRatio * 100,
-      label: demandRatio > 1 + VERDICT_EPSILON ? "downstream satisfied" : "downstream demand",
+      label: demandRatio > 1 + VERDICT_EPSILON ? t("downstream satisfied") : t("downstream demand"),
       now: false,
     });
   }
@@ -2252,7 +2255,7 @@ export function buildLimitLadder(
   const utilizationPct = clamp01(nodeResult.utilization, 0) * 100;
   if (capped.length > 0 && utilizationPct < capped[0]!.pct - 0.5) {
     capped[0] = { ...capped[0]!, now: false };
-    capped.unshift({ pct: utilizationPct, label: "current: the plan asks for less", now: true });
+    capped.unshift({ pct: utilizationPct, label: t("current: the plan asks for less"), now: true });
     if (capped.length > 4) {
       capped.pop();
     }

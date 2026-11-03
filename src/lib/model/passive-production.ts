@@ -1,3 +1,4 @@
+import { msg } from "@/lib/i18n";
 import { TGS_MACHINE_TYPE } from "@/lib/machines/tree-growth-simulator";
 import { applyInputConsumeChances } from "./input-chance";
 import type {
@@ -963,53 +964,53 @@ function cropsNhAnalyticControls(mode: "world" | "farm" = "world"): MachineConfi
   const controls: MachineConfigControl[] = [
     {
       id: CROP_GROWTH_STAT_CONTROL_ID,
-      label: "Growth",
+      label: msg("Growth"),
       minimumKey: "1",
       defaultKey: "31",
       tiers: statTiers(CROP_GROWTH_STAT_CONTROL_ID, "Crop Sticks"),
     },
     {
       id: CROP_GAIN_STAT_CONTROL_ID,
-      label: "Gain",
+      label: msg("Gain"),
       minimumKey: "1",
       defaultKey: "31",
       tiers: statTiers(CROP_GAIN_STAT_CONTROL_ID, "Plant Lens"),
     },
     selectControl({
       id: CROP_WATER_CONTROL_ID,
-      label: "Water",
+      label: msg("Water"),
       defaultKey: "100",
       tiers: [
-        option("0", "Dry", CROP_WATER_CONTROL_ID, "Water Bucket"),
-        option("50", "Half", CROP_WATER_CONTROL_ID, "Water Bucket"),
-        option("100", "Full", CROP_WATER_CONTROL_ID, "Water Bucket"),
+        option("0", msg("Dry"), CROP_WATER_CONTROL_ID, "Water Bucket"),
+        option("50", msg("Half"), CROP_WATER_CONTROL_ID, "Water Bucket"),
+        option("100", msg("Full"), CROP_WATER_CONTROL_ID, "Water Bucket"),
       ],
     }),
     selectControl({
       id: CROP_FERTILIZER_CONTROL_ID,
-      label: "Fert",
+      label: msg("Fert"),
       defaultKey: "100",
       tiers: [
-        option("0", "None", CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
-        option("50", "Half", CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
-        option("100", "Full", CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
+        option("0", msg("None"), CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
+        option("50", msg("Half"), CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
+        option("100", msg("Full"), CROP_FERTILIZER_CONTROL_ID, "Fertilizer"),
       ],
     }),
     selectControl({
       id: CROP_SKY_CONTROL_ID,
-      label: "Sky",
+      label: msg("Sky"),
       defaultKey: "yes",
       tiers: [
-        option("no", "Covered", CROP_SKY_CONTROL_ID, "Daylight Detector"),
-        option("yes", "Open", CROP_SKY_CONTROL_ID, "Daylight Detector"),
+        option("no", msg("Covered"), CROP_SKY_CONTROL_ID, "Daylight Detector"),
+        option("yes", msg("Open"), CROP_SKY_CONTROL_ID, "Daylight Detector"),
       ],
     }),
     selectControl({
       id: CROP_BIOME_CONTROL_ID,
-      label: "Biome",
+      label: msg("Biome"),
       defaultKey: "two-tags",
       tiers: [
-        option("none", "None", CROP_BIOME_CONTROL_ID, "Grass Block"),
+        option("none", msg("None"), CROP_BIOME_CONTROL_ID, "Grass Block"),
         // Humidity rungs, bare percentages: the four-across crop row's wells
         // clip anything longer ("80% Wet" showed as "80% We"). The hover
         // explains what the percent is.
@@ -1018,8 +1019,8 @@ function cropsNhAnalyticControls(mode: "world" | "farm" = "world"): MachineConfi
         option("humid", "80%", CROP_BIOME_CONTROL_ID, "Grass Block"),
         // Labels stay one short word each: the four-across crop row's wells
         // are narrow.
-        option("one-tag", "1 Tag", CROP_BIOME_CONTROL_ID, "Grass Block"),
-        option("two-tags", "2 Tags", CROP_BIOME_CONTROL_ID, "Grass Block"),
+        option("one-tag", msg("1 Tag"), CROP_BIOME_CONTROL_ID, "Grass Block"),
+        option("two-tags", msg("2 Tags"), CROP_BIOME_CONTROL_ID, "Grass Block"),
       ],
     }),
   ];
@@ -1121,7 +1122,7 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         ...cropsNhAnalyticControls("world"),
         voltageTierControl({
           id: CROP_MANAGER_TIER_CONTROL_ID,
-          label: "Manager",
+          label: msg("Manager"),
           minTierIndex: CROP_MANAGER_MIN_TIER_INDEX,
           maxTierIndex: CROP_MANAGER_MAX_TIER_INDEX,
           // No by-hand rung: a planned crop board is automated, so the
@@ -1153,7 +1154,7 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         }),
         countControl({
           id: CROP_IF_GROWTH_UNIT_CONTROL_ID,
-          label: "Growth Units",
+          label: msg("Growth Units"),
           max: 1 + SEED_BED_MAX_TIER_INDEX - SEED_BED_MIN_TIER_INDEX,
           resourceId: "crop_if_growth_unit",
           itemName: "Growth Acceleration Unit (MV)",
@@ -1164,16 +1165,16 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         }),
         selectControl({
           id: CROP_IF_FERTILIZED_CONTROL_ID,
-          label: "Fert",
+          label: msg("Fert"),
           defaultKey: "yes",
           tiers: [
-            option("no", "None", CROP_IF_FERTILIZED_CONTROL_ID, "Fertilizer"),
-            option("yes", "Fed", CROP_IF_FERTILIZED_CONTROL_ID, "Fertilizer"),
+            option("no", msg("None"), CROP_IF_FERTILIZED_CONTROL_ID, "Fertilizer"),
+            option("yes", msg("Fed"), CROP_IF_FERTILIZED_CONTROL_ID, "Fertilizer"),
           ],
         }),
         countControl({
           id: CROP_IF_FERTILIZER_UNIT_CONTROL_ID,
-          label: "Fert Unit",
+          label: msg("Fert Unit"),
           max: MAX_FERTILIZER_UNITS,
           resourceId: "crop_if_fertilizer_unit",
           itemName: "Fertilization Unit (MV)",
@@ -1182,7 +1183,7 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         }),
         countControl({
           id: CROP_IF_HARVEST_UNIT_CONTROL_ID,
-          label: "Harvesting",
+          label: msg("Harvesting"),
           max: MAX_ADVANCED_HARVESTING_UNITS,
           resourceId: "crop_if_harvest_unit",
           itemName: "Advanced Harvesting Unit (MV)",
@@ -1193,7 +1194,7 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         }),
         countControl({
           id: CROP_IF_ENVIRONMENT_UNIT_CONTROL_ID,
-          label: "Biome Cards",
+          label: msg("Biome Cards"),
           max: MAX_ENVIRONMENTAL_UNITS,
           resourceId: "crop_if_environment_unit",
           itemName: "Environmental Enhancement Unit (MV)",
@@ -1204,7 +1205,7 @@ function cropHarvesterHandlers(stats?: CropsNhStats): MachineHandler[] {
         }),
         countControl({
           id: CROP_IF_OVERCLOCK_CONTROL_ID,
-          label: "Overclocks",
+          label: msg("Overclocks"),
           max: MAX_OVERCLOCKS,
           resourceId: "crop_if_overclock",
           itemName: "Overclocked Growth Acceleration Unit (ZPM)",
@@ -1243,31 +1244,31 @@ function cropProductionControls(recipe: PassiveProductionRecipeLabel) {
     cropStatsControl(recipe),
     selectControl({
       id: CROP_HYDRATION_CONTROL_ID,
-      label: "Hydration",
+      label: msg("Hydration"),
       defaultKey: "normal",
       tiers: [
-        option("dry", "Dry", "crop_hydration_dry", "Dry", { durationMultiplier: 1.25 }),
-        option("normal", "Normal", "crop_hydration_normal", "Normal"),
-        option("hydrated", "Hydrated", "crop_hydration_hydrated", "Hydrated", {
+        option("dry", msg("Dry"), "crop_hydration_dry", "Dry", { durationMultiplier: 1.25 }),
+        option("normal", msg("Normal"), "crop_hydration_normal", "Normal"),
+        option("hydrated", msg("Hydrated"), "crop_hydration_hydrated", "Hydrated", {
           durationMultiplier: 0.92,
         }),
-        option("constant", "Constant Water", "crop_hydration_constant", "Constant Water", {
+        option("constant", msg("Constant Water"), "crop_hydration_constant", "Constant Water", {
           durationMultiplier: 0.85,
         }),
       ],
     }),
     selectControl({
       id: CROP_NUTRIENTS_CONTROL_ID,
-      label: "Nutrients",
+      label: msg("Nutrients"),
       defaultKey: "none",
       tiers: [
-        option("none", "None", "crop_nutrients_none", "No Fertilizer"),
-        option("fertilized", "Fertilized", "crop_nutrients_fertilized", "Fertilized", {
+        option("none", msg("None"), "crop_nutrients_none", "No Fertilizer"),
+        option("fertilized", msg("Fertilized"), "crop_nutrients_fertilized", "Fertilized", {
           durationMultiplier: 0.9,
         }),
         option(
           "constant",
-          "Constant Fertilizer",
+          msg("Constant Fertilizer"),
           "crop_nutrients_constant",
           "Constant Fertilizer",
           {
@@ -1278,14 +1279,14 @@ function cropProductionControls(recipe: PassiveProductionRecipeLabel) {
     }),
     selectControl({
       id: CROP_SOIL_CONTROL_ID,
-      label: "Soil",
+      label: msg("Soil"),
       defaultKey: "farmland",
       tiers: [
         option("dirt", "Dirt", "minecraft:dirt", "Dirt", { durationMultiplier: 1.15 }),
         option("farmland", "Farmland", "minecraft:farmland", "Farmland"),
         option(
           "hydrated-farmland",
-          "Hydrated Farmland",
+          msg("Hydrated Farmland"),
           "minecraft:farmland@7",
           "Hydrated Farmland",
           {
@@ -1296,7 +1297,7 @@ function cropProductionControls(recipe: PassiveProductionRecipeLabel) {
     }),
     selectControl({
       id: CROP_SOIL_DEPTH_CONTROL_ID,
-      label: "Soil Depth",
+      label: msg("Soil Depth"),
       defaultKey: "1",
       tiers: [
         option("0", "0", "crop_depth_0", "Depth 0", { durationMultiplier: 1.12 }),
@@ -1307,13 +1308,13 @@ function cropProductionControls(recipe: PassiveProductionRecipeLabel) {
     }),
     selectControl({
       id: CROP_AIR_QUALITY_CONTROL_ID,
-      label: "Air Quality",
+      label: msg("Air Quality"),
       defaultKey: "normal",
       tiers: [
-        option("poor", "Poor", "crop_air_poor", "Poor Air", { durationMultiplier: 1.2 }),
-        option("normal", "Normal", "crop_air_normal", "Normal Air"),
-        option("good", "Good", "crop_air_good", "Good Air", { durationMultiplier: 0.96 }),
-        option("optimal", "Optimal", "crop_air_optimal", "Optimal Air", {
+        option("poor", msg("Poor"), "crop_air_poor", "Poor Air", { durationMultiplier: 1.2 }),
+        option("normal", msg("Normal"), "crop_air_normal", "Normal Air"),
+        option("good", msg("Good"), "crop_air_good", "Good Air", { durationMultiplier: 0.96 }),
+        option("optimal", msg("Optimal"), "crop_air_optimal", "Optimal Air", {
           durationMultiplier: 0.9,
         }),
       ],
@@ -1335,7 +1336,7 @@ function cropStatsControl(recipe: PassiveProductionRecipeLabel): MachineConfigCo
 
   return {
     id: CROP_STATS_CONTROL_ID,
-    label: "Crop Stats",
+    label: msg("Crop Stats"),
     minimumKey: tiers[0]?.key ?? "1-1-1",
     defaultKey: isCropNhRecipe(recipe) ? "31-31-31" : "23-31-0",
     tiers,
@@ -1398,13 +1399,13 @@ function magicApiaryProductionControls(): MachineConfigControl[] {
     beeFrameSlotControl(3),
     selectControl({
       id: BEE_MAGIC_AURA_CONTROL_ID,
-      label: "Aura",
+      label: msg("Aura"),
       defaultKey: "none",
       tiers: [
-        option("none", "No Aura", "bee_magic_aura_none", "No Production Aura"),
+        option("none", msg("No Aura"), "bee_magic_aura_none", "No Production Aura"),
         option(
           "production-aura",
-          "Production Aura",
+          msg("Production Aura"),
           "MagicBees:visAuraProvider",
           "Production Aura Provider",
         ),
@@ -1419,26 +1420,26 @@ function alvearyProductionControls(): MachineConfigControl[] {
     beeSpeedGeneControl(),
     selectControl({
       id: BEE_ALVEARY_FRAME_HOUSING_CONTROL_ID,
-      label: "Frame Housings",
+      label: msg("Frame Housings"),
       defaultKey: "none",
       tiers: [
-        option("none", "None", "bee_alveary_frame_none", "No Frame Housing"),
-        option("proven", "1x Proven Frame", "ExtraBees:alveary@1", "Alveary Frame Housing"),
-        option("magic", "1x Magic Frame", "ExtraBees:alveary@1", "Alveary Frame Housing"),
-        option("four-proven", "4x Proven Frames", "ExtraBees:alveary@1", "Alveary Frame Housings"),
+        option("none", msg("None"), "bee_alveary_frame_none", "No Frame Housing"),
+        option("proven", msg("1x Proven Frame"), "ExtraBees:alveary@1", "Alveary Frame Housing"),
+        option("magic", msg("1x Magic Frame"), "ExtraBees:alveary@1", "Alveary Frame Housing"),
+        option("four-proven", msg("4x Proven Frames"), "ExtraBees:alveary@1", "Alveary Frame Housings"),
       ],
     }),
     selectControl({
       id: BEE_ALVEARY_STIMULATOR_CONTROL_ID,
-      label: "Stimulators",
+      label: msg("Stimulators"),
       defaultKey: "none",
       tiers: [
-        option("none", "None", "bee_alveary_stimulator_none", "No Stimulator"),
-        option("low-voltage", "1x Low Voltage", "ExtraBees:alveary@4", "Alveary Stimulator"),
-        option("high-voltage", "1x High Voltage", "ExtraBees:alveary@4", "Alveary Stimulator"),
+        option("none", msg("None"), "bee_alveary_stimulator_none", "No Stimulator"),
+        option("low-voltage", msg("1x Low Voltage"), "ExtraBees:alveary@4", "Alveary Stimulator"),
+        option("high-voltage", msg("1x High Voltage"), "ExtraBees:alveary@4", "Alveary Stimulator"),
         option(
           "four-high-voltage",
-          "4x High Voltage",
+          msg("4x High Voltage"),
           "ExtraBees:alveary@4",
           "Alveary Stimulators",
         ),
@@ -1446,13 +1447,13 @@ function alvearyProductionControls(): MachineConfigControl[] {
     }),
     selectControl({
       id: BEE_ALVEARY_SUPPORT_CONTROL_ID,
-      label: "Utility Blocks",
+      label: msg("Utility Blocks"),
       defaultKey: "plain",
       tiers: [
-        option("plain", "Plain", "Forestry:alveary", "Plain Alveary"),
-        option("climate", "Climate", "Forestry:alveary@5", "Hygroregulator"),
-        option("lighting-rain", "Light/Rain", "ExtraBees:alveary@2", "Rain Shield / Lighting"),
-        option("sieve", "Sieve", "Forestry:alveary@7", "Alveary Sieve"),
+        option("plain", msg("Plain"), "Forestry:alveary", "Plain Alveary"),
+        option("climate", msg("Climate"), "Forestry:alveary@5", "Hygroregulator"),
+        option("lighting-rain", msg("Light/Rain"), "ExtraBees:alveary@2", "Rain Shield / Lighting"),
+        option("sieve", msg("Sieve"), "Forestry:alveary@7", "Alveary Sieve"),
       ],
     }),
     beeEnvironmentControl(),
@@ -1464,7 +1465,7 @@ function industrialApiaryControls(): MachineConfigControl[] {
     beeSpeedGeneControl(),
     selectControl({
       id: BEE_INDUSTRIAL_SPEED_CONTROL_ID,
-      label: "Acceleration",
+      label: msg("Acceleration"),
       defaultKey: "none",
       tiers: [
         option("none", "0", "bee_industrial_speed_none", "No Acceleration Upgrade"),
@@ -1484,7 +1485,7 @@ function industrialApiaryControls(): MachineConfigControl[] {
         }),
         option(
           "speed-8-upgraded",
-          "Upgraded x256",
+          msg("Upgraded x256"),
           "gregtech:gt.metaitem.03@32208",
           "Upgraded Acceleration Upgrade x256",
           {
@@ -1496,7 +1497,7 @@ function industrialApiaryControls(): MachineConfigControl[] {
     }),
     selectControl({
       id: BEE_INDUSTRIAL_PRODUCTION_CONTROL_ID,
-      label: "Production",
+      label: msg("Production"),
       defaultKey: "0",
       tiers: Array.from({ length: 9 }, (_unused, count) =>
         option(
@@ -1524,11 +1525,11 @@ function megaApiaryControls(): MachineConfigControl[] {
       label: "Royal Jelly",
       defaultKey: "none",
       tiers: [
-        option("none", "None", "bee_mega_jelly_none", "No Royal Jelly"),
-        option("partial", "Partial", "Forestry:royalJelly", "Royal Jelly", {
+        option("none", msg("None"), "bee_mega_jelly_none", "No Royal Jelly"),
+        option("partial", msg("Partial"), "Forestry:royalJelly", "Royal Jelly", {
           outputMultiplier: 2,
         }),
-        option("full", "Full", "Forestry:royalJelly", "Royal Jelly", {
+        option("full", msg("Full"), "Forestry:royalJelly", "Royal Jelly", {
           outputMultiplier: 3,
         }),
       ],
@@ -1544,14 +1545,14 @@ function megaApiaryControls(): MachineConfigControl[] {
  * dataset bakes every chance at speed 1 (Normal).
  */
 const BEE_SPEED_GENES: Array<{ key: string; label: string; value: number }> = [
-  { key: "slowest", label: "Slowest", value: 0.3 },
-  { key: "slower", label: "Slower", value: 0.6 },
-  { key: "slow", label: "Slow", value: 0.8 },
-  { key: "normal", label: "Normal", value: 1 },
-  { key: "fast", label: "Fast", value: 1.2 },
-  { key: "faster", label: "Faster", value: 1.4 },
-  { key: "fastest", label: "Fastest", value: 1.7 },
-  { key: "blinding", label: "Blinding", value: 2 },
+  { key: "slowest", label: msg("Slowest"), value: 0.3 },
+  { key: "slower", label: msg("Slower"), value: 0.6 },
+  { key: "slow", label: msg("Slow"), value: 0.8 },
+  { key: "normal", label: msg("Normal"), value: 1 },
+  { key: "fast", label: msg("Fast"), value: 1.2 },
+  { key: "faster", label: msg("Faster"), value: 1.4 },
+  { key: "fastest", label: msg("Fastest"), value: 1.7 },
+  { key: "blinding", label: msg("Blinding"), value: 2 },
 ];
 
 export function getBeeSpeedGeneValueByKey(key: string | undefined) {
@@ -1561,7 +1562,7 @@ export function getBeeSpeedGeneValueByKey(key: string | undefined) {
 function beeSpeedGeneControl(): MachineConfigControl {
   return selectControl({
     id: BEE_SPEED_GENE_CONTROL_ID,
-    label: "Speed Gene",
+    label: msg("Speed Gene"),
     defaultKey: "normal",
     tiers: BEE_SPEED_GENES.map((gene) =>
       option(
@@ -1578,43 +1579,46 @@ function beeSpeedGeneControl(): MachineConfigControl {
 function beeEnvironmentControl(): MachineConfigControl {
   return selectControl({
     id: BEE_ENVIRONMENT_CONTROL_ID,
-    label: "Climate",
+    label: msg("Climate"),
     defaultKey: "preferred",
     tiers: [
-      option("wrong", "Wrong", "bee_environment_wrong", "Wrong Climate"),
-      option("tolerated", "Tolerated", "bee_environment_tolerated", "Tolerated Climate"),
-      option("preferred", "Preferred", "bee_environment_preferred", "Preferred Climate"),
-      option("controlled", "Controlled", "bee_environment_controlled", "Controlled Climate"),
+      option("wrong", msg("Wrong"), "bee_environment_wrong", "Wrong Climate"),
+      option("tolerated", msg("Tolerated"), "bee_environment_tolerated", "Tolerated Climate"),
+      option("preferred", msg("Preferred"), "bee_environment_preferred", "Preferred Climate"),
+      option("controlled", msg("Controlled"), "bee_environment_controlled", "Controlled Climate"),
     ],
   });
 }
 
+/** Frame slot captions; an Apiary has three slots. */
+const BEE_FRAME_SLOT_LABELS = [msg("Frame 1"), msg("Frame 2"), msg("Frame 3")];
+
 function beeFrameSlotControl(slotIndex: number): MachineConfigControl {
   return selectControl({
     id: `${BEE_FRAME_SLOT_CONTROL_PREFIX}${slotIndex}`,
-    label: `Frame ${slotIndex}`,
+    label: BEE_FRAME_SLOT_LABELS[slotIndex - 1] ?? `Frame ${slotIndex}`,
     defaultKey: "none",
     tiers: [
-      option("none", "Empty", "bee_frame_empty", "Empty Frame Slot"),
-      option("forestry:untreated", "Untreated", "Forestry:frameUntreated", "Untreated Frame"),
+      option("none", msg("Empty"), "bee_frame_empty", "Empty Frame Slot"),
+      option("forestry:untreated", msg("Untreated"), "Forestry:frameUntreated", "Untreated Frame"),
       option(
         "forestry:impregnated",
-        "Impregnated",
+        msg("Impregnated"),
         "Forestry:frameImpregnated",
         "Impregnated Frame",
       ),
-      option("forestry:proven", "Proven", "Forestry:frameProven", "Proven Frame"),
-      option("extrabees:cocoa", "Chocolate", "ExtraBees:hiveFrame.cocoa", "Chocolate Frame"),
-      option("extrabees:cage", "Restraint", "ExtraBees:hiveFrame.cage", "Restraint Frame"),
-      option("extrabees:soul", "Soul", "ExtraBees:hiveFrame.soul", "Soul Frame"),
-      option("extrabees:clay", "Healing", "ExtraBees:hiveFrame.clay", "Healing Frame"),
-      option("magicbees:magic", "Magic", "MagicBees:frameMagic", "Magic Frame"),
-      option("magicbees:resilient", "Resilient", "MagicBees:frameResilient", "Resilient Frame"),
-      option("magicbees:gentle", "Gentle", "MagicBees:frameGentle", "Gentle Frame"),
-      option("magicbees:metabolic", "Metabolic", "MagicBees:frameMetabolic", "Metabolic Frame"),
-      option("magicbees:necrotic", "Necrotic", "MagicBees:frameNecrotic", "Necrotic Frame"),
-      option("magicbees:temporal", "Temporal", "MagicBees:frameTemporal", "Temporal Frame"),
-      option("magicbees:oblivion", "Oblivion", "MagicBees:frameOblivion", "Oblivion Frame"),
+      option("forestry:proven", msg("Proven"), "Forestry:frameProven", "Proven Frame"),
+      option("extrabees:cocoa", msg("Chocolate"), "ExtraBees:hiveFrame.cocoa", "Chocolate Frame"),
+      option("extrabees:cage", msg("Restraint"), "ExtraBees:hiveFrame.cage", "Restraint Frame"),
+      option("extrabees:soul", msg("Soul"), "ExtraBees:hiveFrame.soul", "Soul Frame"),
+      option("extrabees:clay", msg("Healing"), "ExtraBees:hiveFrame.clay", "Healing Frame"),
+      option("magicbees:magic", msg("Magic"), "MagicBees:frameMagic", "Magic Frame"),
+      option("magicbees:resilient", msg("Resilient"), "MagicBees:frameResilient", "Resilient Frame"),
+      option("magicbees:gentle", msg("Gentle"), "MagicBees:frameGentle", "Gentle Frame"),
+      option("magicbees:metabolic", msg("Metabolic"), "MagicBees:frameMetabolic", "Metabolic Frame"),
+      option("magicbees:necrotic", msg("Necrotic"), "MagicBees:frameNecrotic", "Necrotic Frame"),
+      option("magicbees:temporal", msg("Temporal"), "MagicBees:frameTemporal", "Temporal Frame"),
+      option("magicbees:oblivion", msg("Oblivion"), "MagicBees:frameOblivion", "Oblivion Frame"),
     ],
   });
 }

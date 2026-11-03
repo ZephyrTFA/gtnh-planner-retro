@@ -6,6 +6,7 @@ import { Compass, Library, Plus } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getUiScale } from "@/lib/ui-scale";
+import { useT } from "@/lib/i18n";
 import { openDesigns, type DesignFolder } from "@/lib/designs/design-library";
 import type { EntryIcon } from "@/lib/model/types";
 import { FLUID_ICON_SCALE, ResourceIcon } from "./nei/ResourceIcon";
@@ -42,6 +43,7 @@ interface OpenMenu {
 }
 
 export function DesignTabs() {
+  const t = useT();
   const publicView = useDesignStore((state) => state.publicView);
   const publicViews = useDesignStore((state) => state.publicViews);
   const allDesigns = useDesignStore((state) => state.designs);
@@ -505,7 +507,7 @@ export function DesignTabs() {
         <button
           type="button"
           onClick={() => openLibrary()}
-          aria-label="Open the library"
+          aria-label={t("Open the library")}
           aria-pressed={shelf.active}
           data-help-anchor="library"
           className={[
@@ -516,7 +518,7 @@ export function DesignTabs() {
           ].join(" ")}
         >
           <Library className="h-3 w-3" aria-hidden />
-          Library
+          {t("Library")}
         </button>
         <span aria-hidden className="h-3.5 w-px shrink-0 bg-line" />
 
@@ -539,12 +541,12 @@ export function DesignTabs() {
               className="flex items-center gap-1 text-xs font-medium"
             >
               <Compass className="h-3 w-3" aria-hidden />
-              Welcome
+              {t("Welcome")}
             </button>
             <button
               type="button"
               onClick={closeWelcomeTab}
-              aria-label="Close the Welcome tab"
+              aria-label={t("Close the Welcome tab")}
               className="ml-1 rounded px-1 text-xs text-fg-muted opacity-0 hover:bg-surface hover:text-fg focus:opacity-100 group-hover:opacity-100"
             >
               ✕
@@ -567,19 +569,19 @@ export function DesignTabs() {
           <nav
             ref={trackRef}
             style={closingLayout ? { width: closingLayout.trackWidth, maxWidth: "none" } : undefined}
-            aria-label="Designs"
+            aria-label={t("Designs")}
             className="design-tabs-track flex w-max max-w-full select-none items-center gap-1"
           >
             {publicViews.map((view) => {
               const selected = publicView?.id === view.id && !coveringPage;
               return <div key={view.id} data-public-tab={view.id}
                 className={`design-tab group flex h-5 items-center rounded-t border-b-2 pl-2 pr-1 ${selected ? "border-amber-500 text-amber-300 bg-surface-raised" : "border-transparent text-fg-muted hover:bg-surface-sunken hover:text-fg"}`}>
-                <button type="button" aria-label={`View only: ${view.name}`} aria-pressed={selected}
+                <button type="button" aria-label={t("View only: {name}", { name: view.name })} aria-pressed={selected}
                   onClick={() => void useDesignStore.getState().switchToPublicView(view.id)}
                   className="design-tab-label flex h-full min-w-0 flex-1 items-center text-xs font-medium">
                   <FadingTabName name={view.name} />
                 </button>
-                {selected ? <button type="button" aria-label="Close public setup view" onClick={() => void useDesignStore.getState().closePublicView(view.id)}
+                {selected ? <button type="button" aria-label={t("Close public setup view")} onClick={() => void useDesignStore.getState().closePublicView(view.id)}
                   className="ml-1 shrink-0 rounded px-1 text-xs text-fg-muted hover:bg-surface hover:text-fg">×</button> : null}
               </div>;
             })}
@@ -655,7 +657,7 @@ export function DesignTabs() {
 
                   {isActive ? <button
                     type="button"
-                    aria-label={`Close ${design.name}`}
+                    aria-label={t("Close {name}", { name: design.name })}
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={() => void closeFromTab(design.id)}
                     className="ml-1 shrink-0 rounded px-1 text-xs text-fg-muted hover:bg-surface hover:text-fg"
@@ -693,7 +695,7 @@ export function DesignTabs() {
             leaveWelcomeTab();
             void addDesign();
           }}
-          aria-label="New design"
+          aria-label={t("New design")}
           className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded text-fg-muted hover:bg-surface-sunken hover:text-fg"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -709,12 +711,12 @@ export function DesignTabs() {
           ].join(" ")}
           title={libraryError ?? sync.message ?? accountSave.text}
         >
-          {publicView && !coveringPage ? "View only" : libraryError
+          {publicView && !coveringPage ? t("View only") : libraryError
             ? libraryError
             : saveState === "saving"
-              ? "Saving…"
+              ? t("Saving…")
               : saveState === "error"
-                ? "Save failed"
+                ? t("Save failed")
                 : accountSave.text}
         </span>
       </div>
@@ -790,6 +792,7 @@ function DesignMenu({
   onCloseTab: () => void;
   onCloseMany: (ids: string[]) => void;
 }) {
+  const t = useT();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // The one dropdown rule (use-dropdown-dismiss.ts): press outside, Escape,
@@ -806,18 +809,18 @@ function DesignMenu({
     <div
       ref={menuRef}
       role="menu"
-      aria-label={`Design options for ${menu.name}`}
+      aria-label={t("Design options for {name}", { name: menu.name })}
       // A body portal wearing .ui-zoom positions in shell pixels: the
       // real-pixel anchor is divided by the interface scale.
       style={{ left: menu.left / getUiScale(), top: menu.top / getUiScale(), width: MENU_WIDTH }}
       className="ui-zoom fixed z-[100] overflow-hidden rounded border border-line bg-surface-raised shadow-lg"
     >
-      <MenuItem label="Rename" onClick={onRename} />
-      <MenuItem label="Duplicate" onClick={onDuplicate} />
+      <MenuItem label={t("Rename")} onClick={onRename} />
+      <MenuItem label={t("Duplicate")} onClick={onDuplicate} />
       {folders.length > 0 ? (
         <>
           <div className="mt-1 border-t border-line px-2 pb-0.5 pt-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-fg-muted">
-            Add to collection
+            {t("Add to collection")}
           </div>
           {folders.map((folder) => (
             <MenuItem
@@ -829,7 +832,7 @@ function DesignMenu({
             />
           ))}
           <MenuItem
-            label="No collection"
+            label={t("No collection")}
             indent
             checked={!folderId}
             onClick={() => onMoveToFolder(undefined)}
@@ -839,22 +842,22 @@ function DesignMenu({
       ) : null}
 
       <div className="border-t border-line p-2">
-        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">Close</div>
+        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{t("Close")}</div>
         <div className="grid grid-cols-5 gap-1 text-xs">
-          <button type="button" role="menuitem" aria-label="Close this tab"
-            onClick={onCloseTab} className="rounded border border-line px-1 py-1 hover:bg-surface-sunken">This</button>
+          <button type="button" role="menuitem" aria-label={t("Close this tab")}
+            onClick={onCloseTab} className="rounded border border-line px-1 py-1 hover:bg-surface-sunken">{t("This")}</button>
           {([
-            ["left", "Left", neighbours.left],
-            ["right", "Right", neighbours.right],
-            ["others", "Others", neighbours.others],
-            ["all", "All", [...neighbours.others, menu.id]],
-          ] as const).map(([action, label, ids]) => (
+            ["left", t("Left"), neighbours.left, t("Close tabs to the left"), t("Confirm close tabs to the left")],
+            ["right", t("Right"), neighbours.right, t("Close tabs to the right"), t("Confirm close tabs to the right")],
+            ["others", t("Others"), neighbours.others, t("Close others tabs"), t("Confirm close others tabs")],
+            ["all", t("All"), [...neighbours.others, menu.id], t("Close all tabs"), t("Confirm close all tabs")],
+          ] as const).map(([action, label, ids, closeLabel, confirmLabel]) => (
             <button key={action} type="button" role="menuitem"
-              aria-label={`${armed === action ? "Confirm close" : "Close"} ${action === "left" || action === "right" ? "tabs to the " + action : action + " tabs"}`}
+              aria-label={armed === action ? confirmLabel : closeLabel}
               disabled={ids.length === 0}
               onClick={() => armed === action ? onCloseMany([...ids]) : onArm(action)}
               className={`rounded border px-1 py-1 hover:bg-surface-sunken disabled:opacity-30 disabled:hover:bg-transparent ${armed === action ? "border-red-400/50 text-red-300" : "border-line"}`}>
-              {armed === action ? "Sure?" : label}
+              {armed === action ? t("Sure?") : label}
             </button>
           ))}
         </div>
@@ -921,6 +924,7 @@ function RenameInput({
   onCommit: (name: string) => void;
   onCancel: () => void;
 }) {
+  const t = useT();
   const [value, setValue] = useState(initialName);
 
   return (
@@ -939,7 +943,7 @@ function RenameInput({
           onCancel();
         }
       }}
-      aria-label="Design name"
+      aria-label={t("Design name")}
       className="w-[140px] rounded border border-cyan-500 bg-surface px-1 text-xs text-fg outline-none"
     />
   );
@@ -1003,13 +1007,14 @@ function TabFace({ icon }: { icon: EntryIcon }) {
  * subscribe to the solve flag.
  */
 function TabSolvingSpinner() {
+  const t = useT();
   const solving = useSolvingBooks();
   if (!solving) {
     return null;
   }
   return (
     <span
-      aria-label="Still working out this plan's numbers"
+      aria-label={t("Still working out this plan's numbers")}
       className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-neutral-600 border-t-cyan-400"
     />
   );

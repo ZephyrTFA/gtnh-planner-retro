@@ -1,6 +1,7 @@
 import vatData from "./data/bio-vat.json";
 import radioData from "./data/radio-hatch.json";
 import { formulaNumber, knob, type FormulaLine } from "./formula-lines";
+import { msg, t } from "@/lib/i18n";
 import type { MachineConfigControl, Recipe, RecipeInput, RecipeOutput } from "@/lib/model/types";
 import { GT_VOLTAGE_TIERS } from "@/lib/model/tiers";
 
@@ -269,19 +270,19 @@ export function getVatGateReason(
   const need = getVatRequirements(recipe);
   const parsed = getVatSettings(settings, recipe);
   if (parsed.glass < need.glass) {
-    return `Needs ${GT_VOLTAGE_TIERS[need.glass]?.tier ?? need.glass} glass or better.`;
+    return t("Needs {tier} glass or better.", { tier: GT_VOLTAGE_TIERS[need.glass]?.tier ?? need.glass });
   }
   if (need.sievert > 0) {
     const have = parsed.radio ? effectiveSievert(parsed.radio.sievert, parsed.shutter) : 0;
     if (need.exact ? have !== need.sievert : have < need.sievert) {
       return need.exact
-        ? `Needs exactly ${need.sievert} Sv from the radio hatch (it has ${have}).`
-        : `Needs at least ${need.sievert} Sv from the radio hatch (it has ${have}).`;
+        ? t("Needs exactly {sievert} Sv from the radio hatch (it has {have}).", { sievert: need.sievert, have })
+        : t("Needs at least {sievert} Sv from the radio hatch (it has {have}).", { sievert: need.sievert, have });
     }
   }
   const fluidOut = recipe.outputs?.find((output) => output.kind === "fluid")?.amount ?? 0;
   if (fluidOut > 0 && !getVatMultiplier(parsed, fluidOut).fits && !parsed.voidExcess) {
-    return "The scaled output does not fit in the output hatch at this fill: void protection holds the vat.";
+    return t("The scaled output does not fit in the output hatch at this fill: void protection holds the vat.");
   }
   return undefined;
 }
@@ -324,7 +325,11 @@ export function applyVatInputs(recipe: Recipe, settings: Record<string, string> 
       id: parsed.radio.id,
       amount: radioBurnPerSecond(parsed.radio) * craftSeconds,
       displayName: parsed.radio.name,
-      tooltip: [`Burned by the radio hatch: one every ${formulaNumber((parsed.radio.mass * radioDecayTicks(parsed.radio.sievert)) / 20)} s, running or not.`],
+      tooltip: [
+        t("Burned by the radio hatch: one every {seconds} s, running or not.", {
+          seconds: formulaNumber((parsed.radio.mass * radioDecayTicks(parsed.radio.sievert)) / 20),
+        }),
+      ],
     });
   }
   const result = { ...recipe, inputs };
@@ -371,16 +376,21 @@ function buildVatControls(
   const controls: MachineConfigControl[] = [
     {
       id: VAT_GLASS,
-      label: "Glass",
+      label: msg("Glass"),
       minimumKey: "3",
       defaultKey: String(defaults.glass),
       tiers: GT_VOLTAGE_TIERS.slice(3, 13).map((entry, index) =>
-        option(VAT_GLASS, String(index + 3), `${entry.tier} glass`, `All the vat's glass is ${entry.tier} tier or better.`),
+        option(
+          VAT_GLASS,
+          String(index + 3),
+          t("{tier} glass", { tier: entry.tier }),
+          t("All the vat's glass is {tier} tier or better.", { tier: entry.tier }),
+        ),
       ),
     },
     {
       id: VAT_OUTPUT_HATCH,
-      label: "Output hatch",
+      label: msg("Output hatch"),
       minimumKey: OUTPUT_HATCHES[0].key,
       defaultKey: defaults.hatch.key,
       tiers: OUTPUT_HATCHES.map((hatch) =>
@@ -389,27 +399,27 @@ function buildVatControls(
           hatch.key,
           hatch.label,
           hatch.capacity > 0
-            ? `Holds ${formulaNumber(hatch.capacity)} L.`
-            : "Sends everything to ME and keeps nothing, so the vat stays at 1x.",
+            ? t("Holds {amount} L.", { amount: formulaNumber(hatch.capacity) })
+            : msg("Sends everything to ME and keeps nothing, so the vat stays at 1x."),
         ),
       ),
     },
     {
       id: VAT_FILL,
-      label: "Kept full %",
+      label: msg("Kept full %"),
       minimumKey: "0",
       defaultKey: "50",
       numeric: { min: 0, max: 100, step: 0.1 },
-      tiers: [option(VAT_FILL, "50", "Kept full %", "How full the output hatch is when the next run starts: half full is 1001x.")],
+      tiers: [option(VAT_FILL, "50", msg("Kept full %"), msg("How full the output hatch is when the next run starts: half full is 1001x."))],
     },
     {
       id: VAT_VOID,
-      label: "Void protection",
+      label: msg("Void protection"),
       minimumKey: "protect",
       defaultKey: "protect",
       tiers: [
-        option(VAT_VOID, "protect", "On", "A run whose scaled output does not fit waits."),
-        option(VAT_VOID, "void", "Off", "A run starts anyway and the output that does not fit is lost."),
+        option(VAT_VOID, "protect", msg("On"), msg("A run whose scaled output does not fit waits.")),
+        option(VAT_VOID, "void", msg("Off"), msg("A run starts anyway and the output that does not fit is lost.")),
       ],
     },
   ];
@@ -417,17 +427,20 @@ function buildVatControls(
     controls.push(
       {
         id: VAT_RADIO,
-        label: "Radio hatch",
+        label: msg("Radio hatch"),
         minimumKey: "none",
         defaultKey: defaults.radio?.id ?? "none",
         tiers: [
-          option(VAT_RADIO, "none", "Empty", "Nothing in the radio hatch: 0 Sv."),
+          option(VAT_RADIO, "none", msg("Empty"), msg("Nothing in the radio hatch: 0 Sv.")),
           ...RADIO_MATERIALS.map((material) =>
             option(
               VAT_RADIO,
               material.id,
               `${material.name} (${material.sievert} Sv)`,
-              `${material.sievert} Sv; one lasts ${formulaNumber((material.mass * radioDecayTicks(material.sievert)) / 20)} s.`,
+              t("{sievert} Sv; one lasts {seconds} s.", {
+                sievert: material.sievert,
+                seconds: formulaNumber((material.mass * radioDecayTicks(material.sievert)) / 20),
+              }),
               material.id,
             ),
           ),
@@ -435,11 +448,11 @@ function buildVatControls(
       },
       {
         id: VAT_SHUTTER,
-        label: "Shutter %",
+        label: msg("Shutter %"),
         minimumKey: "0",
         defaultKey: String(defaults.shutter),
         numeric: { min: 0, max: 100, step: 1 },
-        tiers: [option(VAT_SHUTTER, "0", "Shutter %", "How far the radio hatch's shutter is closed: it takes that share off its sieverts, rounded up.")],
+        tiers: [option(VAT_SHUTTER, "0", msg("Shutter %"), msg("How far the radio hatch's shutter is closed: it takes that share off its sieverts, rounded up."))],
       },
     );
   }
@@ -470,70 +483,74 @@ export function getVatFormulas(
   const lines: FormulaLine[] = [];
   lines.push(
     parsed.hatch.capacity === 0
-      ? { label: "fill", math: [knob("ME", VAT_OUTPUT_HATCH), " hatch keeps nothing"], result: "1x" }
+      ? { label: t("fill"), math: [knob("ME", VAT_OUTPUT_HATCH), ` ${t("hatch keeps nothing")}`], result: "1x" }
       : vat.stored <= 0
-        ? { label: "fill", math: ["an empty hatch"], result: "1x" }
+        ? { label: t("fill"), math: [t("an empty hatch")], result: "1x" }
         : {
-          label: "fill",
+          label: t("fill"),
           math: ["⌈1000·(1−(2·", knob(formulaNumber(f), VAT_FILL), "−1)", { sup: "2" }, ")⌉+1"],
           result: `${formulaNumber(vat.multiplier)}x`,
         },
   );
   if (fluidIn > 0) {
-    lines.push({ label: "in", math: [`${formulaNumber(fluidIn)} L·${formulaNumber(vat.multiplier)}`], result: `${formulaNumber(fluidIn * vat.multiplier)} L` });
+    lines.push({ label: t("in"), math: [`${formulaNumber(fluidIn)} L·${formulaNumber(vat.multiplier)}`], result: `${formulaNumber(fluidIn * vat.multiplier)} L` });
   }
   if (fluidOut > 0) {
-    lines.push({ label: "out", math: [`${formulaNumber(fluidOut)} L·${formulaNumber(vat.multiplier)}`], result: `${formulaNumber(fluidOut * vat.multiplier)} L` });
+    lines.push({ label: t("out"), math: [`${formulaNumber(fluidOut)} L·${formulaNumber(vat.multiplier)}`], result: `${formulaNumber(fluidOut * vat.multiplier)} L` });
     if (parsed.hatch.capacity > 0) {
       lines.push({
-        label: "room",
+        label: t("room"),
         math: [`${formulaNumber(fluidOut * vat.multiplier)} ≤ `, knob(formulaNumber(parsed.hatch.capacity), VAT_OUTPUT_HATCH), `−${formulaNumber(vat.stored)}`],
-        result: vat.fits ? "fits" : parsed.voidExcess ? `voids ${formulaNumber(fluidOut * vat.multiplier - vat.keptOut)} L` : "waits",
+        result: vat.fits
+          ? t("fits")
+          : parsed.voidExcess
+            ? t("voids {amount} L", { amount: formulaNumber(fluidOut * vat.multiplier - vat.keptOut) })
+            : t("waits"),
         tone: vat.fits ? "good" : "bad",
       });
     }
   }
   const seconds = stats.durationTicks / 20;
   lines.push({
-    label: "time",
+    label: t("time"),
     math: [`${formulaNumber(recipe.durationTicks ?? 0)}t ÷ 2`, { sup: String(stats.overclockSteps) }],
     result: `${formulaNumber(stats.durationTicks)}t`,
   });
   if (fluidOut > 0) {
     lines.push({
-      label: "rate",
+      label: t("rate"),
       math: [`${formulaNumber(vat.keptOut)} L ÷ ${formulaNumber(seconds)}s`],
       result: `${formulaNumber(seconds > 0 ? vat.keptOut / seconds : 0)} L/s`,
     });
   }
   lines.push({
-    label: "glass",
+    label: t("glass"),
     math: [knob(GT_VOLTAGE_TIERS[parsed.glass]?.tier ?? String(parsed.glass), VAT_GLASS), ` ≥ ${GT_VOLTAGE_TIERS[Math.max(need.glass, 0)]?.tier ?? need.glass}`],
-    result: parsed.glass >= need.glass ? "ok" : "too low",
+    result: parsed.glass >= need.glass ? t("ok") : t("too low"),
     tone: parsed.glass >= need.glass ? "good" : "bad",
   });
   if (need.sievert > 0) {
     const have = parsed.radio ? effectiveSievert(parsed.radio.sievert, parsed.shutter) : 0;
     const met = need.exact ? have === need.sievert : have >= need.sievert;
     lines.push({
-      label: "rad",
+      label: t("rad"),
       math: parsed.radio
         ? [knob(parsed.radio.sievert, VAT_RADIO), "−⌈", knob(parsed.radio.sievert, VAT_RADIO), "·", knob(parsed.shutter, VAT_SHUTTER), `%⌉ ${need.exact ? "=" : "≥"} ${need.sievert}`]
-        : [knob("empty", VAT_RADIO), ` ${need.exact ? "=" : "≥"} ${need.sievert}`],
+        : [knob(t("empty"), VAT_RADIO), ` ${need.exact ? "=" : "≥"} ${need.sievert}`],
       result: `${have} Sv`,
       tone: met ? "good" : "bad",
     });
     if (parsed.radio) {
       const decay = radioDecayTicks(parsed.radio.sievert);
       lines.push({
-        label: "burn",
+        label: t("burn"),
         math: [`20 ÷ (${parsed.radio.mass}·${formulaNumber(decay)}t)`],
         result: `${formulaNumber(radioBurnPerSecond(parsed.radio))}/s`,
       });
     }
   }
   lines.push({
-    label: "power",
+    label: t("power"),
     math: [`${formulaNumber(recipe.eut ?? 0)}·4`, { sup: String(stats.overclockSteps) }],
     result: `${formulaNumber(stats.eut)} EU/t`,
   });

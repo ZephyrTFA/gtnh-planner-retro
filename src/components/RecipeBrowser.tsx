@@ -36,6 +36,7 @@ import {
   type IndexedResource,
 } from "./ResourceIndexPane";
 import { ChevronIcon } from "./PanelDrawer";
+import { useT } from "@/lib/i18n";
 import {
   RecipeSearchOverlay,
   type RecipeMapChip,
@@ -63,6 +64,7 @@ interface RecipeBrowserProps {
 }
 
 export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
+  const t = useT();
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -514,7 +516,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
         return projectRecipe;
       }
       if (!selectedDatasetVersion) {
-        throw new Error("No dataset version is selected.");
+        throw new Error(t("No dataset version is selected."));
       }
 
       return getRecipeDatasetRecipe(
@@ -523,7 +525,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
         recipeId,
       );
     },
-    [datasetManifestUrl, projectRecipes, selectedDatasetVersion],
+    [datasetManifestUrl, projectRecipes, selectedDatasetVersion, t],
   );
 
   const handleAddRecipe = useCallback(
@@ -574,7 +576,10 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
           if (!addRecipeToNode(currentMachinePin.nodeId, recipe, { inputPicks })) {
             failRecipeAdd(
               pendingId,
-              `No machine runs both ${recipeSummary.name} and what ${currentMachinePin.label} already has.`,
+              t("No machine runs both {recipe} and what {machine} already has.", {
+                recipe: recipeSummary.name,
+                machine: currentMachinePin.label,
+              }),
             );
             return;
           }
@@ -599,7 +604,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
       } catch (error) {
         failRecipeAdd(
           pendingId,
-          error instanceof Error ? error.message : "The recipe could not be loaded.",
+          error instanceof Error ? error.message : t("The recipe could not be loaded."),
         );
       }
     },
@@ -615,6 +620,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
       getFullRecipe,
       refactorNodeWithRecipe,
       resolveRecipeAdd,
+      t,
     ],
   );
 
@@ -765,7 +771,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
           setAvailableRecipeMaps([]);
           setRecipeMapIcons({});
           setRecipeMapCounts({});
-          setRecipeQueryError(error instanceof Error ? error.message : "Recipe query failed.");
+          setRecipeQueryError(error instanceof Error ? error.message : t("Recipe query failed."));
           setRecipeQueryLoading(false);
         });
     });
@@ -787,6 +793,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
     queryClauses,
     recipePage,
     selectedDatasetVersion,
+    t,
     takesOp,
   ]);
   return (
@@ -807,7 +814,7 @@ export function RecipeBrowser({ onLoadDatasetVersion }: RecipeBrowserProps) {
             <button
               type="button"
               onClick={() => writeWorkspaceView({ leftPanelOpen: false })}
-              aria-label="Hide the items column"
+              aria-label={t("Hide the items column")}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-100"
             >
               <ChevronIcon direction="left" />

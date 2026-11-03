@@ -1,6 +1,7 @@
 "use client";
 
-import { useItemNames, useItemNamesVersion } from "@/lib/item-names";
+import { useItemNamesVersion } from "@/lib/item-names";
+import { msg, t, td, tPlural, useLanguage, useT } from "@/lib/i18n";
 import { Search, X, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { DragEvent, PointerEvent, RefObject, WheelEvent } from "react";
@@ -57,6 +58,7 @@ export function ResourceIndexPane({
   onBrowse: (resource: IndexedResource, mode: "recipes" | "uses") => void;
   autoFocus?: boolean;
 }) {
+  const t = useT();
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const selectedDatasetVersion = useFactoryStore((state) =>
     state.datasetManifest?.versions.find((entry) => entry.id === state.selectedDatasetVersionId),
@@ -85,7 +87,7 @@ export function ResourceIndexPane({
   const [resourceFilter, setResourceFilter] = useState<ResourceFilterMode>("all");
   const [resourceMods, setResourceMods] = useState<Array<{ id: string; count: number }>>([]);
   const [resourceSearchOutcome, setResourceSearchOutcome] = useState<SearchOutcome>(EXACT_SEARCH);
-  const itemLanguage = useItemNames((state) => state.language);
+  const itemLanguage = useLanguage((state) => state.language);
   const [resourceQueryLoading, setResourceQueryLoading] = useState(false);
   const [resourceQueryError, setResourceQueryError] = useState<string | undefined>();
   const resourceQueryCacheRef = useRef<Map<string, ResourceQueryCacheEntry>>(new Map());
@@ -240,7 +242,7 @@ export function ResourceIndexPane({
         }
         setResourceResults([]);
         setResourceTotal(0);
-        setResourceQueryError(error instanceof Error ? error.message : "Resource query failed.");
+        setResourceQueryError(error instanceof Error ? error.message : t("Resource query failed."));
         setResourceQueryLoading(false);
       });
 
@@ -260,6 +262,7 @@ export function ResourceIndexPane({
     resourceSort,
     selectedDatasetVersion,
     itemLanguage,
+    t,
   ]);
 
   // A filter or search change can empty the selected mod's scope; drop a stale pick.
@@ -301,15 +304,15 @@ export function ResourceIndexPane({
                   const value = event.target.value;
                   setRecipeSearch(value);
                 }}
-                placeholder="Search item or fluid..."
+                placeholder={t("Search item or fluid...")}
                 className="min-w-0 flex-1 bg-transparent outline-none"
               />
               {recipeSearch ? (
                 <button
                   type="button"
                   onClick={() => setRecipeSearch("")}
-                  title="Clear search"
-                  aria-label="Clear search"
+                  title={t("Clear search")}
+                  aria-label={t("Clear search")}
                   className="text-neutral-500 hover:text-neutral-200"
                 >
                   <X className="h-4 w-4" />
@@ -324,10 +327,12 @@ export function ResourceIndexPane({
           {displayedOutcome.phase !== "exact" ? (
             <p className="mt-1.5 truncate text-[11px] leading-tight text-amber-300/80">
               {displayedOutcome.phase === "corrected"
-                ? `Showing results for ${displayedOutcome.corrections
-                    .map((correction) => correction.to)
-                    .join(", ")}`
-                : "No item has all those words. Showing the closest."}
+                ? t("Showing results for {words}", {
+                    words: displayedOutcome.corrections
+                      .map((correction) => correction.to)
+                      .join(", "),
+                  })
+                : t("No item has all those words. Showing the closest.")}
             </p>
           ) : null}
 
@@ -339,32 +344,36 @@ export function ResourceIndexPane({
                 key={choice.mode}
                 type="button"
                 onClick={() => setResourceFilter(choice.mode)}
-                title={choice.title}
+                title={td(choice.title)}
                 aria-pressed={resourceFilter === choice.mode}
                 className={[
-                  "h-6 min-w-0 truncate rounded-[4px] border text-[11px] font-medium",
+                  // Longer translations ("Жидкости") take a size down so the
+                  // word fits the three-column row instead of being cut.
+                  `h-6 min-w-0 truncate rounded-[4px] border font-medium ${
+                    td(choice.label).length > 7 ? "text-[10px] tracking-tight" : "text-[11px]"
+                  }`,
                   resourceFilter === choice.mode
                     ? "border-cyan-500 bg-cyan-500/15 text-cyan-300"
                     : "border-neutral-700 bg-[#17191d] text-neutral-400 hover:text-neutral-200",
                 ].join(" ")}
               >
-                {choice.label}
+                {td(choice.label)}
               </button>
             ))}
             <select
               value={resourceSort}
               onChange={(event) => setResourceSort(event.target.value as ResourceSortMode)}
-              title="Sort results"
-              aria-label="Sort results"
+              title={t("Sort results")}
+              aria-label={t("Sort results")}
               className="col-span-3 h-6 min-w-0 rounded-[4px] border border-neutral-700 bg-[#17191d] px-1.5 text-[11px] text-neutral-100 outline-none"
             >
-              {ONLINE_FEATURES ? <option value="popular">Most popular</option> : null}
-              <option value="common">Most used</option>
-              <option value="relevance">Best match</option>
-              <option value="name">Name A–Z</option>
-              <option value="mod">By mod</option>
-              <option value="made">Most ways to make</option>
-              <option value="uses">Used in most recipes</option>
+              {ONLINE_FEATURES ? <option value="popular">{t("Most popular")}</option> : null}
+              <option value="common">{t("Most used")}</option>
+              <option value="relevance">{t("Best match")}</option>
+              <option value="name">{t("Name A–Z")}</option>
+              <option value="mod">{t("By mod")}</option>
+              <option value="made">{t("Most ways to make")}</option>
+              <option value="uses">{t("Used in most recipes")}</option>
             </select>
           </div>
         </ControlsCard>
@@ -372,11 +381,11 @@ export function ResourceIndexPane({
         <div className="min-h-0 flex-1 overflow-hidden px-2 pb-1 pt-2">
           {!dataset && isDatasetLoading ? (
             <div className="rounded border border-dashed border-neutral-600 p-4 text-sm text-neutral-300">
-              Loading recipe index...
+              {t("Loading recipe index...")}
             </div>
           ) : !dataset ? (
             <div className="rounded border border-dashed border-neutral-600 p-4 text-sm text-neutral-300">
-              Recipe index is not loaded yet.
+              {t("Recipe index is not loaded yet.")}
             </div>
           ) : (
             <VirtualResourceResultList
@@ -387,11 +396,11 @@ export function ResourceIndexPane({
               error={resourceQueryError}
               emptyLabel={
                 onBoard
-                  ? "Nothing placed on the board yet."
+                  ? t("Nothing placed on the board yet.")
                   : resourceFilter === "plants"
-                    ? "No crop grows that."
+                    ? t("No crop grows that.")
                     : resourceFilter === "bees"
-                      ? "No bee makes that."
+                      ? t("No bee makes that.")
                       : undefined
               }
               activeResource={activeResource}
@@ -452,12 +461,12 @@ const RESOURCE_FILTER_CHOICES: Array<{
   label: string;
   title: string;
 }> = [
-  { mode: "all", label: "All", title: "Everything" },
-  { mode: "item", label: "Items", title: "Items" },
-  { mode: "fluid", label: "Fluids", title: "Fluids" },
-  { mode: "board", label: "Placed", title: "On this board" },
-  { mode: "plants", label: "CropsNH", title: "Grown" },
-  { mode: "bees", label: "Bees", title: "From bees" },
+  { mode: "all", label: msg("All"), title: msg("Everything") },
+  { mode: "item", label: msg("Items"), title: msg("Items") },
+  { mode: "fluid", label: msg("Fluids"), title: msg("Fluids") },
+  { mode: "board", label: msg("Placed"), title: msg("On this board") },
+  { mode: "plants", label: "CropsNH", title: msg("Grown") },
+  { mode: "bees", label: msg("Bees"), title: msg("From bees") },
 ];
 
 /** The dataset query only knows kinds and sources; this splits the choice up. */
@@ -476,7 +485,9 @@ function resourceFilterSource(filter: ResourceFilterMode): "plants" | "bees" | u
 function resourceTooltipLines(resource: IndexedResource): string[] {
   const subtitle = [
     getResourceModLabel(resource),
-    resource.recipeCount > 0 ? `${resource.recipeCount} recipes` : undefined,
+    resource.recipeCount > 0
+      ? tPlural(resource.recipeCount, "{count} recipe", "{count} recipes", { count: resource.recipeCount })
+      : undefined,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -764,6 +775,7 @@ function RecentResourceStrip({
 }: {
   onBrowse: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
+  const t = useT();
   useItemNamesVersion();
   const history = useFactoryStore((state) => state.recipeResourceHistory);
   const clearResourceHistory = useFactoryStore((state) => state.clearResourceHistory);
@@ -784,15 +796,15 @@ function RecentResourceStrip({
     <div className="mx-2 mb-1.5 shrink-0 rounded-[6px] border border-neutral-700 bg-[#2a2d33] p-1">
       <div className="mb-0.5 flex items-center justify-between px-0.5">
         <span className="text-[9px] font-semibold uppercase tracking-wide text-neutral-500">
-          Recent
+          {t("Recent")}
         </span>
         <button
           type="button"
           onClick={clearResourceHistory}
-          title="Clear recent items"
+          title={t("Clear recent items")}
           className="text-[9px] font-medium text-neutral-600 hover:text-neutral-200"
         >
-          Clear
+          {t("Clear")}
         </button>
       </div>
       {/* auto-fill picks the column count from the width, and the height stops
@@ -803,7 +815,7 @@ function RecentResourceStrip({
           gridTemplateColumns: `repeat(auto-fill, minmax(${cell}px, 1fr))`,
           maxHeight: rows * cell + (rows - 1) * RESOURCE_GRID_GAP,
         }}
-        aria-label="Recently viewed"
+        aria-label={t("Recently viewed")}
         role="listbox"
       >
         {recent.map((resource) => {
@@ -815,7 +827,7 @@ function RecentResourceStrip({
               key={`${resource.kind}:${resource.id}`}
               label={[
                 ...resourceTooltipLines(indexed),
-                "Click for recipes, right click for uses",
+                t("Click for recipes, right click for uses"),
               ]}
             >
               <button
@@ -888,6 +900,7 @@ function VirtualResourceResultList({
   onPageSizeChange: (pageSize: number) => void;
   onBrowse: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { pageSize, gridColumns } = useResourcePageSize(containerRef, onPageSizeChange);
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -908,7 +921,7 @@ function VirtualResourceResultList({
         <ResourceResultSkeleton pageSize={pageSize} gridColumns={gridColumns} />
       ) : resources.length === 0 ? (
         <div className="rounded border border-dashed border-neutral-600 p-4 text-sm text-neutral-300">
-          {emptyLabel ?? "No matching resource."}
+          {emptyLabel ?? t("No matching resource.")}
         </div>
       ) : (
         <ResourceResultPage
@@ -938,12 +951,13 @@ function ResourceResultSkeleton({
   pageSize: number;
   gridColumns: number;
 }) {
+  const t = useT();
   const count = Math.max(3, Math.min(pageSize, 60));
   return (
     <div
       className="grid min-h-0 flex-1 content-start gap-0.5 overflow-hidden"
       style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
-      aria-label="Loading resources"
+      aria-label={t("Loading resources")}
     >
       {Array.from({ length: count }, (_, index) => (
         <div
@@ -978,9 +992,9 @@ export function resourcePagerLabel({
   shown: number;
 }): string {
   if (isLoading && shown === 0) {
-    return "Loading items…";
+    return t("Loading items…");
   }
-  return `Page ${Math.min(currentPage + 1, pageCount)} of ${pageCount}`;
+  return t("Page {page} of {total}", { page: Math.min(currentPage + 1, pageCount), total: pageCount });
 }
 
 function ResourcePager({
@@ -996,6 +1010,7 @@ function ResourcePager({
   onPreviousPage: () => void;
   onNextPage: () => void;
 }) {
+  const t = useT();
   return (
     <div className="mt-1 flex h-6 w-full min-w-0 shrink-0 items-center gap-1">
       <button
@@ -1003,8 +1018,8 @@ function ResourcePager({
         onClick={onPreviousPage}
         disabled={currentPage === 0}
         className="flex h-6 w-7 items-center justify-center rounded-[4px] border border-neutral-700 bg-[#17191d] text-neutral-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
-        aria-label="Previous resource page"
-        title="Previous page"
+        aria-label={t("Previous resource page")}
+        title={t("Previous page")}
       >
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
@@ -1016,8 +1031,8 @@ function ResourcePager({
         onClick={onNextPage}
         disabled={currentPage >= pageCount - 1}
         className="flex h-6 w-7 items-center justify-center rounded-[4px] border border-neutral-700 bg-[#17191d] text-neutral-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
-        aria-label="Next resource page"
-        title="Next page"
+        aria-label={t("Next resource page")}
+        title={t("Next page")}
       >
         <ChevronRight className="h-3.5 w-3.5" />
       </button>
@@ -1100,6 +1115,7 @@ function ResourceResultPage({
   isRefreshing: boolean;
   onBrowseResource: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
+  const t = useT();
   useItemNamesVersion();
   const [, startBrowseTransition] = useTransition();
 
@@ -1118,7 +1134,7 @@ function ResourceResultPage({
         isRefreshing ? "opacity-60" : "",
       ].join(" ")}
       style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
-      aria-label="Resource results"
+      aria-label={t("Resource results")}
       role="listbox"
     >
       {resources.map((resource) => {
@@ -1184,7 +1200,7 @@ function ResourceResultPage({
                 )}
               </span>
               <span className="line-clamp-2 w-full break-words text-center text-[9px] leading-[10px] text-neutral-400">
-                {resource.id === POWER_EU_CLAUSE_ID ? "Power (EU/t)" : resourceDisplayLabel(resource)}
+                {resource.id === POWER_EU_CLAUSE_ID ? t("Power (EU/t)") : resourceDisplayLabel(resource)}
               </span>
           </button>
         );

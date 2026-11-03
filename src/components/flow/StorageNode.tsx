@@ -1,5 +1,6 @@
 "use client";
 import { useItemNamesVersion } from "@/lib/item-names";
+import { msg, td, useT } from "@/lib/i18n";
 import { isInputRate, storageTargetMode } from "@/lib/model/storage-target";
 import { usePortRowBrowse } from "./use-port-row-browse";
 import { formatAmountWithSuffix, parseAmountWithSuffix, RateBox, RuleButton, trimFlow, useRateRule } from "./rate-rule";
@@ -63,27 +64,27 @@ const ROLE_PRESENTATION: Record<
   { word: string; boundary: boolean }
 > = {
   source: {
-    word: "SOURCE",
+    word: msg("SOURCE"),
     boundary: true,
   },
   product: {
-    word: "PRODUCT",
+    word: msg("PRODUCT"),
     boundary: true,
   },
   byproduct: {
-    word: "BYPRODUCT",
+    word: msg("BYPRODUCT"),
     boundary: true,
   },
   trash: {
-    word: "TRASH",
+    word: msg("TRASH"),
     boundary: true,
   },
   buffer: {
-    word: "BUFFER",
+    word: msg("BUFFER"),
     boundary: false,
   },
   idle: {
-    word: "STORAGE",
+    word: msg("STORAGE"),
     boundary: false,
   },
 };
@@ -197,6 +198,7 @@ function storageIconPixelSize(
 
 function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
   useItemNamesVersion();
+  const t = useT();
   const { storage, result } = data;
   const category = useFactoryStore((state) =>
     getCategoryPresentation(state.project.recipes, storage.kind, storage.resourceId),
@@ -273,7 +275,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
   const isTank = storage.kind === "fluid";
   const isPlainFluid = isTank && !storage.iconPath && !storage.iconAtlas;
   const ratio = role === "buffer" && storage.bufferMode === "ratio";
-  const word = ratio ? "RATIO" : role === "buffer" && isStrictBuffer(storage, solveMode) ? "STRICT" : ROLE_PRESENTATION[role].word;
+  const word = ratio ? t("RATIO") : role === "buffer" && isStrictBuffer(storage, solveMode) ? t("STRICT") : td(ROLE_PRESENTATION[role].word);
   // Solve's rule row sits on source and product drawers only.
   const ruled = solveMode && (role === "source" || role === "product");
   // The card wears its JOB's colour, the side panel's dialect: red is what
@@ -542,7 +544,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
               data-resource-handle="true"
               data-resource-node-id={storage.id}
               data-resource-handle-id={outputHandleId}
-              aria-label={`${title}${readOnly ? "" : ". Left click or R for recipes, right click or U for uses, drag to connect"}`}
+              aria-label={readOnly ? title : t("{name}. Left click or R for recipes, right click or U for uses, drag to connect", { name: title })}
               className="nodrag"
               style={WELL_HANDLE}
             />
@@ -581,7 +583,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
                     // leaving the setup, so it says so.
                     <div className="storage-chip-surplus">
                       <ChipRate net={net} kind={storage.kind} role={role} size="large" />
-                      <span className="storage-chip-surplus-word">(surplus)</span>
+                      <span className="storage-chip-surplus-word">{t("(surplus)")}</span>
                     </div>
                   ) : (
                     <ChipRate net={net} kind={storage.kind} role={role} size="large" />
@@ -788,6 +790,7 @@ export function TargetLine({
   inlinePencil?: boolean;
   input?: boolean;
 }) {
+  const t = useT();
   const setStorageTarget = useFactoryStore((state) => state.setStorageTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -863,7 +866,7 @@ export function TargetLine({
         onPointerDown={(event) => event.stopPropagation()}
         onMouseDown={(event) => { event.stopPropagation(); if (event.button === 1) event.preventDefault(); }}
         onAuxClick={clearRate}
-        aria-label="Required amount"
+        aria-label={t("Required amount")}
         style={rateStyle}
         className="nodrag group/target relative z-40 flex cursor-pointer justify-center hover:brightness-125"
       >
@@ -883,7 +886,7 @@ export function TargetLine({
                 askBlink ? "animate-pulse" : "opacity-60",
               ].join(" ")}
             >
-              rate?
+              {t("rate?")}
             </div>
           )}
           <Pencil
@@ -921,8 +924,8 @@ export function TargetLine({
         onTouchStart={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
         inputMode={signed ? "text" : "decimal"}
-        placeholder="rate"
-        aria-label="Required amount"
+        placeholder={t("rate")}
+        aria-label={t("Required amount")}
         className={[
           "nodrag h-4 w-[60px] border px-[3px] text-center text-[9px] font-bold tabular-nums outline-none",
           "bg-[#14171d] shadow-[inset_1px_1px_0_rgba(255,255,255,0.08),inset_-1px_-1px_0_rgba(0,0,0,0.5)]",
@@ -937,8 +940,9 @@ export function TargetLine({
 
 /** The ratio editor's pencil, a key in the title bar beside the mode key. */
 function RatioSplitButton({ storageId }: { storageId: string }) {
+  const t = useT();
   return (
-    <button type="button" data-tooltip-stop aria-label="Edit drawer ratios" title="Edit split"
+    <button type="button" data-tooltip-stop aria-label={t("Edit drawer ratios")} title={t("Edit split")}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => { event.stopPropagation(); openRatioEditor(storageId); }}
       className="storage-title-key board-edit-chrome nodrag nopan"
@@ -966,8 +970,9 @@ function StorageTitleBar({
   title: string;
   solveMode: boolean;
 }) {
+  const t = useT();
   const deleteStorage = useFactoryStore((state) => state.deleteStorage);
-  const noun = isTank ? "tank" : "drawer";
+  const deleteLabel = isTank ? t("Delete tank") : t("Delete drawer");
   const ratio = role === "buffer" && storage.bufferMode === "ratio";
   // Pool has one drain kind, so DrainModeSwap shows nothing there.
   const poolMode = useFactoryStore((state) => state.project.poolMode === true);
@@ -982,8 +987,8 @@ function StorageTitleBar({
             deleteStorage(storage.id);
           }}
           className="storage-title-key storage-title-key--delete board-edit-chrome nodrag"
-          title={`Delete ${noun}`}
-          aria-label={`Delete ${noun}`}
+          title={deleteLabel}
+          aria-label={deleteLabel}
         />
       </span>
       <StorageTitleName title={title} />
@@ -1006,9 +1011,11 @@ function StorageTitleBar({
  * Clicking cycles all three; ratio's pencil beside it opens its editor.
  */
 function BufferModeSwap({ storageId, mode }: { storageId: string; mode: StorageBufferMode }) {
+  const t = useT();
   const updateStorage = useFactoryStore((state) => state.updateStorage);
   const Icon = mode === "ratio" ? Split : mode === "strict" ? ArrowLeftRight : ArrowDownToLine;
   const next = mode === "overflow" ? "strict" : mode === "strict" ? "ratio" : "overflow";
+  const switchLabel = next === "strict" ? t("Switch to strict") : next === "ratio" ? t("Switch to ratio") : t("Switch to overflow");
 
   return (
     <MinecraftTooltip content={() => <RecipeTooltip view={buildBufferKeyTooltip(mode)} />}>
@@ -1018,7 +1025,7 @@ function BufferModeSwap({ storageId, mode }: { storageId: string; mode: StorageB
         event.stopPropagation();
         updateStorage(storageId, { bufferMode: next });
       }}
-      aria-label={`Switch to ${next}`}
+      aria-label={switchLabel}
       className="storage-title-key board-edit-chrome nodrag"
     >
       <Icon aria-hidden />
@@ -1042,6 +1049,7 @@ function DrainModeSwap({
   role: StorageRole;
   kind: FactoryStorage["kind"];
 }) {
+  const t = useT();
   const setStorageDrainMode = useFactoryStore((state) => state.setStorageDrainMode);
   // POOL MODE has one drawer kind, the product: byproduct and trash drawers
   // are inert there (the pool banks every surplus by itself), so there is
@@ -1057,6 +1065,7 @@ function DrainModeSwap({
           ? "product"
           : "trash"
         : "product";
+  const switchLabel = next === "product" ? t("Switch to product") : next === "byproduct" ? t("Switch to byproduct") : t("Switch to trash");
   if (poolMode) {
     return null;
   }
@@ -1069,7 +1078,7 @@ function DrainModeSwap({
         event.stopPropagation();
         setStorageDrainMode(storageId, next);
       }}
-      aria-label={`Switch to ${next}`}
+      aria-label={switchLabel}
       className="storage-title-key board-edit-chrome nodrag"
     >
       <Repeat aria-hidden />

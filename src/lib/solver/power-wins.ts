@@ -4,6 +4,7 @@ import type { FactoryNode, Recipe } from "@/lib/model/types";
 import { getNodePowerReport, type NodePowerReport } from "./power-report";
 import { applyMachineHandlerToRecipe } from "@/lib/model/recipe-rules";
 import { getMachineStructuralParallels } from "./machine-effects";
+import { t, tPlural, useLanguage } from "@/lib/i18n";
 
 /**
  * One budget worth stepping to: the smallest EU/t at which the build gains
@@ -49,16 +50,16 @@ function same(a: NodePowerReport, b: NodePowerReport): boolean {
 
 function describe(report: NodePowerReport): string {
   if (report.state !== "ok") {
-    return "does not run";
+    return t("does not run");
   }
   const parts: string[] = [];
   if (report.overclockSteps > 0) {
-    parts.push(`${report.overclockSteps} overclock${report.overclockSteps === 1 ? "" : "s"}`);
+    parts.push(tPlural(report.overclockSteps, "{count} overclock", "{count} overclocks", { count: report.overclockSteps }));
   }
   if (report.parallels > 1) {
-    parts.push(`${report.parallels} parallels`);
+    parts.push(tPlural(report.parallels, "{count} parallel", "{count} parallels", { count: report.parallels }));
   }
-  return parts.length > 0 ? parts.join(", ") : "runs";
+  return parts.length > 0 ? parts.join(", ") : t("runs");
 }
 
 /**
@@ -138,6 +139,8 @@ const WINS_CACHE_LIMIT = 400;
 
 export function listPowerWinsCached(recipe: Recipe, node: PowerWinNode): PowerWin[] {
   const key = JSON.stringify([
+    // The wins carry text in the interface language.
+    useLanguage.getState().language,
     recipe.id,
     recipe.machineType,
     recipe.durationTicks,

@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getCommunityPlan, voteCommunityPlan } from "@/lib/community/client";
 import { ONLINE_FEATURES } from "@/lib/site";
+import { tPlural, useT } from "@/lib/i18n";
 import { computeCommunityPlanStats } from "@/lib/community/plan-stats";
 import { noteSharedPlanGone, sharedPlanLink } from "@/lib/community/shared-link";
 import type { CommunityPlanSummary } from "@/lib/community/types";
@@ -43,6 +44,7 @@ const BAR_BUTTON =
   "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-line-strong bg-surface text-fg-subtle hover:bg-surface-raised disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-sunken disabled:text-fg-muted";
 
 export function PlanIdentityDrawer() {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const setProjectIdentity = useFactoryStore((state) => state.setProjectIdentity);
@@ -121,15 +123,15 @@ export function PlanIdentityDrawer() {
           className="!h-6 !w-6 shrink-0 border border-line-strong bg-surface-sunken"
         />
         <button type="button" onClick={toggleOpen} aria-expanded={isOpen}
-          aria-label="Edit plan details" className="plan-summary-name group flex h-6 min-w-0 max-w-[35%] shrink items-center gap-1.5 rounded px-1 text-left font-semibold text-fg hover:bg-surface-raised">
+          aria-label={t("Edit plan details")} className="plan-summary-name group flex h-6 min-w-0 max-w-[35%] shrink items-center gap-1.5 rounded px-1 text-left font-semibold text-fg hover:bg-surface-raised">
           <span className="truncate">{nameDraft ?? project.name}</span>
           <Pencil aria-hidden className="h-3 w-3 shrink-0 text-fg-muted opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
         </button>
         <button type="button" onClick={toggleOpen} aria-expanded={isOpen}
-          aria-label={isOpen ? "Fold the plan description away" : "Open the plan description"}
+          aria-label={isOpen ? t("Fold the plan description away") : t("Open the plan description")}
           className="plan-summary-description flex h-6 min-w-0 flex-1 items-center rounded px-2 text-left text-xs text-fg-muted hover:bg-surface-raised hover:text-fg">
           <span className="block w-full overflow-hidden whitespace-nowrap text-xs" style={{ maskImage: "linear-gradient(to right, black calc(100% - 12px), transparent)" }}>
-            {(descriptionDraft ?? project.description)?.trim() || "Add description…"}
+            {(descriptionDraft ?? project.description)?.trim() || t("Add description…")}
           </span>
         </button>
         {/* Posting needs the community; Copy plan beside it shares a link without one. */}
@@ -140,12 +142,12 @@ export function PlanIdentityDrawer() {
             type="button"
             onClick={() => setSharing(true)}
             disabled={project.nodes.length === 0}
-            title={project.nodes.length === 0 ? "Share: build something first" : "Share"}
-            aria-label="Share this setup"
+            title={project.nodes.length === 0 ? t("Share: build something first") : t("Share")}
+            aria-label={t("Share this setup")}
             className="plan-summary-action inline-flex h-6 shrink-0 items-center justify-center gap-1.5 rounded border border-line-strong px-2 text-fg hover:bg-surface-raised disabled:opacity-40"
           >
             <Share2 className="h-3 w-3" />
-            <span>Share</span>
+            <span>{t("Share")}</span>
           </button>
         )}
         <ScreenshotButton />
@@ -155,7 +157,7 @@ export function PlanIdentityDrawer() {
 
       {isOpen ? (
         <div className="plan-summary-details grid gap-2 border-t border-line p-3">
-          <label className="grid gap-1 text-xs text-fg-muted">Name
+          <label className="grid gap-1 text-xs text-fg-muted">{t("Name")}
         <input
           value={nameDraft ?? project.name}
           onChange={(event) => setNameDraft(event.target.value)}
@@ -166,13 +168,13 @@ export function PlanIdentityDrawer() {
             }
           }}
           maxLength={80}
-          aria-label="Plan name"
-          title="Plan name"
+          aria-label={t("Plan name")}
+          title={t("Plan name")}
 
           className="h-8 w-full min-w-0 rounded border border-line bg-surface-sunken px-1.5 text-sm font-medium text-fg outline-none hover:border-line focus:border-line-strong focus:bg-surface-sunken"
         />
           </label>
-          <label className="grid gap-1 text-xs text-fg-muted">Description
+          <label className="grid gap-1 text-xs text-fg-muted">{t("Description")}
           <textarea
             value={descriptionDraft ?? project.description ?? ""}
             onChange={(event) => {
@@ -184,8 +186,8 @@ export function PlanIdentityDrawer() {
             onBlur={(event) => commitDescription(event.target.value)}
             maxLength={2000}
             rows={2}
-            placeholder="What does it make? Any setup notes? Sharing posts this with the plan."
-            aria-label="Plan description"
+            placeholder={t("What does it make? Any setup notes? Sharing posts this with the plan.")}
+            aria-label={t("Plan description")}
             className="w-full resize-y rounded border border-line-strong bg-surface-sunken px-2 py-1.5 text-xs"
           />
           </label>
@@ -194,7 +196,7 @@ export function PlanIdentityDrawer() {
 
       {isPickingIcon ? (
         <IconPicker
-          title="Pick this plan's icon"
+          title={t("Pick this plan's icon")}
           suggestions={iconSuggestionsFromStats(stats.needs, stats.outputs)}
           onPick={(picked) => {
             setProjectIdentity({ icon: picked });
@@ -221,6 +223,7 @@ export function PlanIdentityDrawer() {
  * fingerprint math track the link alone.
  */
 function LinkedPostStrip({ planId }: { planId: string }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const setProjectIdentity = useFactoryStore((state) => state.setProjectIdentity);
   const clearProjectCommunityLink = useFactoryStore((state) => state.clearProjectCommunityLink);
@@ -298,7 +301,7 @@ function LinkedPostStrip({ planId }: { planId: string }) {
     try {
       await action();
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "That did not go through.");
+      setActionError(error instanceof Error ? error.message : t("That did not go through."));
     } finally {
       setBusy(undefined);
     }
@@ -325,7 +328,7 @@ function LinkedPostStrip({ planId }: { planId: string }) {
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      window.prompt("Copy this link:", url);
+      window.prompt(t("Copy this link:"), url);
       return;
     }
     setLinkCopied(true);
@@ -340,13 +343,13 @@ function LinkedPostStrip({ planId }: { planId: string }) {
     return (
       <>
         <span className="shrink-0 text-[11px] text-fg-muted compact:hidden">
-          The post this came from is gone
+          {t("The post this came from is gone")}
         </span>
         <button
           type="button"
           onClick={clearProjectCommunityLink}
-          title="Detach from the post"
-          aria-label="Detach this plan from its deleted post"
+          title={t("Detach from the post")}
+          aria-label={t("Detach this plan from its deleted post")}
           className={BAR_BUTTON}
         >
           <Unlink className="h-3.5 w-3.5" />
@@ -363,10 +366,10 @@ function LinkedPostStrip({ planId }: { planId: string }) {
     post.updatedAt &&
     new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
   const meta = [
-    post.isMine ? "your post" : post.authorName ? `by ${post.authorName}` : undefined,
-    `posted ${formatRelativeDate(post.createdAt)}`,
-    wasEdited && post.updatedAt ? `edited ${formatRelativeDate(post.updatedAt)}` : undefined,
-    `${post.downloads} downloads`,
+    post.isMine ? t("your post") : post.authorName ? t("by {name}", { name: post.authorName }) : undefined,
+    t("posted {when}", { when: formatRelativeDate(post.createdAt) }),
+    wasEdited && post.updatedAt ? t("edited {when}", { when: formatRelativeDate(post.updatedAt) }) : undefined,
+    tPlural(post.downloads, "{count} download", "{count} downloads", { count: post.downloads }),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -386,7 +389,7 @@ function LinkedPostStrip({ planId }: { planId: string }) {
         type="button"
         onClick={() => void vote()}
         disabled={busy === "vote"}
-        title={post.myVote === 1 ? "You voted this setup up" : "Vote this setup up"}
+        title={post.myVote === 1 ? t("You voted this setup up") : t("Vote this setup up")}
         className={[
           "inline-flex h-6 shrink-0 items-center gap-0.5 rounded border px-1.5 text-xs tabular-nums",
           post.myVote === 1
@@ -399,8 +402,8 @@ function LinkedPostStrip({ planId }: { planId: string }) {
       <button
         type="button"
         onClick={() => void copyLink()}
-        title="Copy link"
-        aria-label="Copy the link to this post"
+        title={t("Copy link")}
+        aria-label={t("Copy the link to this post")}
         className={BAR_BUTTON}
       >
         {isLinkCopied ? (
@@ -415,8 +418,8 @@ function LinkedPostStrip({ planId }: { planId: string }) {
       <button
         type="button"
         onClick={() => setSharingAsOwn(true)}
-        title="Share"
-        aria-label="Share this setup"
+        title={t("Share")}
+        aria-label={t("Share this setup")}
         className={BAR_BUTTON}
       >
         <Share2 className="h-3.5 w-3.5" />

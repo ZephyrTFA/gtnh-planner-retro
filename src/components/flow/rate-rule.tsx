@@ -7,6 +7,7 @@ import { isInputRate, storageTargetMode, type TargetMode } from "@/lib/model/sto
 import { formatCompact, formatPowerValue, trimTrailingDecimalZeros } from "@/lib/model";
 import { rateMultiplierForKind, rateSuffixForKind } from "@/lib/model/rate-unit";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
+import { msg, td, useT } from "@/lib/i18n";
 import { playBoardSound, suppressBoardSound } from "@/lib/board-sounds";
 import { hasAnySolveNumbers } from "@/lib/solver/throughput";
 import { useFactoryStore } from "@/store/factory-store";
@@ -28,7 +29,13 @@ import { buildRatePlateTooltip } from "./storage-tooltip-data";
  * is stored as "ignore": a number can wait there without applying. */
 export const RULE_STEPS: TargetMode[] = ["ignore", "at-least", "exact", "at-most"];
 export const RULE_MARK: Record<TargetMode, string> = { ignore: "~", "at-least": "≥", exact: "=", "at-most": "≤" };
-export const RULE_NAME: Record<TargetMode, string> = { ignore: "Any", "at-least": "At least", exact: "Exactly", "at-most": "At most" };
+/** Rule names in English; show them with `td()`. */
+export const RULE_NAME: Record<TargetMode, string> = {
+  ignore: msg("Any"),
+  "at-least": msg("At least"),
+  exact: msg("Exactly"),
+  "at-most": msg("At most"),
+};
 
 export type RateRuleVariant = "drawer" | "table";
 
@@ -302,6 +309,7 @@ function clippingBox(element: HTMLElement): { top: number; bottom: number } {
 
 /** The rule button and, while open, its list of four. */
 export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; variant?: RateRuleVariant }) {
+  const t = useT();
   const rootRef = useRef<HTMLSpanElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [button, setButton] = useState<HTMLButtonElement | null>(null);
@@ -347,7 +355,11 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
         disabled={locked}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`${rule.name ? `Rule for ${rule.name}` : "Rule"}: ${RULE_NAME[shownMode]}. Click to choose.`}
+        aria-label={
+          rule.name
+            ? t("Rule for {name}: {rule}. Click to choose.", { name: rule.name, rule: td(RULE_NAME[shownMode]) })
+            : t("Rule: {rule}. Click to choose.", { rule: td(RULE_NAME[shownMode]) })
+        }
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => {
           event.stopPropagation();
@@ -367,14 +379,14 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
         }}
       >
         <b className="storage-rule-mark">{RULE_MARK[shownMode]}</b>
-        {table ? <span className="storage-rule-word">{RULE_NAME[shownMode]}</span> : null}
+        {table ? <span className="storage-rule-word">{td(RULE_NAME[shownMode])}</span> : null}
         <ChevronDown aria-hidden />
       </button>
       {open ? (
         <div
           ref={listRef}
           role="listbox"
-          aria-label="Rule"
+          aria-label={t("Rule")}
           data-tooltip-stop
           className={`storage-rule-list nodrag nowheel ${table ? "storage-rule-list--table" : ""} ${up ? "storage-rule-list--up" : ""}`}
           onPointerDown={(event) => event.stopPropagation()}
@@ -392,7 +404,7 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
               }}
             >
               <b>{RULE_MARK[step]}</b>
-              {RULE_NAME[step]}
+              {td(RULE_NAME[step])}
             </button>
           ))}
         </div>
@@ -404,6 +416,7 @@ export function RuleButton({ rule, variant = "drawer" }: { rule: RuleControl; va
 /** Your rate in its sunken box: click to type, scroll to step, middle click
  * to clear. */
 export function RateBox({ rule }: { rule: RateRule }) {
+  const t = useT();
   const [box, setBox] = useState<HTMLButtonElement | null>(null);
   const { storage, result, kind, any, target, input, signed, ask, locked, editing } = rule;
   // Native and non-passive, so Ctrl-scroll steps the rate instead of
@@ -438,8 +451,8 @@ export function RateBox({ rule }: { rule: RateRule }) {
         onMouseDown={middleDownKeepsFocus}
         onAuxClick={rule.clear}
         inputMode={signed ? "text" : "decimal"}
-        placeholder={rule.flowing > 0 ? `${signed && input ? "-" : ""}${draftFor(rule.flowing, kind)}` : "rate"}
-        aria-label="Your rate"
+        placeholder={rule.flowing > 0 ? `${signed && input ? "-" : ""}${draftFor(rule.flowing, kind)}` : t("rate")}
+        aria-label={t("Your rate")}
         className="storage-rate-field storage-rate-field--editing nodrag"
       />
     );
@@ -463,9 +476,9 @@ export function RateBox({ rule }: { rule: RateRule }) {
         }}
         onMouseDown={middleDownKeepsFocus}
         onAuxClick={rule.clear}
-        aria-label={any ? "Your rate: none. Click to type one." : `Your rate: ${shown} ${unit}. Click to change it.`}
+        aria-label={any ? t("Your rate: none. Click to type one.") : t("Your rate: {rate} {unit}. Click to change it.", { rate: shown, unit })}
       >
-        <span className="storage-rate-field-number">{any ? "rate?" : shown}</span>
+        <span className="storage-rate-field-number">{any ? t("rate?") : shown}</span>
         {any ? null : <span className="storage-rate-field-unit">{unit}</span>}
       </button>
     </MinecraftTooltip>

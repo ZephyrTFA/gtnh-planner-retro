@@ -1,13 +1,21 @@
 import { Fragment, type ReactNode } from "react";
 import { useFactoryStore } from "@/store/factory-store";
+import { msg, td, useT } from "@/lib/i18n";
 import type { RecipeTooltipView, TooltipAction } from "./recipe-tooltip-data";
 
 const GESTURE_NAME: Record<TooltipAction["gesture"], string> = {
-  left: "Left click",
-  right: "Right click",
-  wheel: "Mouse wheel",
-  drag: "Drag",
-  middle: "Middle click",
+  left: msg("Left click"),
+  right: msg("Right click"),
+  wheel: msg("Mouse wheel"),
+  drag: msg("Drag"),
+  middle: msg("Middle click"),
+};
+
+/** The board mode a panel speaks for, shown in its corner (lower case, capitalized by CSS). */
+const MODE_NAME: Record<NonNullable<RecipeTooltipView["mode"]>, string> = {
+  build: msg("build"),
+  solve: msg("solve"),
+  pool: msg("pool"),
 };
 
 /**
@@ -32,6 +40,7 @@ export function MouseIcon({ gesture }: { gesture: TooltipAction["gesture"] }) {
 
 /** Read-only gesture legend; actions remain on the hovered control. */
 export function TooltipActions({ actions }: { actions: readonly TooltipAction[] }) {
+  useT();
   const readOnly = useFactoryStore((state) => state.isReadOnly);
   // The viewer permits inspection, but none of these editing/browsing gestures.
   if (readOnly || !actions.length) return null;
@@ -39,7 +48,7 @@ export function TooltipActions({ actions }: { actions: readonly TooltipAction[] 
     <div className="mt-3 flex flex-col gap-y-1 border-t border-line pt-2.5 text-fg-subtle" data-tooltip-actions="">
       {actions.map((action) => (
         <span key={`${action.gesture}-${action.label}`} className="flex items-center gap-2">
-          <span role="img" aria-label={GESTURE_NAME[action.gesture]}>
+          <span role="img" aria-label={td(GESTURE_NAME[action.gesture])}>
             <MouseIcon gesture={action.gesture} />
           </span>
           <span>{action.label}</span>
@@ -50,6 +59,7 @@ export function TooltipActions({ actions }: { actions: readonly TooltipAction[] 
 }
 
 export function RecipeTooltip({ view, children }: { view: RecipeTooltipView; children?: ReactNode }) {
+  useT();
   const modeColor = view.mode === "pool" ? "text-[#6f9cff]" : view.mode === "solve" ? "text-[#c78bff]" : "text-[#f5b642]";
   // ONE body size (14/20) everywhere but the heading; the panel is as wide
   // as its longest line and no wider, capped so a paragraph still wraps.
@@ -58,7 +68,7 @@ export function RecipeTooltip({ view, children }: { view: RecipeTooltipView; chi
     <div className="w-max max-w-[300px] text-sm leading-5 text-fg-subtle">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 break-words text-base font-semibold leading-6 text-fg">{view.title}</div>
-        {view.mode && <span className={`shrink-0 capitalize ${modeColor}`}>{view.mode}</span>}
+        {view.mode && <span className={`shrink-0 capitalize ${modeColor}`}>{td(MODE_NAME[view.mode])}</span>}
       </div>
       {(view.subtitle || view.status) && <div className="flex flex-wrap justify-between gap-x-3 text-fg-muted">
         <span>{view.subtitle}</span>

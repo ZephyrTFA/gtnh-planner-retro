@@ -7,6 +7,7 @@ import type {
 } from "@/lib/import-export/plan-image";
 import { drawBorder, type CompositeLayout, type ExportBorder } from "@/lib/import-export/export-composite";
 import { PULSE_STROKE } from "../flow/edge-pulse";
+import { t } from "@/lib/i18n";
 
 /**
  * The board as a looping GIF: one static photograph with the marching flow
@@ -147,7 +148,7 @@ function makeCanvas(width: number, height: number) {
   canvas.height = height;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) {
-    throw new Error("Canvas 2D context unavailable.");
+    throw new Error(t("Canvas 2D context unavailable."));
   }
   return { canvas, context };
 }

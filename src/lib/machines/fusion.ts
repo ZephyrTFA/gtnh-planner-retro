@@ -1,4 +1,5 @@
 import { getVoltageTierForEuT, getVoltageTierIndex, getVoltageTierMaxEuT } from "@/lib/model/tiers";
+import { msg } from "@/lib/i18n";
 import type { MachineHandler, Recipe } from "@/lib/model/types";
 import startupSnapshot from "./data/fusion-startups.json";
 
@@ -160,7 +161,7 @@ export function normalizeFusionHandler(
         ? [
             {
               id: "machineParallel",
-              label: "Parallels",
+              label: msg("Parallels"),
               minimumKey: String(parallels),
               defaultKey: String(parallels),
               tiers: [

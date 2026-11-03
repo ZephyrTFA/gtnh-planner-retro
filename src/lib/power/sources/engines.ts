@@ -5,9 +5,10 @@
  * (fuel x2, output x3, oxygen 40 L/s) and MTEUniversalChemicalFuelEngine
  * (eff = 1.5 e^(-C/ratio)).
  */
+import { msg } from "@/lib/i18n";
 import { findFuel, fuelOptions, powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
-import { formatAmount, items, liters, percent, stat } from "./helpers";
+import { formatAmount, items, liters, percent, powerText, stat } from "./helpers";
 
 /**
  * mRuntime counts 0..1001 before it wraps (MTEMultiBlockBase.doRandomMaintenanceDamage),
@@ -40,7 +41,7 @@ const ENGINE_SPECS: EngineSpec[] = [
     id: "large-combustion-engine",
     name: "Large Combustion Engine",
     unlock: "EV",
-    blurb: "Diesel fuels; oxygen boost triples it.",
+    blurb: msg("Diesel fuels; oxygen boost triples it."),
     fuels: powerPlannerData.combustionFuels,
     baseOutput: 2048,
     boostedOutput: 6144,
@@ -54,7 +55,7 @@ const ENGINE_SPECS: EngineSpec[] = [
     id: "extreme-combustion-engine",
     name: "Extreme Combustion Engine",
     unlock: "IV",
-    blurb: "Jet fuels and HOG; liquid oxygen boost.",
+    blurb: msg("Jet fuels and HOG; liquid oxygen boost."),
     fuels: powerPlannerData.eceFuels,
     baseOutput: 10900,
     boostedOutput: 32700,
@@ -69,7 +70,7 @@ const ENGINE_SPECS: EngineSpec[] = [
     id: "large-semifluid-generator",
     name: "Large Semifluid Burner",
     unlock: "EV",
-    blurb: "The engine for heavy oils.",
+    blurb: msg("The engine for heavy oils."),
     fuels: powerPlannerData.semifluidFuels,
     // Boosted it meters fuel against 4096 and runs at 150% efficiency (MTELargeSemifluidGenerator).
     baseOutput: 2048,
@@ -91,11 +92,11 @@ function buildEngine(spec: EngineSpec): PowerSourceDefinition {
       {
         type: "select",
         id: "fuel",
-        label: "Fuel",
+        label: msg("Fuel"),
         options: fuelOptions(spec.fuels),
         defaultKey: spec.defaultFuel ?? spec.fuels[0]?.name ?? "",
       },
-      { type: "toggle", id: "boost", label: "Oxygen boost", defaultOn: false },
+      { type: "toggle", id: "boost", label: msg("Oxygen boost"), defaultOn: false },
     ],
     compute(read): PowerModel {
       const fuel = findFuel(spec.fuels, read.select("fuel"));
@@ -128,9 +129,9 @@ function buildEngine(spec: EngineSpec): PowerSourceDefinition {
         euPerTick: output,
         inputs,
         outputs: [],
-        stats: [stat("EU per L", formatAmount(effectiveEu))],
+        stats: [stat(msg("EU per L"), formatAmount(effectiveEu))],
         warnings: blocked
-          ? [`${fuel.name} is over ${spec.unboostedFuelCap} EU/L and needs the oxygen boost.`]
+          ? [powerText(msg("{fuel} is over {cap} EU/L and needs the oxygen boost."), { fuel: fuel.name, cap: spec.unboostedFuelCap ?? 0 })]
           : undefined,
       };
     },
@@ -158,17 +159,17 @@ const largeRocketEngine: PowerSourceDefinition = {
   name: "Large Rocket Engine",
   group: "engines",
   unlock: "IV",
-  blurb: "Rocket fuel; falls off past its knees.",
+  blurb: msg("Rocket fuel; falls off past its knees."),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: fuelOptions(powerPlannerData.rocketFuels),
       defaultKey: powerPlannerData.rocketFuels[0]?.name ?? "",
     },
-    { type: "number", id: "throttle", label: "Fuel rate", min: 1, max: 4000, step: 1, defaultValue: 500, unit: "L/s" },
-    { type: "toggle", id: "boost", label: "Liquid hydrogen boost", defaultOn: false },
+    { type: "number", id: "throttle", label: msg("Fuel rate"), min: 1, max: 4000, step: 1, defaultValue: 500, unit: "L/s" },
+    { type: "toggle", id: "boost", label: msg("Liquid hydrogen boost"), defaultOn: false },
   ],
   compute(read): PowerModel {
     const fuel = findFuel(powerPlannerData.rocketFuels, read.select("fuel"));
@@ -202,8 +203,8 @@ const largeRocketEngine: PowerSourceDefinition = {
       inputs,
       outputs: [],
       stats: [
-        stat("EU per L", formatAmount(throttle > 0 ? euPerTick / (throttle / 20) : 0)),
-        stat("Power knees", `${formatAmount(knee1)} / ${formatAmount(knee2)} L/s`),
+        stat(msg("EU per L"), formatAmount(throttle > 0 ? euPerTick / (throttle / 20) : 0)),
+        stat(msg("Power knees"), `${formatAmount(knee1)} / ${formatAmount(knee2)} L/s`),
       ],
     };
   },
@@ -219,20 +220,20 @@ const universalChemicalFuelEngine: PowerSourceDefinition = {
   name: "Universal Chemical Fuel Engine",
   group: "engines",
   unlock: "LuV",
-  blurb: "Any fuel plus combustion promoter.",
+  blurb: msg("Any fuel plus combustion promoter."),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: fuelOptions(powerPlannerData.ucfeFuels),
       defaultKey: "RP-1 (red)",
     },
-    { type: "number", id: "flow", label: "Fuel rate", min: 1, max: 100000, step: 1, defaultValue: 500, unit: "L/s" },
+    { type: "number", id: "flow", label: msg("Fuel rate"), min: 1, max: 100000, step: 1, defaultValue: 500, unit: "L/s" },
     {
       type: "number",
       id: "promoterRatio",
-      label: "Promoter per fuel",
+      label: msg("Promoter per fuel"),
       min: 0.01,
       max: 2,
       step: 0.01,
@@ -250,7 +251,7 @@ const universalChemicalFuelEngine: PowerSourceDefinition = {
       euPerTick,
       inputs: [liters(fuel.name, flow), liters("Combustion Promoter", flow * ratio)],
       outputs: [],
-      stats: [stat("Efficiency", percent(efficiency))],
+      stats: [stat(msg("Efficiency"), percent(efficiency))],
     };
   },
 };
@@ -266,12 +267,12 @@ const largeNeutralizationEngine: PowerSourceDefinition = {
   name: "Large Neutralization Engine",
   group: "engines",
   unlock: "EV",
-  blurb: "Neutralizes acids for power.",
+  blurb: msg("Neutralizes acids for power."),
   settings: [
     {
       type: "select",
       id: "structure",
-      label: "Structure",
+      label: msg("Structure"),
       options: powerPlannerData.lneStructureTiers.map((entry) => ({
         key: entry.name,
         label: entry.name,
@@ -281,19 +282,19 @@ const largeNeutralizationEngine: PowerSourceDefinition = {
     {
       type: "select",
       id: "fuel",
-      label: "Acid",
+      label: msg("Acid"),
       options: fuelOptions(powerPlannerData.chemFuels),
       defaultKey: "Molten Redstone",
     },
     // Per TICK, like the game's own fluid-use dial (maxFluidUse) and the
     // workbook's rate cell: mEUt = fuel value x litres per tick.
-    { type: "number", id: "rate", label: "Acid rate", min: 1, max: 100_000, step: 1, defaultValue: 50, unit: "L/t" },
+    { type: "number", id: "rate", label: msg("Acid rate"), min: 1, max: 100_000, step: 1, defaultValue: 50, unit: "L/t" },
     {
       type: "select",
       id: "base",
-      label: "Base",
+      label: msg("Base"),
       options: [
-        { key: "None", label: "None" },
+        { key: "None", label: msg("None") },
         ...powerPlannerData.lneBases.map((entry) => ({
           key: entry.name,
           label: `${entry.name} (x${entry.multiplier})`,
@@ -301,11 +302,11 @@ const largeNeutralizationEngine: PowerSourceDefinition = {
       ],
       defaultKey: "None",
     },
-    { type: "number", id: "arms", label: "Robot arms", min: 0, max: 16, step: 1, defaultValue: 0 },
+    { type: "number", id: "arms", label: msg("Robot arms"), min: 0, max: 16, step: 1, defaultValue: 0 },
     {
       type: "select",
       id: "armTier",
-      label: "Arm tier",
+      label: msg("Arm tier"),
       options: powerPlannerData.lneRobotArms.map((entry) => ({
         key: entry.name,
         label: entry.name.replace(/^Amount \((.+)\)$/, "$1"),
@@ -361,21 +362,21 @@ const largeNeutralizationEngine: PowerSourceDefinition = {
       inputs,
       outputs: [],
       stats: [
-        stat("EU per L", formatAmount(density * multiplier)),
-        stat("Toxic residue", `${formatAmount(residueMedian)} median / ${formatAmount(residueMax)} max`),
-        stat("Avg residue", `${formatAmount(residuePerTick)}/t`),
-        stat("At full tank", `${netAtFull > 0 ? "+" : ""}${formatAmount(netAtFull)}/t`),
-        stat("Residue capacity", formatAmount(structure.residueCapacity)),
+        stat(msg("EU per L"), formatAmount(density * multiplier)),
+        stat(msg("Toxic residue"), powerText(msg("{median} median / {max} max"), { median: formatAmount(residueMedian), max: formatAmount(residueMax) })),
+        stat(msg("Avg residue"), `${formatAmount(residuePerTick)}/t`),
+        stat(msg("At full tank"), `${netAtFull > 0 ? "+" : ""}${formatAmount(netAtFull)}/t`),
+        stat(msg("Residue capacity"), formatAmount(structure.residueCapacity)),
         ...(arms > 0
           ? [
-              stat("Decay boost", `x${formatAmount(decayBoost)}`),
-              stat("Avg lifespan", `${formatAmount(Math.floor(1 / lossChance))} min`),
+              stat(msg("Decay boost"), `x${formatAmount(decayBoost)}`),
+              stat(msg("Avg lifespan"), `${formatAmount(Math.floor(1 / lossChance))} min`),
             ]
           : []),
       ],
       warnings:
         netAtFull > 0
-          ? ["Residue builds faster than it decays even at a full tank. The engine will explode."]
+          ? [powerText(msg("Residue builds faster than it decays even at a full tank. The engine will explode."))]
           : undefined,
     };
   },

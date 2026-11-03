@@ -23,6 +23,7 @@ import type { PlanResourceStat } from "@/lib/community/types";
 import type { EntryIcon } from "@/lib/model/types";
 import { Face, formatEuT, type TileMarks } from "./LibraryTile";
 import { PlanComments } from "./PlanComments";
+import { tPlural, useT } from "@/lib/i18n";
 
 /**
  * A design's detail page, replacing the grid (not a popup): the board
@@ -99,6 +100,7 @@ export function LibraryDetail({
   entry: LibraryDetailEntry;
   onClose: () => void;
 }) {
+  const t = useT();
   // The picture is probed up front: an <img> that 404s before React attaches
   // its onError never reports, leaving the frame dark.
   const [probed, setProbed] = useState<{ url: string; ok: boolean }>();
@@ -195,8 +197,8 @@ export function LibraryDetail({
           <div className="flex h-full w-full items-center justify-center gap-2 text-[12px] text-[var(--mc-ink-muted)] compact:h-16">
             <ImageIcon className="h-4 w-4 opacity-50" aria-hidden />
             {entry.previewUrl
-              ? "No picture of this board yet."
-              : "No picture yet. One is taken when the design is posted."}
+              ? t("No picture of this board yet.")
+              : t("No picture yet. One is taken when the design is posted.")}
           </div>
         )}
         <button
@@ -205,7 +207,7 @@ export function LibraryDetail({
           className="absolute left-3 top-3 flex h-7 items-center gap-1.5 border-2 border-[var(--mc-33)] bg-[var(--mc-61)] px-2 text-xs font-bold text-[var(--mc-ink)] hover:bg-[var(--mc-85)] compact:static compact:order-first compact:mx-2 compact:mt-2 compact:h-9 compact:w-fit compact:text-[13px]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-          Back
+          {t("Back")}
         </button>
       </div>
 
@@ -218,7 +220,7 @@ export function LibraryDetail({
               <button
                 type="button"
                 onClick={entry.onPickIcon}
-                aria-label="Change the icon"
+                aria-label={t("Change the icon")}
                 className="ring-cyan-400 hover:ring-2"
               >
                 <Face icon={entry.icon} size={48} />
@@ -233,15 +235,15 @@ export function LibraryDetail({
                   autoFocus
                   value={editing.name}
                   onChange={(event) => setEditing({ ...editing, name: event.target.value })}
-                  aria-label="Name"
+                  aria-label={t("Name")}
                   className="h-7 border border-cyan-500 bg-[var(--mc-33)] px-2 text-[13px] font-bold text-[var(--mc-ink)] outline-none"
                 />
                 <textarea
                   value={editing.description}
                   onChange={(event) => setEditing({ ...editing, description: event.target.value })}
                   rows={2}
-                  placeholder="Describe it"
-                  aria-label="Description"
+                  placeholder={t("Describe it")}
+                  aria-label={t("Description")}
                   className="resize-none border-2 border-[var(--mc-33)] bg-[#17191d] px-2 py-1 text-[12px] text-neutral-100 outline-none shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607] placeholder:text-[var(--mc-ink-muted)]"
                 />
                 {entry.editTags ? (
@@ -250,8 +252,8 @@ export function LibraryDetail({
                     onChange={(event) =>
                       setEditing({ ...editing, tags: event.target.value.split(",") })
                     }
-                    placeholder="Tags, separated by commas"
-                    aria-label="Tags"
+                    placeholder={t("Tags, separated by commas")}
+                    aria-label={t("Tags")}
                     className="h-7 border-2 border-[var(--mc-33)] bg-[#17191d] px-2 text-[12px] text-neutral-100 outline-none shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607] placeholder:text-[var(--mc-ink-muted)]"
                   />
                 ) : null}
@@ -262,18 +264,18 @@ export function LibraryDetail({
                     onClick={() => void saveEdit()}
                     className="flex h-7 items-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] px-3 text-[12px] font-bold text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-85)] hover:border-cyan-400 hover:text-cyan-200 disabled:opacity-50"
                   >
-                    Save
+                    {t("Save")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditing(undefined)}
                     className="flex h-7 items-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] px-3 text-[12px] font-bold text-[var(--mc-ink)] hover:bg-[var(--mc-85)]"
                   >
-                    Cancel
+                    {t("Cancel")}
                   </button>
                   {entry.onPickIcon ? (
                     <span className="text-[11px] text-[var(--mc-ink-muted)]">
-                      Click the icon to change it.
+                      {t("Click the icon to change it.")}
                     </span>
                   ) : null}
                 </div>
@@ -287,7 +289,7 @@ export function LibraryDetail({
                   {entry.tier ? <TierBadge tier={entry.tier} /> : null}
                   {marks.open ? (
                     <span className="bg-[var(--mc-61)] px-1 text-[9px] font-black uppercase tracking-wide text-neutral-300">
-                      open
+                      {t("open")}
                     </span>
                   ) : null}
                 </div>
@@ -311,7 +313,10 @@ export function LibraryDetail({
                   </span>
                   {entry.machines !== undefined ? (
                     <span>
-                      <span className="font-bold text-neutral-300">{entry.machines}</span> machines
+                      {withCount(
+                        tPlural(entry.machines, "{count} machine", "{count} machines"),
+                        <span className="font-bold text-neutral-300">{entry.machines}</span>,
+                      )}
                     </span>
                   ) : null}
                   {entry.euT !== undefined ? (
@@ -328,7 +333,7 @@ export function LibraryDetail({
                   {marks.posted ? (
                     <span className="flex items-center gap-1 text-emerald-400">
                       <Globe className="h-3 w-3" aria-hidden />
-                      {marks.privatePost ? "posted, private" : "posted"}
+                      {marks.privatePost ? t("posted, private") : t("posted")}
                     </span>
                   ) : null}
                 </div>
@@ -354,8 +359,8 @@ export function LibraryDetail({
                 <div className="flex max-w-[360px] flex-wrap items-center justify-end gap-1 compact:max-w-none compact:justify-start">
                   {entry.onEdit ? (
                     <IconKey
-                      label="Edit the name, description and tags"
-                      word="Edit"
+                      label={t("Edit the name, description and tags")}
+                      word={t("Edit")}
                       onClick={() =>
                         setEditing({
                           name: entry.name,
@@ -371,7 +376,7 @@ export function LibraryDetail({
                     <IconKey
                       key={key.label}
                       label={key.label}
-                      word={keyWord(key.icon)}
+                      word={keyWord(key.icon, t)}
                       active={key.active}
                       danger={key.icon === "delete"}
                       count={key.count}
@@ -402,14 +407,14 @@ export function LibraryDetail({
                 }}
                 className="h-7 border border-red-600 bg-red-700 px-3 text-[12px] font-bold text-white hover:bg-red-600"
               >
-                {confirming.icon === "delete" ? "Delete" : "Yes"}
+                {confirming.icon === "delete" ? t("Delete") : t("Yes")}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(undefined)}
                 className="h-7 border-2 border-[var(--mc-33)] bg-[var(--mc-61)] px-3 text-[12px] font-bold text-[var(--mc-ink)] hover:bg-[var(--mc-85)]"
               >
-                Cancel
+                {t("Cancel")}
               </button>
             </div>
           ) : null}
@@ -444,8 +449,8 @@ export function LibraryDetail({
               {(entry.needs && entry.needs.length > 0) ||
               (entry.outputs && entry.outputs.length > 0) ? (
                 <div className="grid grid-cols-2 gap-3 compact:grid-cols-1">
-                  <StatColumns label="Needs" stats={entry.needs ?? []} />
-                  <StatColumns label="Makes" stats={entry.outputs ?? []} />
+                  <StatColumns label={t("Needs")} stats={entry.needs ?? []} />
+                  <StatColumns label={t("Makes")} stats={entry.outputs ?? []} />
                 </div>
               ) : null}
             </div>
@@ -474,21 +479,34 @@ function keyIcon(icon: DetailKey["icon"]): ReactNode {
 }
 
 /** The short word on each key: the icon alone was unreadable, and there are no tooltips here. */
-function keyWord(icon: DetailKey["icon"]): string {
+function keyWord(icon: DetailKey["icon"], t: ReturnType<typeof useT>): string {
   switch (icon) {
     case "vote":
-      return "Vote";
+      return t("Vote");
     case "link":
-      return "Link";
+      return t("Link");
     case "public":
-      return "Make public";
+      return t("Make public");
     case "private":
-      return "Make private";
+      return t("Make private");
     case "post":
-      return "Post";
+      return t("Post");
     case "delete":
-      return "Delete";
+      return t("Delete");
   }
+}
+
+/** A counted phrase with its `{count}` drawn as `count` (a styled number). */
+function withCount(text: string, count: ReactNode): ReactNode {
+  const at = text.indexOf("{count}");
+  if (at < 0) return text;
+  return (
+    <>
+      {text.slice(0, at)}
+      {count}
+      {text.slice(at + "{count}".length)}
+    </>
+  );
 }
 
 function IconKey({
@@ -531,6 +549,7 @@ function IconKey({
 
 /** One side of needs or makes: every stat, in as many columns as fit. */
 function StatColumns({ label, stats }: { label: string; stats: PlanResourceStat[] }) {
+  const t = useT();
   return (
     <div className="min-w-0 border border-[var(--mc-33)] bg-[var(--mc-25)] p-2">
       <div className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--mc-ink)]">
@@ -538,7 +557,7 @@ function StatColumns({ label, stats }: { label: string; stats: PlanResourceStat[
         <span className="ml-1.5 font-medium text-[var(--mc-ink-muted)]">{stats.length}</span>
       </div>
       {stats.length === 0 ? (
-        <div className="text-[11px] text-[var(--mc-ink-muted)]">Nothing</div>
+        <div className="text-[11px] text-[var(--mc-ink-muted)]">{t("Nothing")}</div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-3 gap-y-0.5">
           {stats.map((stat) => (

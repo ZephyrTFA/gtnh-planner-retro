@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import type { LibrarySyncStatus } from "./library-sync";
 
 export function accountSaveStatus(
@@ -7,14 +8,14 @@ export function accountSaveStatus(
   // Refused (too large, not valid, library full): nothing retries until the
   // design changes, and the tooltip carries the reason.
   if (sync.state === "error" && sync.refused) {
-    return { text: "Not saved to account", error: true };
+    return { text: t("Not saved to account"), error: true };
   }
   if (sync.state === "error" || (signedIn && sync.state === "off" && sync.message)) {
-    return { text: "Not saved to account — retrying", error: true };
+    return { text: t("Not saved to account — retrying"), error: true };
   }
-  if (!signedIn) return { text: "Saved on this device", error: false };
+  if (!signedIn) return { text: t("Saved on this device"), error: false };
   if (sync.state === "idle" && sync.lastSyncedAt) {
-    return { text: "Saved to account", error: false };
+    return { text: t("Saved to account"), error: false };
   }
-  return { text: "Saving to account…", error: false };
+  return { text: t("Saving to account…"), error: false };
 }

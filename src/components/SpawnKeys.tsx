@@ -2,6 +2,7 @@
 
 import { Gauge, Sprout, Zap } from "lucide-react";
 import type { ReactNode } from "react";
+import { useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 
 /**
@@ -11,6 +12,7 @@ import { useFactoryStore } from "@/store/factory-store";
  * is the column's fold-away key, placed at the row's start.
  */
 export function SpawnKeys({ leading }: { leading?: ReactNode }) {
+  const t = useT();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const openPowerMenu = useFactoryStore((state) => state.openPowerMenu);
   const addCustomRateNode = useFactoryStore((state) => state.addCustomRateNode);
@@ -28,31 +30,31 @@ export function SpawnKeys({ leading }: { leading?: ReactNode }) {
         type="button"
         onClick={openPowerMenu}
         className={key}
-        title="Place a generator"
-        aria-label="Place a generator"
+        title={t("Place a generator")}
+        aria-label={t("Place a generator")}
       >
         <Zap className="h-3 w-3 shrink-0" />
-        Power
+        {t("Power")}
       </button>
       <button
         type="button"
         onClick={addCustomRateNode}
         className={key}
-        title="Add custom rate node"
-        aria-label="Add custom rate node"
+        title={t("Add custom rate node")}
+        aria-label={t("Add custom rate node")}
       >
         <Gauge className="h-3 w-3 shrink-0" />
-        Custom
+        {t("Custom")}
       </button>
       <button
         type="button"
         onClick={addCropFarmNode}
         className={key}
-        title="Add crop farm"
-        aria-label="Add crop farm"
+        title={t("Add crop farm")}
+        aria-label={t("Add crop farm")}
       >
         <Sprout className="h-3 w-3 shrink-0" />
-        Farm
+        {t("Farm")}
       </button>
     </div>
   );

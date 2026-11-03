@@ -8,6 +8,7 @@ import { AccountMenu } from "./community/AccountMenu";
 import { AppIdentity, useHasPackChoice } from "./AppIdentity";
 import { BoardActions } from "./BoardActions";
 import { MenuLinks } from "./HeaderLinks";
+import { useT } from "@/lib/i18n";
 
 interface AppMenuProps {
   onLoadDatasetVersion: (versionId: string) => void;
@@ -31,6 +32,7 @@ export function AppMenu({
   onExportImage,
   onOpenSettings,
 }: AppMenuProps) {
+  const t = useT();
   const [isOpen, setOpen] = useState(false);
   const hasPackChoice = useHasPackChoice();
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -45,7 +47,7 @@ export function AppMenu({
         type="button"
         onClick={() => setOpen((open) => !open)}
         aria-expanded={isOpen}
-        aria-label={isOpen ? "Close the menu" : "Open the menu"}
+        aria-label={isOpen ? t("Close the menu") : t("Open the menu")}
         className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-line-strong bg-surface text-fg-subtle hover:bg-surface-raised"
       >
         {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -60,13 +62,13 @@ export function AppMenu({
         >
           {/* Shown with the header's pack picker: only when there is a choice. */}
           {hasPackChoice ? (
-            <MenuSection label="Pack">
+            <MenuSection label={t("Pack")}>
               <div className="px-2 py-1">
                 <AppIdentity onLoadDatasetVersion={onLoadDatasetVersion} />
               </div>
             </MenuSection>
           ) : null}
-          <MenuSection label="This plan">
+          <MenuSection label={t("This plan")}>
             <BoardActions
               variant="list"
               onAction={() => setOpen(false)}
@@ -74,7 +76,7 @@ export function AppMenu({
               onExportImage={onExportImage}
             />
           </MenuSection>
-          <MenuSection label="Planner">
+          <MenuSection label={t("Planner")}>
             <button
               type="button"
               onClick={() => {
@@ -86,7 +88,7 @@ export function AppMenu({
               <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                 <Settings className="h-3.5 w-3.5" aria-hidden />
               </span>
-              <span className="truncate">Settings</span>
+              <span className="truncate">{t("Settings")}</span>
             </button>
             <MenuLinks onAction={() => setOpen(false)} />
             <div className="flex px-2 py-1">

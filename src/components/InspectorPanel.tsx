@@ -64,6 +64,7 @@ import {
 import { TrendSparkline } from "./inspector/TrendSparkline";
 import { MotionNumberText, runMotionTween, useBoardMotion } from "./flow/board-motion";
 import { ResourceIcon } from "./nei/ResourceIcon";
+import { tPlural, useLanguage, useT } from "@/lib/i18n";
 
 const FLOW_FILTER_DEBOUNCE_MS = 120;
 const SELECTION_DEBOUNCE_MS = 100;
@@ -299,6 +300,8 @@ export function InspectorPanel() {
 }
 
 function FlowIOPanel() {
+  const t = useT();
+  const language = useLanguage((state) => state.language);
   const readOnly = useFactoryStore(state => state.isReadOnly);
   const project = useFactoryStore((state) => state.project);
   const result = useFactoryStore((state) => state.lastResult);
@@ -436,11 +439,14 @@ function FlowIOPanel() {
     return [
       // One line each: the row is a single fixed-height line, so wrapping
       // would clip.
-      build("need", "Inputs", "Nothing missing.", "need", -1, boundary.needs),
-      build("output", "Outputs", "Nothing coming out yet.", "output", 1, boundary.outputs),
-      build("internal", "Internal", "Nothing internal.", "internal", 0, balanced),
+      build("need", t("Inputs"), t("Nothing missing."), "need", -1, boundary.needs),
+      build("output", t("Outputs"), t("Nothing coming out yet."), "output", 1, boundary.outputs),
+      build("internal", t("Internal"), t("Nothing internal."), "internal", 0, balanced),
     ];
+    // The labels are interface text: a language change rebuilds them.
   }, [
+    language,
+    t,
     balanced,
     boundaryStorageKeys,
     debouncedFilter,
@@ -528,18 +534,18 @@ function FlowIOPanel() {
       ) : null}
 
       <div className="inspector-section-heading">
-        <h2>Resources</h2>
+        <h2>{t("Resources")}</h2>
         <div hidden={readOnly} className={readOnly ? "ml-auto hidden" : "inspector-header-actions ml-auto flex items-center gap-1"}>
           <ToolbarToggle
             on={workspace.showHiddenResources}
             onClick={() =>
               writeWorkspaceView({ showHiddenResources: !workspace.showHiddenResources })
             }
-            title={`Hidden resources (${hiddenCount})`}
+            title={t("Hidden resources ({count})", { count: hiddenCount })}
             label={
               workspace.showHiddenResources
-                ? "Stop showing hidden resources"
-                : "Show hidden resources"
+                ? t("Stop showing hidden resources")
+                : t("Show hidden resources")
             }
             tone="cyan"
           >
@@ -551,8 +557,8 @@ function FlowIOPanel() {
             <ToolbarToggle
               on={workspace.trendsOpen}
               onClick={() => writeWorkspaceView({ trendsOpen: !workspace.trendsOpen })}
-              title="Charts"
-              label={workspace.trendsOpen ? "Hide all charts" : "Show all charts"}
+              title={t("Charts")}
+              label={workspace.trendsOpen ? t("Hide all charts") : t("Show all charts")}
               tone="amber"
             >
               <ChartIcon />
@@ -562,9 +568,9 @@ function FlowIOPanel() {
           <ToolbarToggle
             on={workspace.favouritesOnly}
             onClick={() => writeWorkspaceView({ favouritesOnly: !workspace.favouritesOnly })}
-            title="Starred only"
+            title={t("Starred only")}
             label={
-              workspace.favouritesOnly ? "List every resource again" : "List only starred resources"
+              workspace.favouritesOnly ? t("List every resource again") : t("List only starred resources")
             }
             tone="amber"
           >
@@ -576,8 +582,8 @@ function FlowIOPanel() {
           <button
             type="button"
             onClick={() => writeWorkspaceView({ rightPanelOpen: false })}
-            title="Hide"
-            aria-label="Hide the resources column"
+            title={t("Hide")}
+            aria-label={t("Hide the resources column")}
             className={[
               "ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-100",
 
@@ -601,15 +607,15 @@ function FlowIOPanel() {
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="Filter resources…"
-            aria-label="Filter flow resources"
+            placeholder={t("Filter resources…")}
+            aria-label={t("Filter flow resources")}
             className="h-7 w-full rounded-[4px] border border-neutral-700 bg-[#17191d] pl-2 pr-14 text-base shadow-[inset_1px_1px_0_rgba(255,255,255,0.08)] text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-cyan-600 focus:ring-1 focus:ring-cyan-300"
           />
           {filter ? (
             <button
               type="button"
               onClick={() => setFilter("")}
-              aria-label="Clear filter"
+              aria-label={t("Clear filter")}
               className="absolute right-1 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hover:bg-[#1b1d21] hover:text-neutral-100"
             >
               {matchCount} ✕
@@ -720,15 +726,16 @@ function ScopeStrip({
   machineCount: number;
   storageCount: number;
 }) {
-  const parts = [`${machineCount} ${machineCount === 1 ? "machine" : "machines"}`];
+  const t = useT();
+  const parts = [tPlural(machineCount, "{count} machine", "{count} machines", { count: machineCount })];
   if (storageCount > 0) {
-    parts.push(`${storageCount} ${storageCount === 1 ? "drawer" : "drawers"}`);
+    parts.push(tPlural(storageCount, "{count} drawer", "{count} drawers", { count: storageCount }));
   }
 
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-[var(--selection-line)] bg-[var(--selection-wash)] px-2 py-1">
       <span className="text-xs font-bold uppercase tracking-wider text-[var(--selection-ink)]">
-        Selection
+        {t("Selection")}
       </span>
       <span className="ml-auto truncate text-xs text-[var(--selection-ink-dim)]">
         {parts.join(", ")}
@@ -781,6 +788,7 @@ function FlowVirtualList({
   onHover: (resourceKey?: string) => void;
   onFocusBoard: (resourceKey: string) => void;
 }) {
+  const t = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(320);
@@ -1088,7 +1096,7 @@ function FlowVirtualList({
             >
               {/* The row is one fixed-height line, so wrapping would clip. */}
               <span className="truncate">
-                {isFiltered ? "No matches." : row.section.empty}
+                {isFiltered ? t("No matches.") : row.section.empty}
               </span>
             </p>,
           );
@@ -1288,6 +1296,7 @@ function FlowSectionHeader({
   isFiltered: boolean;
   onToggle: (id: FlowSectionId) => void;
 }) {
+  const t = useT();
   const tone = TONE_STYLES[section.tone];
   const showRatio = isFiltered && section.items.length !== section.totalCount;
 
@@ -1306,10 +1315,10 @@ function FlowSectionHeader({
         {showRatio ? `${section.items.length} / ${section.totalCount}` : section.totalCount}
       </span>
       </button>
-      {section.id === "need" && <span className="inspector-rate-selector ml-auto flex shrink-0 justify-end gap-0.5" role="group" aria-label="Resource rate display">
+      {section.id === "need" && <span className="inspector-rate-selector ml-auto flex shrink-0 justify-end gap-0.5" role="group" aria-label={t("Resource rate display")}>
         {(["raw", "net"] as const).map(value => <button key={value} type="button" aria-pressed={rateColumn === value}
-          onClick={() => onRateColumnChange(value)} className="px-2 py-0.5" aria-label={value === "raw" ? "Show raw rates" : "Show net rates"}>
-          {value === "raw" ? "Raw" : "Net"}
+          onClick={() => onRateColumnChange(value)} className="px-2 py-0.5" aria-label={value === "raw" ? t("Show raw rates") : t("Show net rates")}>
+          {value === "raw" ? t("Raw") : t("Net")}
         </button>)}
       </span>}
     </div>
@@ -1360,6 +1369,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
   onMarkChanged?: () => void;
   onFocusBoard: (resourceKey: string) => void;
 }) {
+  const t = useT();
   useItemNamesVersion();
   // Memoized rows keep the same balance when only a display dial changes.
   useRateDisplayUnits();
@@ -1466,7 +1476,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
             tooltip={false}
             className="!h-full !w-full"
           />
-          {productMarker ? <span className="inspector-product-marker" role="img" aria-label="Product">◆</span> : null}
+          {productMarker ? <span className="inspector-product-marker" role="img" aria-label={t("Product")}>◆</span> : null}
         </span>
 
         {/* Truncates in the wide copy too. The extra width fits most names in
@@ -1581,7 +1591,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
             toggleResourceFavourite(balance.key);
             onMarkChanged?.();
           }}
-          title={isFavourite ? "Unwatch" : "Watch"}
+          title={isFavourite ? t("Unwatch") : t("Watch")}
           on={isFavourite}
           onClass="text-amber-300"
         >
@@ -1595,7 +1605,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
               toggleResourceHidden(balance.key);
               onMarkChanged?.();
             }}
-            title={isHidden ? "Unhide" : "Hide"}
+            title={isHidden ? t("Unhide") : t("Hide")}
             on={isHidden}
             onClass="text-cyan-300"
           >

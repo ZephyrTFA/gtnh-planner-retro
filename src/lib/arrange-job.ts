@@ -15,6 +15,7 @@ import { arrangeBoard, type ArrangeInput, type ArrangeResult } from "./board-arr
 import { makeRouteJudge } from "./route-judge";
 import type { GridObstacle, GridRouteRequest } from "@/components/flow/grid-edge-router";
 import type { RouterTuning } from "@/components/flow/router-tuning";
+import { msg } from "@/lib/i18n";
 
 export interface ArrangeJudgeInput {
   obstacles: GridObstacle[];
@@ -38,12 +39,12 @@ export interface ArrangeJob {
  * step taking an equal share.
  */
 export const ARRANGE_STEPS = [
-  { key: "layout", label: "Laying the board out" },
-  { key: "search", label: "Searching for a better layout" },
-  { key: "route", label: "Routing the candidates" },
-  { key: "polishFirst", label: "Polishing the first layout" },
-  { key: "polishSecond", label: "Polishing the second layout" },
-  { key: "choose", label: "Choosing the better board" },
+  { key: "layout", label: msg("Laying the board out") },
+  { key: "search", label: msg("Searching for a better layout") },
+  { key: "route", label: msg("Routing the candidates") },
+  { key: "polishFirst", label: msg("Polishing the first layout") },
+  { key: "polishSecond", label: msg("Polishing the second layout") },
+  { key: "choose", label: msg("Choosing the better board") },
 ] as const;
 
 /** Where the arrange is, for the loader: a step, and how far along it. */
@@ -51,7 +52,10 @@ export interface ArrangeProgress {
   seq: number;
   /** Index into ARRANGE_STEPS. */
   step: number;
+  /** Interface text (msg); show it with td(). */
   stage: string;
+  /** Set on a polish step: the stage counts the crossings it starts from. */
+  crossings?: number;
   done: number;
   total: number;
 }

@@ -6,6 +6,7 @@ import { RecipeTooltip } from "./RecipeTooltip";
 import { tooltipMode } from "./recipe-tooltip-data";
 import { buildMachineTooltip } from "./machine-tooltip-data";
 import { machineAddon } from "@/lib/datasets/addon-machines";
+import { useT } from "@/lib/i18n";
 import {
   cropsNhCropsPerMachine,
   cropsNhEnvironmentFromTiers,
@@ -40,6 +41,7 @@ function CropSourceStatsContent({
   node?: Pick<FactoryNode, "machineConfigTiers" | "machineCount">;
   title?: string;
 }) {
+  const t = useT();
   const stats = getCropsNhStats(recipe);
   if (!stats) {
     return null;
@@ -73,21 +75,21 @@ function CropSourceStatsContent({
   const perHarvest = drops.reduce((sum, drop) => sum + drop.expected, 0);
   const perSeed = harvestSeconds > 0 ? perHarvest / harvestSeconds : 0;
   const rows = [
-    { label: "Growth speed", value: `${formatNumber(speedPercent, 0)}%` },
-    { label: "Harvest every", value: Number.isFinite(harvestSeconds) && harvestSeconds > 0 ? `${formatNumber(harvestSeconds, 1)} s` : "Never" },
+    { label: t("Growth speed"), value: `${formatNumber(speedPercent, 0)}%` },
+    { label: t("Harvest every"), value: Number.isFinite(harvestSeconds) && harvestSeconds > 0 ? `${formatNumber(harvestSeconds, 1)} s` : t("Never") },
     ...(drops.length > 1
-      ? drops.map((drop) => ({ label: drop.name, value: `${formatNumber(drop.expected, 2)} per harvest` }))
-      : [{ label: "Per harvest", value: `${formatNumber(perHarvest, 2)} ${drops[0]?.name ?? "items"}` }]),
-    { label: "Per seed", value: `${formatNumber(perSeed, 3)}/s` },
-    { label: "Crops per machine", value: cropsNhCropsPerMachine(setup).toLocaleString() },
+      ? drops.map((drop) => ({ label: drop.name, value: t("{amount} per harvest", { amount: formatNumber(drop.expected, 2) }) }))
+      : [{ label: t("Per harvest"), value: drops[0] ? `${formatNumber(perHarvest, 2)} ${drops[0].name}` : t("{amount} items", { amount: formatNumber(perHarvest, 2) }) }]),
+    { label: t("Per seed"), value: `${formatNumber(perSeed, 3)}/s` },
+    { label: t("Crops per machine"), value: cropsNhCropsPerMachine(setup).toLocaleString() },
   ];
   return (
     <RecipeTooltip
       view={{
-        title: title ?? handler?.label ?? "Crop farm",
-        subtitle: `${cropName} · Tier ${stats.tier}`,
+        title: title ?? handler?.label ?? t("Crop farm"),
+        subtitle: t("{crop} · Tier {tier}", { crop: cropName, tier: stats.tier }),
         rows,
-        reason: stats.machineOnly ? "Grows only in an Industrial Farm." : undefined,
+        reason: stats.machineOnly ? t("Grows only in an Industrial Farm.") : undefined,
       }}
     />
   );

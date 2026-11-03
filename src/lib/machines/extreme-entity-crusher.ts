@@ -1,3 +1,4 @@
+import { msg } from "@/lib/i18n";
 import type { MachineConfigControl, Recipe, RecipeOutput } from "@/lib/model/types";
 
 /**
@@ -131,7 +132,7 @@ function option(id: string, key: string, label: string, detail: string) {
 export const EEC_CONTROLS: MachineConfigControl[] = [
   {
     id: EEC_WEAPON_DAMAGE,
-    label: "Weapon damage",
+    label: msg("Weapon damage"),
     minimumKey: "0",
     defaultKey: "0",
     numeric: { min: 0, max: 10000, step: 0.25 },
@@ -139,48 +140,48 @@ export const EEC_CONTROLS: MachineConfigControl[] = [
       option(
         EEC_WEAPON_DAMAGE,
         "0",
-        "Weapon damage",
-        "The weapon's attack damage, plus 1.25 per level of Sharpness. The spikes add 9 on their own.",
+        msg("Weapon damage"),
+        msg("The weapon's attack damage, plus 1.25 per level of Sharpness. The spikes add 9 on their own."),
       ),
     ],
   },
   {
     id: EEC_LOOTING,
-    label: "Looting",
+    label: msg("Looting"),
     minimumKey: "0",
     defaultKey: "0",
     tiers: [0, 1, 2, 3, 4].map((level) =>
-      option(EEC_LOOTING, String(level), String(level), "The weapon's Looting level, capped at 4."),
+      option(EEC_LOOTING, String(level), String(level), msg("The weapon's Looting level, capped at 4.")),
     ),
   },
   {
     id: EEC_INFERNAL,
-    label: "Infernal spawns",
+    label: msg("Infernal spawns"),
     minimumKey: "on",
     defaultKey: "on",
     tiers: [
-      option(EEC_INFERNAL, "on", "On", "With 15360 EU/t of input, 1 kill in 20 is infernal: 8x power and a longer kill."),
-      option(EEC_INFERNAL, "off", "Off", "Shift-screwdriver: no infernal spawns, except mobs that are always infernal."),
+      option(EEC_INFERNAL, "on", msg("On"), msg("With 15360 EU/t of input, 1 kill in 20 is infernal: 8x power and a longer kill.")),
+      option(EEC_INFERNAL, "off", msg("Off"), msg("Shift-screwdriver: no infernal spawns, except mobs that are always infernal.")),
     ],
   },
   {
     id: EEC_MODE,
-    label: "Kill method",
+    label: msg("Kill method"),
     minimumKey: "spikes",
     defaultKey: "spikes",
     tiers: [
-      option(EEC_MODE, "spikes", "Spikes", "Diamond spikes, with the weapon and overclocks."),
-      option(EEC_MODE, "ritual", "Ritual", "Linked to a Well of Suffering: 400 ticks a kill, a quarter of the power, no overclock, 5000 L of XP."),
+      option(EEC_MODE, "spikes", msg("Spikes"), msg("Diamond spikes, with the weapon and overclocks.")),
+      option(EEC_MODE, "ritual", msg("Ritual"), msg("Linked to a Well of Suffering: 400 ticks a kill, a quarter of the power, no overclock, 5000 L of XP.")),
     ],
   },
   {
     id: EEC_VOID,
-    label: "Damaged gear",
+    label: msg("Damaged gear"),
     minimumKey: "keep",
     defaultKey: "keep",
     tiers: [
-      option(EEC_VOID, "keep", "Keep", "Damaged and enchanted drops come out with the rest."),
-      option(EEC_VOID, "void", "Void", "Damaged and enchanted drops are thrown away."),
+      option(EEC_VOID, "keep", msg("Keep"), msg("Damaged and enchanted drops come out with the rest.")),
+      option(EEC_VOID, "void", msg("Void"), msg("Damaged and enchanted drops are thrown away.")),
     ],
   },
 ];

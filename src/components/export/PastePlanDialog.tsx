@@ -4,12 +4,14 @@ import { ClipboardPaste, LoaderCircle, X } from "lucide-react";
 import { SITE_URL } from "@/lib/site";
 import { useState } from "react";
 import { openPlanCode } from "@/lib/open-plan-code";
+import { useT } from "@/lib/i18n";
 
 /**
  * Paste a plan copied with the plan bar's Copy plan button and open it as a
  * new tab. The other half of that button.
  */
 export function PastePlanDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [text, setText] = useState("");
   const [error, setError] = useState<string>();
   const [isOpening, setOpening] = useState(false);
@@ -24,7 +26,7 @@ export function PastePlanDialog({ onClose }: { onClose: () => void }) {
       await openPlanCode(text);
       onClose();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "That copied plan could not be opened.");
+      setError(reason instanceof Error ? reason.message : t("That copied plan could not be opened."));
       setOpening(false);
     }
   };
@@ -41,25 +43,25 @@ export function PastePlanDialog({ onClose }: { onClose: () => void }) {
     >
       <div
         role="dialog"
-        aria-label="Paste a copied plan"
+        aria-label={t("Paste a copied plan")}
         className="flex w-full max-w-lg flex-col gap-3 rounded border border-line-strong bg-surface p-4 shadow-xl"
       >
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold">
             <ClipboardPaste aria-hidden className="h-4 w-4" />
-            Paste a copied plan
+            {t("Paste a copied plan")}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="rounded p-1 text-fg-subtle hover:bg-surface-raised"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
         <p className="text-sm text-fg-muted">
-          Paste a plan copied with Copy plan. It opens in a new tab.
+          {t("Paste a plan copied with Copy plan. It opens in a new tab.")}
         </p>
         <textarea
           autoFocus
@@ -83,7 +85,7 @@ export function PastePlanDialog({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="inline-flex items-center gap-1.5 rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
           >
-            Cancel
+            {t("Cancel")}
           </button>
           <button
             type="button"
@@ -92,7 +94,7 @@ export function PastePlanDialog({ onClose }: { onClose: () => void }) {
             className="inline-flex items-center gap-1.5 rounded border border-line-strong bg-surface-raised px-3 py-1.5 text-sm font-semibold hover:bg-surface-sunken disabled:opacity-40"
           >
             {isOpening ? <LoaderCircle aria-hidden className="h-3.5 w-3.5 animate-spin" /> : null}
-            Open
+            {t("Open")}
           </button>
         </div>
       </div>

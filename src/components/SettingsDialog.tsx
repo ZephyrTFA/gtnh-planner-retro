@@ -2,7 +2,8 @@
 
 import { Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ITEM_LANGUAGES, useItemNames, type ItemLanguage } from "@/lib/item-names";
+import { LANGUAGES, getStoredLanguage, td, useT, type Language } from "@/lib/i18n";
+import { chooseLanguage } from "@/lib/i18n/apply";
 import {
   APP_FONTS,
   getStoredAppFont,
@@ -37,9 +38,9 @@ import {
  * without unmounting it.
  */
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const [font, setFont] = useState<AppFontId>(() => getStoredAppFont());
-  const itemLanguage = useItemNames((state) => state.language);
-  const setItemLanguage = useItemNames((state) => state.setLanguage);
+  const [language] = useState<Language>(() => getStoredLanguage());
   const [sounds, setSounds] = useState<boolean>(() => areBoardSoundsEnabled());
   const [volume, setVolume] = useState<number>(() => getBoardSoundVolume());
   const canPlayTimelapse = useFactoryStore(
@@ -82,18 +83,18 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Planner settings"
+        aria-label={t("Planner settings")}
         // The view sheet's frame (FactoryFlow): the same plate, border and
         // drop shadow every board sheet wears.
         className="flex max-h-[calc(88*var(--ui-vh))] w-full max-w-sm flex-col overflow-hidden border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),4px_4px_0_rgba(0,0,0,0.45)] compact:max-h-[calc(92*var(--ui-vh))]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b-2 border-[var(--mc-15)] px-4 py-2.5">
-          <h2 className="text-sm font-bold">Settings</h2>
+          <h2 className="text-sm font-bold">{t("Settings")}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className={`flex h-7 w-7 items-center justify-center border-2 border-[var(--mc-15)] font-mono ${FACE_OFF}`}
           >
             <X className="h-4 w-4" />
@@ -102,9 +103,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
         {/* One plate per setting: name left, control right, no subtext. */}
         <div className="flex min-h-0 flex-1 flex-col divide-y divide-[var(--mc-36)] overflow-y-auto px-4">
-          <Row label="Font">
+          <Row label={t("Font")}>
             <select
-              aria-label="Font"
+              aria-label={t("Font")}
               value={font}
               onChange={(event) => chooseFont(event.target.value as AppFontId)}
               className={`h-7 w-44 border-2 border-[var(--mc-15)] px-1 text-sm ${FACE_OFF}`}
@@ -118,14 +119,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             </select>
           </Row>
 
-          <Row label="Item names">
+          <Row label={t("Language")}>
             <select
-              aria-label="Item names"
-              value={itemLanguage}
-              onChange={(event) => setItemLanguage(event.target.value as ItemLanguage)}
+              aria-label={t("Language")}
+              value={language}
+              onChange={(event) => chooseLanguage(event.target.value as Language)}
               className={`h-7 w-44 border-2 border-[var(--mc-15)] px-1 text-sm ${FACE_OFF}`}
             >
-              {ITEM_LANGUAGES.map((option) => (
+              {LANGUAGES.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
@@ -133,29 +134,29 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             </select>
           </Row>
 
-          <Row label="Size">
+          <Row label={t("Size")}>
             {uiScalePercent !== DEFAULT_UI_SCALE_PERCENT ? (
               <button
                 type="button"
                 onClick={() => setUiScalePercent(DEFAULT_UI_SCALE_PERCENT)}
                 className="mr-1 text-xs text-[var(--mc-ink-muted)] hover:text-[var(--mc-ink)]"
               >
-                Reset
+                {t("Reset")}
               </button>
             ) : null}
-            <Key label="Smaller" disabled={uiScalePercent <= UI_SCALE_MIN_PERCENT} onClick={() => stepUiScale(-1)}>
+            <Key label={t("Smaller")} disabled={uiScalePercent <= UI_SCALE_MIN_PERCENT} onClick={() => stepUiScale(-1)}>
               <Minus className="h-3.5 w-3.5" />
             </Key>
             <span className="w-12 text-center text-sm tabular-nums" aria-live="polite">
               {uiScalePercent}%
             </span>
-            <Key label="Larger" disabled={uiScalePercent >= UI_SCALE_MAX_PERCENT} onClick={() => stepUiScale(1)}>
+            <Key label={t("Larger")} disabled={uiScalePercent >= UI_SCALE_MAX_PERCENT} onClick={() => stepUiScale(1)}>
               <Plus className="h-3.5 w-3.5" />
             </Key>
           </Row>
 
           <ToggleRow
-            label="Sounds"
+            label={t("Sounds")}
             on={sounds}
             onChange={(next) => {
               setBoardSoundsEnabled(next);
@@ -163,7 +164,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             }}
           />
 
-          <Row label="Volume" dim={!sounds}>
+          <Row label={t("Volume")} dim={!sounds}>
             <input
               type="range"
               min={0}
@@ -171,7 +172,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               step={1}
               value={Math.round(volume * 100)}
               disabled={!sounds}
-              aria-label="Sound volume"
+              aria-label={t("Sound volume")}
               onChange={(event) => {
                 const next = Number(event.target.value) / 100;
                 setBoardSoundVolume(next);
@@ -191,7 +192,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           {/* The build timelapse. Each preset applies its whole look for the
               run and restores your settings when it ends. The dialog closes
               first so the board has the screen. */}
-          <Row label="Animation" dim={!canPlayTimelapse}>
+          <Row label={t("Animation")} dim={!canPlayTimelapse}>
             {BOARD_TIMELAPSE_PRESETS.map((preset) => (
               <button
                 key={preset.id}
@@ -203,7 +204,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 }}
                 className={`h-7 border-2 border-[var(--mc-15)] px-2.5 text-sm ${FACE_OFF} disabled:cursor-not-allowed disabled:hover:brightness-100`}
               >
-                {preset.name}
+                {td(preset.name)}
               </button>
             ))}
           </Row>

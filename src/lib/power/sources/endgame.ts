@@ -4,9 +4,10 @@
  * Antimatter loop (closed-form optimum search instead of the workbook's
  * 3,235-row sweep).
  */
+import { msg } from "@/lib/i18n";
 import { powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
-import { formatAmount, liters, stat } from "./helpers";
+import { formatAmount, liters, powerText, stat } from "./helpers";
 
 const NONE = "None";
 
@@ -33,21 +34,21 @@ const lnr: PowerSourceDefinition = {
   group: "endgame",
   // goodgenerator assembles the controller on the assembly line at RECIPE_UV.
   unlock: "UV",
-  blurb: "Naquadah fuel times coolant and booster.",
+  blurb: msg("Naquadah fuel times coolant and booster."),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: powerPlannerData.lnrFuels.map((entry) => ({ key: entry.name, label: entry.name })),
       defaultKey: "Naq Fuel Mk-I",
     },
     {
       type: "select",
       id: "coolant",
-      label: "Coolant",
+      label: msg("Coolant"),
       options: [
-        { key: NONE, label: "None" },
+        { key: NONE, label: msg("None") },
         ...powerPlannerData.lnrCoolants
           .filter((entry) => entry.name !== NONE)
           .map((entry) => ({ key: entry.name, label: `${entry.name} (x${entry.efficiency})` })),
@@ -57,9 +58,9 @@ const lnr: PowerSourceDefinition = {
     {
       type: "select",
       id: "booster",
-      label: "Booster",
+      label: msg("Booster"),
       options: [
-        { key: NONE, label: "None" },
+        { key: NONE, label: msg("None") },
         ...powerPlannerData.lnrBoosters
           .filter((entry) => entry.name !== NONE)
           .map((entry) => ({ key: entry.name, label: `${entry.name} (x${entry.multiplier})` })),
@@ -100,7 +101,7 @@ const lnr: PowerSourceDefinition = {
       euPerTick,
       inputs,
       outputs: depleted ? [liters(depleted, fuelPerSecond)] : [],
-      stats: [stat("Fuel", `${formatAmount(fuelPerSecond)} L/s`)],
+      stats: [stat(msg("Fuel"), `${formatAmount(fuelPerSecond)} L/s`)],
     };
   },
 };
@@ -113,13 +114,13 @@ function buildFusion(compact: boolean): PowerSourceDefinition {
     group: "endgame",
     unlock: "LuV",
     blurb: compact
-      ? "The fusion recipes at 64x the scale."
-      : "Makes plasma; charges its own drain.",
+      ? msg("The fusion recipes at 64x the scale.")
+      : msg("Makes plasma; charges its own drain."),
     settings: [
       {
         type: "select",
         id: "recipe",
-        label: "Plasma",
+        label: msg("Plasma"),
         options: powerPlannerData.fusionRecipes
           .filter((entry) => (entry.euPerLiter ?? 0) > 0)
           .map((entry) => ({ key: entry.name, label: entry.name })),
@@ -128,7 +129,7 @@ function buildFusion(compact: boolean): PowerSourceDefinition {
       {
         type: "select",
         id: "mark",
-        label: "Mark",
+        label: msg("Mark"),
         options: marks.map((mark, index) => ({ key: String(index + 1), label: mark })),
         defaultKey: "1",
       },
@@ -156,11 +157,11 @@ function buildFusion(compact: boolean): PowerSourceDefinition {
         inputs,
         outputs: belowMark ? [] : [liters(recipe.name, output)],
         stats: [
-          stat("Plasma value", `${formatAmount(recipe.euPerLiter)} EU/L`),
-          stat("Startup", `${formatAmount(recipe.startupEu)} EU`),
+          stat(msg("Plasma value"), `${formatAmount(recipe.euPerLiter)} EU/L`),
+          stat(msg("Startup"), `${formatAmount(recipe.startupEu)} EU`),
         ],
         warnings: belowMark
-          ? [`${recipe.name} needs at least mark ${recipe.minMark}.`]
+          ? [powerText(msg("{plasma} needs at least mark {mark}."), { plasma: recipe.name, mark: recipe.minMark })]
           : undefined,
       };
     },
@@ -177,12 +178,12 @@ const eoh: PowerSourceDefinition = {
   name: "Eye of Harmony",
   group: "endgame",
   unlock: "UMV",
-  blurb: "A materials machine with a power bill.",
+  blurb: msg("A materials machine with a power bill."),
   settings: [
     {
       type: "select",
       id: "star",
-      label: "Target block",
+      label: msg("Target block"),
       options: powerPlannerData.eohStars.map((entry) => ({ key: entry.name, label: entry.name })),
       defaultKey: powerPlannerData.eohStars[0]?.name ?? "",
     },
@@ -206,13 +207,13 @@ const eoh: PowerSourceDefinition = {
       inputs: [liters("Hydrogen", gasPerSecond), liters("Helium", gasPerSecond)],
       outputs: [],
       stats: [
-        stat("Cycle", `${formatAmount(star.durationSeconds / 3600)}h`),
-        stat("Success", `${Math.round(star.baseSuccess * 100)}%`),
-        stat("EU in", formatAmount(star.euInput)),
-        stat("EU out", formatAmount(star.euOutput * 0.6)),
-        stat("Star matter", formatAmount(star.starMatter)),
+        stat(msg("Cycle"), `${formatAmount(star.durationSeconds / 3600)}h`),
+        stat(msg("Success"), `${Math.round(star.baseSuccess * 100)}%`),
+        stat(msg("EU in"), formatAmount(star.euInput)),
+        stat(msg("EU out"), formatAmount(star.euOutput * 0.6)),
+        stat(msg("Star matter"), formatAmount(star.starMatter)),
       ],
-      warnings: ["Simplified model: base upgrade tiers, success assumed."],
+      warnings: [powerText(msg("Simplified model: base upgrade tiers, success assumed."))],
     };
   },
 };
@@ -272,12 +273,12 @@ const antimatter: PowerSourceDefinition = {
   group: "endgame",
   // The controller's assembly line recipe runs at RECIPE_UMV.
   unlock: "UMV",
-  blurb: "Grows and burns antimatter.",
+  blurb: msg("Grows and burns antimatter."),
   settings: [
     {
       type: "number",
       id: "amount",
-      label: "Antimatter held",
+      label: msg("Antimatter held"),
       min: 0,
       max: 50_000_000,
       step: 1000,
@@ -307,12 +308,12 @@ const antimatter: PowerSourceDefinition = {
       ],
       outputs: [],
       stats: [
-        stat("Antimatter held", formatAmount(amount)),
-        stat("Best quantity", formatAmount(optimum)),
+        stat(msg("Antimatter held"), formatAmount(amount)),
+        stat(msg("Best quantity"), formatAmount(optimum)),
       ],
       warnings:
         requested > 0 && Math.abs(requested - optimum) / optimum > 0.5
-          ? ["Far from the best quantity; net power falls off steeply."]
+          ? [powerText(msg("Far from the best quantity; net power falls off steeply."))]
           : undefined,
     };
   },
@@ -331,12 +332,12 @@ const dysonSwarm: PowerSourceDefinition = {
   name: "Dyson Swarm",
   group: "endgame",
   unlock: "UIV",
-  blurb: "Orbital modules beaming power down.",
+  blurb: msg("Orbital modules beaming power down."),
   settings: [
     {
       type: "number",
       id: "modules",
-      label: "Deployed modules",
+      label: msg("Deployed modules"),
       min: 1,
       max: 10_000,
       step: 1,
@@ -345,7 +346,7 @@ const dysonSwarm: PowerSourceDefinition = {
     {
       type: "number",
       id: "factor",
-      label: "Dimension power factor",
+      label: msg("Dimension power factor"),
       min: 0.01,
       max: 3.37,
       step: 0.01,
@@ -360,11 +361,11 @@ const dysonSwarm: PowerSourceDefinition = {
       inputs: [liters("Cryotheum", 1000)],
       outputs: [],
       stats: [
-        stat("Per module", `${formatAmount(10_000_000 * factor)} EU/t`),
-        stat("Overworld factor", "1"),
+        stat(msg("Per module"), `${formatAmount(10_000_000 * factor)} EU/t`),
+        stat(msg("Overworld factor"), "1"),
       ],
       warnings: [
-        "Modules burn off over time. The rate depends on module count and computation, and is not modeled.",
+        powerText(msg("Modules burn off over time. The rate depends on module count and computation, and is not modeled.")),
       ],
     };
   },

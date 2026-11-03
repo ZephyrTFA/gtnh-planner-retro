@@ -1,6 +1,7 @@
 "use client";
 
 import { useItemNamesVersion } from "@/lib/item-names";
+import { tPlural, useT } from "@/lib/i18n";
 import { displayNameFor } from "@/lib/model/resources";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useState, type CSSProperties } from "react";
@@ -79,6 +80,7 @@ const INERT_HANDLE =
 
 function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
   useItemNamesVersion();
+  const t = useT();
   const { pocket, summary } = data;
   // A folded board is the SAME board: it wears the paper the window wore,
   // so you can tell which one it is at a glance instead of meeting an
@@ -237,8 +239,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                   }}
                   className="nodrag flex h-6 w-6 items-center justify-center border-2 hover:bg-red-700"
                   style={buttonStyle(chrome)}
-                  title="Delete board"
-                  aria-label={`Delete board ${pocket.name}`}
+                  title={t("Delete board")}
+                  aria-label={t("Delete board {name}", { name: pocket.name })}
                 >
                   {/* Drawn rather than a "-" glyph: at this size Monocraft's
                       metrics baseline-align the hyphen low instead of centring. */}
@@ -252,8 +254,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                   }}
                   className="nodrag flex h-6 w-6 items-center justify-center border-2 hover:brightness-125"
                   style={buttonStyle(chrome)}
-                  title="Clone board"
-                  aria-label={`Clone board ${pocket.name}`}
+                  title={t("Clone board")}
+                  aria-label={t("Clone board {name}", { name: pocket.name })}
                 >
                   <Copy aria-hidden className="h-3.5 w-3.5" />
                 </button>
@@ -265,8 +267,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                 style={buttonStyle(chrome)}
                 title={
                   calmMode
-                    ? `${pocket.name} (double-click the card to open the window)`
-                    : `${pocket.name} (double-click the name to rename, double-click the card to open the window)`
+                    ? t("{name} (double-click the card to open the window)", { name: pocket.name })
+                    : t("{name} (double-click the name to rename, double-click the card to open the window)", { name: pocket.name })
                 }
                 onDoubleClick={
                   // Renaming is editing, so calm mode lets the double-click
@@ -314,8 +316,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                   }}
                   className="nodrag flex h-6 w-6 items-center justify-center border-2 hover:brightness-125"
                   style={buttonStyle(chrome)}
-                  title="Remove board, keep its cards"
-                  aria-label={`Remove board ${pocket.name}, keep its cards`}
+                  title={t("Remove board, keep its cards")}
+                  aria-label={t("Remove board {name}, keep its cards", { name: pocket.name })}
                 >
                   <PackageOpen aria-hidden className="h-3.5 w-3.5" />
                 </button>
@@ -327,8 +329,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                   }}
                   className="nodrag flex h-6 w-6 items-center justify-center border-2 hover:brightness-125"
                   style={buttonStyle(chrome)}
-                  title="Open board"
-                  aria-label={`Open board ${pocket.name}`}
+                  title={t("Open board")}
+                  aria-label={t("Open board {name}", { name: pocket.name })}
                 >
                   <Maximize2 aria-hidden className="h-3.5 w-3.5" />
                 </button>
@@ -349,15 +351,15 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
               className="flex h-[80px] items-center justify-center text-center text-[11px] leading-4"
               style={{ color: chrome.inkMuted }}
             >
-              Nothing goes in or out.
+              {t("Nothing goes in or out.")}
               <br />
-              Open the window to work on it.
+              {t("Open the window to work on it.")}
             </div>
           ) : (
             <>
               <CardSection
-                leftLabel="NEEDS"
-                rightLabel="MAKES"
+                leftLabel={t("NEEDS")}
+                rightLabel={t("MAKES")}
                 left={needs}
                 right={offers}
                 painted
@@ -373,8 +375,8 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
                 </div>
               ) : null}
               <CardSection
-                leftLabel="COMING IN"
-                rightLabel="GOING OUT"
+                leftLabel={t("COMING IN")}
+                rightLabel={t("GOING OUT")}
                 left={incoming}
                 right={outgoing}
                 chrome={chrome}
@@ -390,15 +392,15 @@ function PocketNodeComponent({ data, selected }: NodeProps<PocketFlowNode>) {
             <span className="truncate">
               {summary
                 ? [
-                    `${summary.machineCount}× ${summary.machineCount === 1 ? "machine" : "machines"}`,
-                    `${summary.memberCount} ${summary.memberCount === 1 ? "card" : "cards"}`,
+                    tPlural(summary.machineCount, "{count}× machine", "{count}× machines", { count: summary.machineCount }),
+                    tPlural(summary.memberCount, "{count} card", "{count} cards", { count: summary.memberCount }),
                     summary.euPerTick > 0
                       ? `${Math.round(summary.euPerTick).toLocaleString()} EU/t`
                       : undefined,
                   ]
                     .filter(Boolean)
                     .join(" · ")
-                : "minimized board"}
+                : t("minimized board")}
             </span>
           </div>
         </div>
@@ -523,6 +525,7 @@ function CrossingRow({
   tone?: string;
   chrome: BoardChrome;
 }) {
+  const t = useT();
   const rate = formatSlotRateOrNull(crossing.ratePerSecond, crossing.kind);
   const icon = (
     <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden">
@@ -557,14 +560,14 @@ function CrossingRow({
         style={tone ? undefined : { color: chrome.inkMuted }}
       >
         {rate ?? "0/s"}
-        {crossing.wireCount > 1 ? ` · ${crossing.wireCount} wires` : ""}
+        {crossing.wireCount > 1 ? ` · ${tPlural(crossing.wireCount, "{count} wire", "{count} wires", { count: crossing.wireCount })}` : ""}
       </span>
     </span>
   );
   return (
     <span
       className="flex h-[40px] min-w-0 items-center gap-1"
-      title={`${displayNameFor(crossing.resourceId, crossing.displayName ?? crossing.resourceId)}: ${rate ?? "nothing moving"}`}
+      title={`${displayNameFor(crossing.resourceId, crossing.displayName ?? crossing.resourceId)}: ${rate ?? t("nothing moving")}`}
     >
       {side === "in" ? (
         <>
@@ -608,6 +611,7 @@ function PocketGlanceReveal({
   needs: PocketCrossing[];
   offers: PocketCrossing[];
 }) {
+  const t = useT();
   return (
     <div
       data-node-detail="glance"
@@ -660,7 +664,7 @@ function PocketGlanceReveal({
           </span>
         ) : (
           <span className="text-center text-[13px]" style={{ color: chrome.inkMuted }}>
-            Nothing goes in or out.
+            {t("Nothing goes in or out.")}
           </span>
         )}
       </span>

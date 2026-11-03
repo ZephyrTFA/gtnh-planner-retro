@@ -4,9 +4,10 @@
  * docs/power-planner-math.md; where the workbook leaves a cost out (IC2
  * rods), the card says so.
  */
+import { msg } from "@/lib/i18n";
 import { powerPlannerData } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition } from "../types";
-import { formatAmount, items, lifespanHours, liters, percent, stat } from "./helpers";
+import { formatAmount, items, lifespanHours, liters, percent, powerText, stat } from "./helpers";
 
 const thtr: PowerSourceDefinition = {
   id: "thtr",
@@ -14,12 +15,12 @@ const thtr: PowerSourceDefinition = {
   group: "reactors",
   // The controller is crafted with two circuitUltimate (ZPM) circuits.
   unlock: "ZPM",
-  blurb: "Thorium pebbles to hot coolant.",
+  blurb: msg("Thorium pebbles to hot coolant."),
   settings: [
     {
       type: "number",
       id: "fill",
-      label: "Pebble fill",
+      label: msg("Pebble fill"),
       min: 100_000,
       max: 675_000,
       step: 1000,
@@ -50,12 +51,12 @@ const thtr: PowerSourceDefinition = {
         items("Burned Out TRISO pebble", (pebbleCost % 64) / operationSeconds),
       ],
       stats: [
-        stat("Efficiency", percent(efficiency)),
-        stat("Pebbles per cycle", formatAmount(pebbleCost)),
-        stat("Cycle", "9h"),
-        stat("Hot coolant", `${formatAmount(hotCoolantPerSecond / 20)} L/t`),
+        stat(msg("Efficiency"), percent(efficiency)),
+        stat(msg("Pebbles per cycle"), formatAmount(pebbleCost)),
+        stat(msg("Cycle"), "9h"),
+        stat(msg("Hot coolant"), `${formatAmount(hotCoolantPerSecond / 20)} L/t`),
         // Primed once, never burned: emptying mode hands it all back.
-        stat("Helium charge", "730,000 L, kept"),
+        stat(msg("Helium charge"), powerText(msg("730,000 L, kept"))),
       ],
     };
   },
@@ -115,17 +116,17 @@ const htgr: PowerSourceDefinition = {
   group: "reactors",
   // The controller is crafted with four circuitUltimate (ZPM) circuits.
   unlock: "ZPM",
-  blurb: "TRISO pebbles to coolant and steam.",
+  blurb: msg("TRISO pebbles to coolant and steam."),
   settings: [
     {
       type: "select",
       id: "pebble",
-      label: "TRISO pebble",
+      label: msg("TRISO pebble"),
       options: powerPlannerData.htgrPebbles.map((entry) => ({ key: entry.name, label: entry.name })),
       defaultKey: powerPlannerData.htgrPebbles[0]?.name ?? "",
     },
     // MTEHighTempGasCooledReactor will not start below 1% of its 10,000 balls.
-    { type: "number", id: "fill", label: "Pebble fill", min: 100, max: 10_000, step: 100, defaultValue: 10_000 },
+    { type: "number", id: "fill", label: msg("Pebble fill"), min: 100, max: 10_000, step: 100, defaultValue: 10_000 },
   ],
   compute(read): PowerModel {
     const pebble =
@@ -151,11 +152,11 @@ const htgr: PowerSourceDefinition = {
         items(htgrFuelName(pebble.name, true), run.burned / cycleSeconds),
       ],
       stats: [
-        stat("Efficiency", percent(run.efficiency)),
-        stat("Output multiplier", formatAmount(run.energyMultiplier)),
-        stat("Pebbles per cycle", formatAmount(run.burned)),
-        stat("Cycle", `${formatAmount(cycleSeconds)}s`),
-        stat("Helium charge", "512,000 L"),
+        stat(msg("Efficiency"), percent(run.efficiency)),
+        stat(msg("Output multiplier"), formatAmount(run.energyMultiplier)),
+        stat(msg("Pebbles per cycle"), formatAmount(run.burned)),
+        stat(msg("Cycle"), `${formatAmount(cycleSeconds)}s`),
+        stat(msg("Helium charge"), "512,000 L"),
       ],
     };
   },
@@ -169,12 +170,12 @@ const lftr: PowerSourceDefinition = {
   group: "reactors",
   // The controller is crafted around an IV Machine Hull.
   unlock: "IV",
-  blurb: "Burns fuel salts for direct EU.",
+  blurb: msg("Burns fuel salts for direct EU."),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: powerPlannerData.lftrFuels.map((entry) => ({ key: entry.name, label: entry.name })),
       defaultKey: powerPlannerData.lftrFuels[0]?.name ?? "",
     },
@@ -205,15 +206,15 @@ const lftr: PowerSourceDefinition = {
       euPerTick,
       inputs,
       outputs,
-      stats: [stat("EU per L", formatAmount(fuel.euPerLiter))],
+      stats: [stat(msg("EU per L"), formatAmount(fuel.euPerLiter))],
     };
   },
 };
 
 const IC2_DESIGNS = [
-  { key: "design-1", label: "Design 1 (1,150 L/s)", rate: 1150 },
-  { key: "design-2", label: "Design 2 (1,380 L/s)", rate: 1380 },
-  { key: "design-3", label: "Design 3 (1,340 L/s)", rate: 1340 },
+  { key: "design-1", label: msg("Design 1 (1,150 L/s)"), rate: 1150 },
+  { key: "design-2", label: msg("Design 2 (1,380 L/s)"), rate: 1380 },
+  { key: "design-3", label: msg("Design 3 (1,340 L/s)"), rate: 1340 },
 ];
 
 const ic2FluidReactor: PowerSourceDefinition = {
@@ -221,19 +222,19 @@ const ic2FluidReactor: PowerSourceDefinition = {
   name: "Nuclear Reactor (fluid mode)",
   group: "reactors",
   unlock: "EV",
-  blurb: "A preset rod layout heating coolant.",
+  blurb: msg("A preset rod layout heating coolant."),
   settings: [
     {
       type: "select",
       id: "design",
-      label: "Reactor design",
-      options: [...IC2_DESIGNS.map(({ key, label }) => ({ key, label })), { key: "custom", label: "Custom rate" }],
+      label: msg("Reactor design"),
+      options: [...IC2_DESIGNS.map(({ key, label }) => ({ key, label })), { key: "custom", label: msg("Custom rate") }],
       defaultKey: "design-2",
     },
     {
       type: "number",
       id: "customRate",
-      label: "Hot coolant rate",
+      label: msg("Hot coolant rate"),
       min: 1,
       max: 100_000,
       step: 10,
@@ -249,8 +250,8 @@ const ic2FluidReactor: PowerSourceDefinition = {
       euPerTick: 0,
       inputs: [liters("Coolant", rate)],
       outputs: [liters("Hot Coolant", rate)],
-      stats: [stat("Hot coolant", `${formatAmount(rate)} L/s`)],
-      warnings: ["Uranium rod costs are not modeled; the community planner skips them too."],
+      stats: [stat(msg("Hot coolant"), `${formatAmount(rate)} L/s`)],
+      warnings: [powerText(msg("Uranium rod costs are not modeled; the community planner skips them too."))],
     };
   },
 };
@@ -416,26 +417,26 @@ const vacuumReactor: PowerSourceDefinition = {
   name: "Vacuum Reactor",
   group: "reactors",
   unlock: "EV",
-  blurb: "Actively cooled nuke. Wire a freezer to recool its cells.",
+  blurb: msg("Actively cooled nuke. Wire a freezer to recool its cells."),
   settings: [
     {
       type: "select",
       id: "fuel",
-      label: "Fuel rod (x40)",
+      label: msg("Fuel rod (x40)"),
       options: VACUUM_FUELS.map(({ key, label }) => ({ key, label })),
       defaultKey: "uranium-4",
     },
     {
       type: "select",
       id: "coolant",
-      label: "Coolant cell (x14)",
+      label: msg("Coolant cell (x14)"),
       options: VACUUM_COOLANTS.map(({ key, name }) => ({ key, label: name })),
       defaultKey: "he-360k",
     },
     {
       type: "number",
       id: "coreTemp",
-      label: "Core temp",
+      label: msg("Core temp"),
       min: 0,
       max: 99,
       step: 1,
@@ -459,12 +460,19 @@ const vacuumReactor: PowerSourceDefinition = {
     const warnings: string[] = [];
     if (run.cellHeat.max > coolant.durability) {
       warnings.push(
-        `${coolant.name} bursts: the hottest cell takes ${formatAmount(run.cellHeat.max)} heat a second and holds ${formatAmount(coolant.durability)}. Pick a bigger cell.`,
+        powerText(msg("{cell} bursts: the hottest cell takes {heat} heat a second and holds {durability}. Pick a bigger cell."), {
+          cell: coolant.name,
+          heat: formatAmount(run.cellHeat.max),
+          durability: formatAmount(coolant.durability),
+        }),
       );
     }
     if (fuel.moxBonus) {
       warnings.push(
-        `Core temp ${formatAmount(coreTemp)}% multiplies the output by ${formatAmount(run.moxMultiplier)}. The reactor melts at 100%.`,
+        powerText(msg("Core temp {temp}% multiplies the output by {multiplier}. The reactor melts at 100%."), {
+          temp: formatAmount(coreTemp),
+          multiplier: formatAmount(run.moxMultiplier),
+        }),
       );
     }
     return {
@@ -472,16 +480,22 @@ const vacuumReactor: PowerSourceDefinition = {
       inputs: [items(fuel.rod, rodsPerSecond), items(coolant.name, cellsPerSecond)],
       outputs: [items(fuel.depleted, rodsPerSecond), items(coolant.name, cellsPerSecond)],
       stats: [
-        stat("Rod lifespan", lifespanHours(fuel.durability)),
+        stat(msg("Rod lifespan"), lifespanHours(fuel.durability)),
         stat(
-          "Cell heat",
-          `${formatAmount(run.cellHeat.average)}/s avg, ${formatAmount(run.cellHeat.max)}/s max`,
+          msg("Cell heat"),
+          powerText(msg("{average}/s avg, {max}/s max"), {
+            average: formatAmount(run.cellHeat.average),
+            max: formatAmount(run.cellHeat.max),
+          }),
         ),
         stat(
-          "Coolant lifespan",
-          `${formatAmount(cellLifeMin)} s min, ${formatAmount(cellLifeAverage)} s avg`,
+          msg("Coolant lifespan"),
+          powerText(msg("{min} s min, {average} s avg"), {
+            min: formatAmount(cellLifeMin),
+            average: formatAmount(cellLifeAverage),
+          }),
         ),
-        stat("Cells to recool", `${formatAmount(cellsPerSecond * 60)} a minute`),
+        stat(msg("Cells to recool"), powerText(msg("{count} a minute"), { count: formatAmount(cellsPerSecond * 60) })),
       ],
       warnings,
     };
@@ -494,15 +508,15 @@ const dehp: PowerSourceDefinition = {
   group: "reactors",
   // bartworks assembles the controller at RECIPE_IV.
   unlock: "IV",
-  blurb: "Geothermal steam or hot coolant.",
+  blurb: msg("Geothermal steam or hot coolant."),
   settings: [
     {
       type: "select",
       id: "mode",
-      label: "Mode",
+      label: msg("Mode"),
       options: [
-        { key: "steam", label: "Direct steam" },
-        { key: "coolant", label: "Coolant heating" },
+        { key: "steam", label: msg("Direct steam") },
+        { key: "coolant", label: msg("Coolant heating") },
       ],
       defaultKey: "steam",
     },
@@ -514,7 +528,7 @@ const dehp: PowerSourceDefinition = {
         euPerTick: -480,
         inputs: [liters("Coolant", perSecond)],
         outputs: [liters("Hot Coolant", perSecond)],
-        stats: [stat("Hot coolant", "192 L/t")],
+        stats: [stat(msg("Hot coolant"), "192 L/t")],
       };
     }
     const steamPerTick = 25_600;
@@ -524,17 +538,17 @@ const dehp: PowerSourceDefinition = {
       euPerTick: -480,
       inputs: [liters("Distilled Water", 161 * 20)],
       outputs: [liters("SH Steam", steamPerTick * 20)],
-      stats: [stat("Steam", `${formatAmount(steamPerTick)} L/t superheated`)],
+      stats: [stat(msg("Steam"), powerText(msg("{amount} L/t superheated"), { amount: formatAmount(steamPerTick) }))],
     };
   },
 };
 
 const SOLAR_TOWER_RINGS = [
-  { rings: 1, hotSalt: 38.6 },
-  { rings: 2, hotSalt: 104.6 },
-  { rings: 3, hotSalt: 217.4 },
-  { rings: 4, hotSalt: 431 },
-  { rings: 5, hotSalt: 883 },
+  { rings: 1, hotSalt: 38.6, label: msg("1 ring") },
+  { rings: 2, hotSalt: 104.6, label: msg("2 rings") },
+  { rings: 3, hotSalt: 217.4, label: msg("3 rings") },
+  { rings: 4, hotSalt: 431, label: msg("4 rings") },
+  { rings: 5, hotSalt: 883, label: msg("5 rings") },
 ];
 
 const solarTower: PowerSourceDefinition = {
@@ -542,15 +556,15 @@ const solarTower: PowerSourceDefinition = {
   name: "Solar Tower",
   group: "passive",
   unlock: "EV",
-  blurb: "Heliostats heat solar salt. No fuel.",
+  blurb: msg("Heliostats heat solar salt. No fuel."),
   settings: [
     {
       type: "select",
       id: "rings",
-      label: "Heliostat rings",
+      label: msg("Heliostat rings"),
       options: SOLAR_TOWER_RINGS.map((entry) => ({
         key: String(entry.rings),
-        label: `${entry.rings} ${entry.rings === 1 ? "ring" : "rings"}`,
+        label: entry.label,
       })),
       defaultKey: "5",
     },
@@ -564,8 +578,8 @@ const solarTower: PowerSourceDefinition = {
       inputs: [liters("Cold Solar Salt", entry.hotSalt)],
       outputs: [liters("Hot Solar Salt", entry.hotSalt)],
       stats: [
-        stat("Heliostats", String(heliostats)),
-        stat("Hot salt", `${formatAmount(entry.hotSalt)} L/s`),
+        stat(msg("Heliostats"), String(heliostats)),
+        stat(msg("Hot salt"), `${formatAmount(entry.hotSalt)} L/s`),
       ],
     };
   },
@@ -592,16 +606,16 @@ const solarPanel: PowerSourceDefinition = {
   name: "Solar Panel",
   group: "passive",
   unlock: "MV",
-  blurb: "Flat daytime EU from sunlight.",
+  blurb: msg("Flat daytime EU from sunlight."),
   settings: [
     {
       type: "select",
       id: "panel",
-      label: "Panel",
+      label: msg("Panel"),
       options: SOLAR_PANEL_TIERS.map(({ key, label }) => ({ key, label })),
       defaultKey: "LV",
     },
-    { type: "number", id: "duty", label: "Duty", min: 1, max: 100, step: 1, defaultValue: 100, unit: "%" },
+    { type: "number", id: "duty", label: msg("Duty"), min: 1, max: 100, step: 1, defaultValue: 100, unit: "%" },
   ],
   compute(read): PowerModel {
     const panel = SOLAR_PANEL_TIERS.find((entry) => entry.key === read.select("panel")) ?? SOLAR_PANEL_TIERS[1];
@@ -610,7 +624,7 @@ const solarPanel: PowerSourceDefinition = {
       euPerTick: panel.eut * duty,
       inputs: [],
       outputs: [],
-      stats: [stat("Daytime output", `${formatAmount(panel.eut)} EU/t`)],
+      stats: [stat(msg("Daytime output"), `${formatAmount(panel.eut)} EU/t`)],
     };
   },
 };

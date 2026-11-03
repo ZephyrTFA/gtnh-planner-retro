@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { formatCompact } from "@/lib/model";
 import { useBoardMotion, useMotionPoints, useMotionValue } from "@/components/flow/board-motion";
+import { tPlural, useT } from "@/lib/i18n";
 
 /**
  * One resource's balance across recent edits. The zero line is drawn and
@@ -34,6 +35,7 @@ export function TrendSparkline({
   const gradientId = useId();
   const hostRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number>();
+  const t = useT();
   const { valueMotion } = useBoardMotion();
 
   const latest = series[series.length - 1] ?? 0;
@@ -75,7 +77,7 @@ export function TrendSparkline({
         style={{ height }}
         className="flex items-center justify-center text-[10px] text-fg-muted"
       >
-        Edit the board to start the chart
+        {t("Edit the board to start the chart")}
       </div>
     );
   }
@@ -180,7 +182,7 @@ export function TrendSparkline({
       */}
       {hoverIndex === undefined ? (
         <span className="pointer-events-none absolute left-0 top-0 text-[10px] tabular-nums text-fg-muted">
-          {series.length} edits
+          {tPlural(series.length, "{count} edit", "{count} edits", { count: series.length })}
         </span>
       ) : (
         <span

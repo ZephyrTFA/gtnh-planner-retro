@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyCheck, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 import { useDesignStore } from "@/store/design-store";
 
 /**
@@ -9,6 +10,7 @@ import { useDesignStore } from "@/store/design-store";
  * tab's edits became a copy, so the notice says where each went.
  */
 export function TabConflictNotice() {
+  const t = useT();
   const conflict = useDesignStore((state) => state.tabConflict);
   const dismiss = useDesignStore((state) => state.dismissTabConflict);
   if (!conflict) {
@@ -21,13 +23,15 @@ export function TabConflictNotice() {
     >
       <CopyCheck aria-hidden className="h-3.5 w-3.5 shrink-0" />
       <p className="min-w-0 flex-1">
-        Another browser tab saved a newer version of &ldquo;{conflict.name}&rdquo;, so your edits
-        from this tab were kept as &ldquo;{conflict.copyName}&rdquo;. Nothing was lost.
+        {t(
+          "Another browser tab saved a newer version of “{name}”, so your edits from this tab were kept as “{copyName}”. Nothing was lost.",
+          { name: conflict.name, copyName: conflict.copyName },
+        )}
       </p>
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Dismiss"
+        aria-label={t("Dismiss")}
         className="shrink-0 rounded p-0.5 text-amber-200 hover:bg-amber-900/60"
       >
         <X aria-hidden className="h-3.5 w-3.5" />

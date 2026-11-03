@@ -1,6 +1,7 @@
 "use client";
 
 import { useItemNamesVersion } from "@/lib/item-names";
+import { t, useT } from "@/lib/i18n";
 import { memo, useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   getAlternativeCycleFaces,
@@ -80,6 +81,7 @@ function ResourceIconComponent({
   alternativeState,
 }: ResourceIconProps) {
   useItemNamesVersion();
+  const t = useT();
   // Artwork deliberately exceeds its clipped slot. Every art renderer below
   // must opt out of flex shrinking: Firefox shrinks percentage-sized <img>
   // widths where Chromium keeps their aspect-ratio minimum; atlas spans shrink
@@ -112,10 +114,10 @@ function ResourceIconComponent({
       {/* Circuits get no "NC" marker: they are a machine setting, never consumed. */}
       {showConsumedState && resource?.consumed === false && !isProgrammedCircuitResource(resource) ? (
         <span
-          title="Not consumed"
+          title={t("Not consumed")}
           className="absolute left-0 top-0 font-mono text-[8px] font-black leading-none text-[#ffff55] drop-shadow-[1px_1px_0_#000]"
         >
-          NC
+          {t("NC")}
         </span>
       ) : null}
 
@@ -259,25 +261,25 @@ function buildTooltipLabel(
     : [resourceDisplayLabel(resource)].filter(Boolean);
   const chanceLine =
     resource.chance !== undefined && Number.isFinite(resource.chance) && resource.chance < 1
-      ? `Chance: ${trimAmount(resource.chance * 100)}%`
+      ? t("Chance: {percent}%", { percent: trimAmount(resource.chance * 100) })
       : undefined;
   const consumedLine =
     resource.consumed === false && !resource.tooltip?.some(isNotConsumedTooltipLine)
-      ? "Not consumed"
+      ? t("Not consumed")
       : undefined;
   // The amount is already the average a run, so the tip says why it is fractional.
   const consumeChance = (resource as { consumeChance?: number }).consumeChance;
   const consumeChanceLine =
     consumeChance !== undefined && consumeChance < 1
-      ? `Used up ${trimAmount(consumeChance * 100)}% of runs`
+      ? t("Used up {percent}% of runs", { percent: trimAmount(consumeChance * 100) })
       : undefined;
   // Both short enough to sit on one line at the panel's width: a hint that wraps
   // mid-sentence reads worse than no hint at all.
   const cycleLine =
     alternativeState === "locked"
-      ? "Scroll to change."
+      ? t("Scroll to change.")
       : alternativeState === "cycling"
-        ? "Scroll to pick one."
+        ? t("Scroll to pick one.")
         : undefined;
 
   return [...baseLines, cycleLine, chanceLine, consumeChanceLine, consumedLine].filter(Boolean).join("\n");

@@ -7,7 +7,6 @@ import {
   DETAILS_MAX,
   DETAILS_MIN,
   REQUEST_KINDS,
-  REQUEST_KIND_LABELS,
   TITLE_MAX,
   TITLE_MIN,
   TURNSTILE_ACTION,
@@ -17,14 +16,26 @@ import { sendRequest, type SendOutcome } from "@/lib/requests/send-request";
 import { loadTurnstile, type TurnstileApi } from "@/lib/requests/turnstile";
 import { TURNSTILE_SITE_KEY } from "@/lib/site";
 import { APP_VERSION } from "@/lib/version";
+import { msg, t, td, useT } from "@/lib/i18n";
 import { useFactoryStore } from "@/store/factory-store";
 
 /** What the player is told when sending fails; their text stays in the form. */
 export const SEND_ERRORS: Record<Exclude<SendOutcome, "sent">, string> = {
-  "rate-limited": "Too many requests. Wait a minute and try again.",
-  "bot-check-failed": "The bot check failed. Wait for a new check, then send again.",
-  invalid: "The request was refused. Check each field and try again.",
-  failed: "Couldn't send your request. Try again later.",
+  "rate-limited": msg("Too many requests. Wait a minute and try again."),
+  "bot-check-failed": msg("The bot check failed. Wait for a new check, then send again."),
+  invalid: msg("The request was refused. Check each field and try again."),
+  failed: msg("Couldn't send your request. Try again later."),
+};
+
+/**
+ * The kinds as the form shows them. The Worker titles issues with the English
+ * REQUEST_KIND_LABELS; these are their display twins.
+ */
+const KIND_DISPLAY_LABELS: Record<RequestKind, string> = {
+  bug: msg("Bug"),
+  feature: msg("Feature"),
+  "recipe-data": msg("Recipe data"),
+  other: msg("Other"),
 };
 
 type Field = "title" | "details" | "contact";
@@ -34,14 +45,14 @@ function fieldErrors(form: { title: string; details: string; contact: string }):
   const errors: Partial<Record<Field, string>> = {};
   const title = form.title.trim().length;
   if (title < TITLE_MIN || title > TITLE_MAX) {
-    errors.title = `Use ${TITLE_MIN} to ${TITLE_MAX} characters.`;
+    errors.title = t("Use {min} to {max} characters.", { min: TITLE_MIN, max: TITLE_MAX });
   }
   const details = form.details.trim().length;
   if (details < DETAILS_MIN || details > DETAILS_MAX) {
-    errors.details = `Use ${DETAILS_MIN} to ${DETAILS_MAX.toLocaleString("en-US")} characters.`;
+    errors.details = t("Use {min} to {max} characters.", { min: DETAILS_MIN, max: DETAILS_MAX.toLocaleString("en-US") });
   }
   if (form.contact.trim().length > CONTACT_MAX) {
-    errors.contact = `Use at most ${CONTACT_MAX} characters.`;
+    errors.contact = t("Use at most {max} characters.", { max: CONTACT_MAX });
   }
   return errors;
 }
@@ -56,6 +67,7 @@ function fieldErrors(form: { title: string; details: string; contact: string }):
  * every send because each token is good for one try.
  */
 export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClose: () => void; siteKey?: string }) {
+  const t = useT();
   const datasetVersion = useFactoryStore((state) => state.dataset?.datasetVersionId);
   const [kind, setKind] = useState<RequestKind>("bug");
   const [title, setTitle] = useState("");
@@ -179,12 +191,12 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
         <div className="flex items-center justify-between">
           <h2 id="request-dialog-title" className="flex items-center gap-2 text-base font-semibold">
             <MessageSquarePlus aria-hidden className="h-4 w-4" />
-            Send a request
+            {t("Send a request")}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             className="rounded p-1 text-fg-subtle hover:bg-surface-raised"
           >
             <X className="h-4 w-4" />
@@ -195,7 +207,7 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
           <div role="status" className="flex flex-col gap-3">
             <p className="flex items-center gap-2 text-sm text-emerald-300">
               <CheckCircle2 aria-hidden className="h-4 w-4 shrink-0" />
-              Request sent. Thank you.
+              {t("Request sent. Thank you.")}
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -203,14 +215,14 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
                 onClick={() => setStatus("editing")}
                 className="rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
               >
-                Send another
+                {t("Send another")}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="rounded border border-line-strong bg-surface-raised px-3 py-1.5 text-sm font-semibold hover:bg-surface-sunken"
               >
-                Close
+                {t("Close")}
               </button>
             </div>
           </div>
@@ -225,22 +237,22 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
           }}
         >
           <p className="text-sm text-fg-muted">
-            Requests go to the maintainer privately. Only the app and dataset versions are sent with them.
+            {t("Requests go to the maintainer privately. Only the app and dataset versions are sent with them.")}
           </p>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="font-semibold">Kind</span>
+            <span className="font-semibold">{t("Kind")}</span>
             <select value={kind} onChange={(event) => setKind(event.target.value as RequestKind)} className={inputClass}>
               {REQUEST_KINDS.map((value) => (
                 <option key={value} value={value}>
-                  {REQUEST_KIND_LABELS[value]}
+                  {td(KIND_DISPLAY_LABELS[value])}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="font-semibold">Title</span>
+            <span className="font-semibold">{t("Title")}</span>
             <input
               autoFocus
               value={title}
@@ -259,7 +271,7 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
 
           <label className="flex flex-col gap-1 text-sm">
             <span className="flex items-baseline justify-between">
-              <span className="font-semibold">Details</span>
+              <span className="font-semibold">{t("Details")}</span>
               <span className="text-xs tabular-nums text-fg-muted">
                 {details.length.toLocaleString("en-US")} / {DETAILS_MAX.toLocaleString("en-US")}
               </span>
@@ -281,7 +293,7 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
           </label>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="font-semibold">How can we reach you? Optional.</span>
+            <span className="font-semibold">{t("How can we reach you? Optional.")}</span>
             <input
               value={contact}
               onChange={(event) => setContact(event.target.value)}
@@ -299,25 +311,25 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
 
           <div ref={widgetHost} data-testid="turnstile" className="min-h-[65px]" />
           {checkState === "unavailable" ? (
-            <p className="text-xs text-red-400">The bot check could not load. Reload the page and try again.</p>
+            <p className="text-xs text-red-400">{t("The bot check could not load. Reload the page and try again.")}</p>
           ) : null}
 
           {failure ? (
             <p role="alert" className="text-sm text-red-400">
-              {SEND_ERRORS[failure]}
+              {td(SEND_ERRORS[failure])}
             </p>
           ) : null}
 
           <div className="flex items-center justify-end gap-2">
             {!token && checkState !== "unavailable" ? (
-              <span className="mr-auto text-xs text-fg-muted">Waiting for the bot check.</span>
+              <span className="mr-auto text-xs text-fg-muted">{t("Waiting for the bot check.")}</span>
             ) : null}
             <button
               type="button"
               onClick={onClose}
               className="rounded border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-raised"
             >
-              Cancel
+              {t("Cancel")}
             </button>
             <button
               type="submit"
@@ -325,7 +337,7 @@ export function RequestDialog({ onClose, siteKey = TURNSTILE_SITE_KEY }: { onClo
               className="inline-flex items-center gap-1.5 rounded border border-line-strong bg-surface-raised px-3 py-1.5 text-sm font-semibold hover:bg-surface-sunken disabled:opacity-40"
             >
               {status === "sending" ? <LoaderCircle aria-hidden className="h-3.5 w-3.5 animate-spin" /> : null}
-              Send
+              {t("Send")}
             </button>
           </div>
         </form>

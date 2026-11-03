@@ -1,3 +1,4 @@
+import { msg, t, td, tPlural } from "@/lib/i18n";
 import { maxInputTierSkips } from "./power-input-rules";
 import { getFusionStats } from "@/lib/machines/fusion";
 import {
@@ -57,8 +58,10 @@ export type NodePowerState = "ok" | "under-powered" | "over-tier";
 
 export interface NodePowerReport {
   state: NodePowerState;
-  /** Machine-specific structural limit, such as the HILE's laser source tier. */
+  /** Machine-specific structural limit, such as the HILE's laser source tier. In English. */
   recipeGateReason?: string;
+  /** The msg() key and values `recipeGateReason` was filled from, for `describePowerStall`. */
+  recipeGateMessage?: { key: string; vars: Record<string, string | number> };
   /** The tier the user picked (or the recipe's minimum by default). */
   tier: VoltageTier;
   minimumTier: VoltageTier;
@@ -136,12 +139,18 @@ export function getNodePowerReport(recipe: Recipe, node: PowerReportNode): NodeP
   const behaviour = getMachineBehaviour(effectiveRecipe.machineType);
   const voltageLimit = behaviour?.inputVoltageTierLimit?.(node.machineConfigTiers ?? {});
   const casingGateReason = voltageLimit !== undefined && getVoltageTierIndex(getVoltageTierForEuT(rawEuT)) > voltageLimit
-    ? "Machine casing voltage is too low for this recipe. Select a higher machine casing; UHV casings remove the limit."
+    ? msg("Machine casing voltage is too low for this recipe. Select a higher machine casing; UHV casings remove the limit.")
     : undefined;
   const fusion = getFusionStats(effectiveRecipe);
+  // The report can be built in a worker and is shown later, so it carries
+  // English and describePowerStall translates it.
+  const fusionMarkKey = msg("This recipe requires a Mk-{mark} fusion reactor or higher.");
+  const fusionGateMessage = fusion && !fusion.eligible && fusion.recipeMark !== undefined
+    ? { key: fusionMarkKey, vars: { mark: fusion.recipeMark } }
+    : undefined;
   const fusionGateReason = fusion && !fusion.eligible
-    ? fusion.recipeMark === undefined ? "Fusion startup metadata is unavailable for this recipe."
-      : `This recipe requires a Mk-${fusion.recipeMark} fusion reactor or higher.`
+    ? fusion.recipeMark === undefined ? msg("Fusion startup metadata is unavailable for this recipe.")
+      : fusionMarkKey.replace("{mark}", String(fusion.recipeMark))
     : undefined;
   const recipeGateReason = fusionGateReason ?? behaviour?.recipeGate?.(
     buildMachineContext(effectiveRecipe, node),
@@ -150,6 +159,7 @@ export function getNodePowerReport(recipe: Recipe, node: PowerReportNode): NodeP
   return {
     state: recipeGateReason ? "over-tier" : getPowerState(effectiveRecipe, tier, minimumTier, isMultiblock, poolEuT, singleDrawEuT),
     recipeGateReason,
+    ...(fusionGateMessage ? { recipeGateMessage: fusionGateMessage } : {}),
     tier,
     minimumTier,
     hatches,
@@ -298,26 +308,42 @@ export function isPowerStalled(report: NodePowerReport): boolean {
   return report.state !== "ok";
 }
 
-/** One-line reason for a stalled build, used by node warnings. */
+/** One-line reason for a stalled build, used by node warnings, in the interface language. */
 export function describePowerStall(report: NodePowerReport): string | undefined {
-  if (report.recipeGateReason) return report.recipeGateReason;
+  if (report.recipeGateReason) {
+    // Gate reasons are English (msg()-marked where they are written).
+    return report.recipeGateMessage
+      ? td(report.recipeGateMessage.key, report.recipeGateMessage.vars)
+      : td(report.recipeGateReason);
+  }
   if (report.state === "under-powered") {
     if (report.typedBudget) {
-      return `Needs ${report.singleDrawEuT} EU/t. Supplied ${formatBudget(report.poolEuT)}.`;
+      return t("Needs {draw} EU/t. Supplied {supply}.", {
+        draw: report.singleDrawEuT,
+        supply: formatBudget(report.poolEuT),
+      });
     }
-    const supply = report.hatchTypeLabel
-      ? `the ${report.tier} ${report.hatchTypeLabel} supplies`
-      : `${report.hatches}x ${report.tier} ${report.hatches === 1 ? "hatch supplies" : "hatches supply"}`;
-    return (
-      `Underpowered: the recipe draws ${report.singleDrawEuT} EU/t but ` +
-      `${supply} ${report.poolEuT} EU/t. Add amperage or raise the tier.`
-    );
+    const vars = {
+      draw: report.singleDrawEuT,
+      tier: report.tier,
+      supply: report.poolEuT,
+      count: report.hatches,
+      hatch: report.hatchTypeLabel ?? "",
+    };
+    return report.hatchTypeLabel
+      ? t("Underpowered: the recipe draws {draw} EU/t but the {tier} {hatch} supplies {supply} EU/t. Add amperage or raise the tier.", vars)
+      : tPlural(
+          report.hatches,
+          "Underpowered: the recipe draws {draw} EU/t but {count}x {tier} hatch supplies {supply} EU/t. Add amperage or raise the tier.",
+          "Underpowered: the recipe draws {draw} EU/t but {count}x {tier} hatches supply {supply} EU/t. Add amperage or raise the tier.",
+          vars,
+        );
   }
   if (report.state === "over-tier") {
-    return (
-      `Won't run at ${report.tier}: this recipe needs at least ` +
-      `${report.minimumTier}${report.isMultiblock ? " hatches (amps cannot skip more than one tier)" : ""}.`
-    );
+    const vars = { tier: report.tier, minimum: report.minimumTier };
+    return report.isMultiblock
+      ? t("Won't run at {tier}: this recipe needs at least {minimum} hatches (amps cannot skip more than one tier).", vars)
+      : t("Won't run at {tier}: this recipe needs at least {minimum}.", vars);
   }
   return undefined;
 }

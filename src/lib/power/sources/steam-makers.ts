@@ -5,9 +5,10 @@
  * Exchangers convert hot fluids to steam by threshold: below it the Under
  * ratio and lower grade, at/above it the Over ratio and higher grade.
  */
+import { msg } from "@/lib/i18n";
 import { findFuel, powerPlannerData, type PowerFuelEntry } from "../planner-data";
 import type { PowerModel, PowerSourceDefinition, PowerSetting } from "../types";
-import { formatAmount, items, liters, stat } from "./helpers";
+import { formatAmount, items, liters, powerText, stat, templatedBlurb } from "./helpers";
 
 interface BoilerSpec {
   id: string;
@@ -71,7 +72,7 @@ const WATER_KINDS = [
 ];
 
 function fuelChoices(table: PowerFuelEntry[]): Array<{ key: string; label: string }> {
-  return [{ key: NO_FUEL, label: "None" }, ...table.map((entry) => ({ key: entry.name, label: entry.name }))];
+  return [{ key: NO_FUEL, label: msg("None") }, ...table.map((entry) => ({ key: entry.name, label: entry.name }))];
 }
 
 function buildBoiler(spec: BoilerSpec): PowerSourceDefinition {
@@ -80,21 +81,24 @@ function buildBoiler(spec: BoilerSpec): PowerSourceDefinition {
     name: spec.name,
     group: "steam",
     unlock: spec.unlock,
-    blurb: `${formatAmount(spec.steamPerTick)} L/t of ${
-      spec.steamGrade === "SH Steam" ? "SH steam" : "steam"
-    } on dual fuel.`,
+    ...templatedBlurb(
+      spec.steamGrade === "SH Steam"
+        ? msg("{amount} L/t of SH steam on dual fuel.")
+        : msg("{amount} L/t of steam on dual fuel."),
+      { amount: formatAmount(spec.steamPerTick) },
+    ),
     settings: [
       {
         type: "select",
         id: "liquidFuel",
-        label: "Liquid fuel",
+        label: msg("Liquid fuel"),
         options: fuelChoices(spec.liquidTable),
         defaultKey: spec.liquidTable[0]?.name ?? NO_FUEL,
       },
       {
         type: "select",
         id: "solidFuel",
-        label: "Solid fuel",
+        label: msg("Solid fuel"),
         options: fuelChoices(spec.solidTable),
         defaultKey: NO_FUEL,
       },
@@ -103,7 +107,7 @@ function buildBoiler(spec: BoilerSpec): PowerSourceDefinition {
       {
         type: "select",
         id: "waterKind",
-        label: "Water supply",
+        label: msg("Water supply"),
         options: WATER_KINDS,
         defaultKey: "Water",
       },
@@ -133,10 +137,10 @@ function buildBoiler(spec: BoilerSpec): PowerSourceDefinition {
         inputs,
         outputs: steamPerTick > 0 ? [liters(spec.steamGrade, steamPerTick * 20)] : [],
         stats: [
-          stat("Steam", `${formatAmount(steamPerTick)} L/t`),
-          stat("Firebox", dual ? "Dual fuel: 100%" : "Single fuel: 80%"),
+          stat(msg("Steam"), `${formatAmount(steamPerTick)} L/t`),
+          stat(msg("Firebox"), powerText(dual ? msg("Dual fuel: 100%") : msg("Single fuel: 80%"))),
         ],
-        warnings: !liquid && !solid ? ["Pick a fuel to make steam."] : undefined,
+        warnings: !liquid && !solid ? [powerText(msg("Pick a fuel to make steam."))] : undefined,
       };
     },
   };
@@ -198,19 +202,19 @@ function buildSmallBoiler(spec: SmallBoilerSpec): PowerSourceDefinition {
     name: spec.name,
     group: "steam",
     unlock: spec.unlock,
-    blurb: `${formatAmount(spec.steamPerSecond)} L/s of steam from any furnace fuel.`,
+    ...templatedBlurb(msg("{amount} L/s of steam from any furnace fuel."), { amount: formatAmount(spec.steamPerSecond) }),
     settings: [
       {
         type: "select",
         id: "solidFuel",
-        label: "Fuel",
+        label: msg("Fuel"),
         options: solidTable.map((entry) => ({ key: entry.name, label: entry.name })),
         defaultKey: "Coal",
       },
       {
         type: "select",
         id: "waterKind",
-        label: "Water supply",
+        label: msg("Water supply"),
         options: WATER_KINDS,
         defaultKey: "Water",
       },
@@ -222,7 +226,7 @@ function buildSmallBoiler(spec: SmallBoilerSpec): PowerSourceDefinition {
       const secondsPerItem = energyPerItem / spec.energyPerSecond;
       const warnings: string[] = [];
       if (!spec.automatable) {
-        warnings.push("GTNH turns small boiler automation off. Fuel goes in by hand.");
+        warnings.push(powerText(msg("GTNH turns small boiler automation off. Fuel goes in by hand.")));
       }
       return {
         euPerTick: 0,
@@ -232,8 +236,8 @@ function buildSmallBoiler(spec: SmallBoilerSpec): PowerSourceDefinition {
         ],
         outputs: [liters("Steam", spec.steamPerSecond)],
         stats: [
-          stat("Steam", `${formatAmount(spec.steamPerSecond / 20)} L/t`),
-          stat("One item burns", `${formatAmount(secondsPerItem)}s`),
+          stat(msg("Steam"), `${formatAmount(spec.steamPerSecond / 20)} L/t`),
+          stat(msg("One item burns"), `${formatAmount(secondsPerItem)}s`),
         ],
         warnings,
       };
@@ -264,19 +268,19 @@ const advancedBoiler: PowerSourceDefinition = {
   name: "Advanced Boiler",
   group: "steam",
   unlock: "LV",
-  blurb: "GT++ boilers: up to 2,250 L/s, safe and automatable.",
+  blurb: msg("GT++ boilers: up to 2,250 L/s, safe and automatable."),
   settings: [
     {
       type: "select",
       id: "tier",
-      label: "Boiler",
+      label: msg("Boiler"),
       options: ADVANCED_BOILER_TIERS.map(({ key, label }) => ({ key, label })),
       defaultKey: "LV",
     },
     {
       type: "select",
       id: "solidFuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: powerPlannerData.boilerFuels.bronzeSolid.map((entry) => ({
         key: entry.name,
         label: entry.name,
@@ -286,7 +290,7 @@ const advancedBoiler: PowerSourceDefinition = {
     {
       type: "select",
       id: "waterKind",
-      label: "Water supply",
+      label: msg("Water supply"),
       options: WATER_KINDS,
       defaultKey: "Water",
     },
@@ -305,8 +309,8 @@ const advancedBoiler: PowerSourceDefinition = {
       ],
       outputs: [liters("Steam", steamPerSecond)],
       stats: [
-        stat("Steam", `${formatAmount(steamPerSecond / 20)} L/t`),
-        stat("One item burns", `${formatAmount(secondsPerItem)}s`),
+        stat(msg("Steam"), `${formatAmount(steamPerSecond / 20)} L/t`),
+        stat(msg("One item burns"), `${formatAmount(secondsPerItem)}s`),
       ],
     };
   },
@@ -326,12 +330,12 @@ const lavaBoiler: PowerSourceDefinition = {
   name: "Reinforced Lava Boiler",
   group: "steam",
   unlock: "LV",
-  blurb: `600 L/s of steam on ${formatAmount(LAVA_PER_SECOND)} L/s of lava.`,
+  ...templatedBlurb(msg("600 L/s of steam on {lava} L/s of lava."), { lava: formatAmount(LAVA_PER_SECOND) }),
   settings: [
     {
       type: "select",
       id: "waterKind",
-      label: "Water supply",
+      label: msg("Water supply"),
       options: WATER_KINDS,
       defaultKey: "Water",
     },
@@ -342,9 +346,9 @@ const lavaBoiler: PowerSourceDefinition = {
       inputs: [liters("Lava", LAVA_PER_SECOND), liters(read.select("waterKind"), 600 / 160)],
       outputs: [liters("Steam", 600), items("Obsidian", LAVA_PER_SECOND / 1000)],
       stats: [
-        stat("Steam", "30 L/t"),
+        stat(msg("Steam"), "30 L/t"),
         stat("Lava", `${formatAmount(LAVA_PER_SECOND)} L/s`),
-        stat("Obsidian", `${formatAmount((LAVA_PER_SECOND / 1000) * 3600)} per hour`),
+        stat("Obsidian", powerText(msg("{count} per hour"), { count: formatAmount((LAVA_PER_SECOND / 1000) * 3600) })),
       ],
     };
   },
@@ -369,26 +373,26 @@ const solarBoiler: PowerSourceDefinition = {
   name: "Solar Boiler",
   group: "steam",
   unlock: "ULV",
-  blurb: "Free steam from the sun. Calcifies on regular water.",
+  blurb: msg("Free steam from the sun. Calcifies on regular water."),
   settings: [
     {
       type: "select",
       id: "model",
-      label: "Boiler",
+      label: msg("Boiler"),
       options: SOLAR_BOILER_MODELS.map(({ key, label }) => ({ key, label })),
       defaultKey: "bronze",
     },
     {
       type: "select",
       id: "waterKind",
-      label: "Water supply",
+      label: msg("Water supply"),
       options: WATER_KINDS,
       defaultKey: "Distilled Water",
     },
     {
       type: "toggle",
       id: "calcified",
-      label: "Fully calcified",
+      label: msg("Fully calcified"),
       defaultOn: false,
       enabledWhen: { settingId: "waterKind", equals: "Water" },
     },
@@ -403,18 +407,22 @@ const solarBoiler: PowerSourceDefinition = {
       const fallTicks = ((model.max - model.min) * SOLAR_CALCIFICATION_TICKS) / model.max;
       const minTicks = fallTicks + SOLAR_CALCIFICATION_TICKS;
       warnings.push(
-        `Regular water calcifies this boiler: full ${model.max} L/s for ${formatAmount(
-          SOLAR_CALCIFICATION_TICKS / TICKS_PER_HOUR,
-        )} hours of run time, then down to ${model.min} L/s by ${formatAmount(
-          minTicks / TICKS_PER_HOUR,
-        )} hours. Distilled water does not.`,
+        powerText(
+          msg("Regular water calcifies this boiler: full {max} L/s for {fullHours} hours of run time, then down to {min} L/s by {minHours} hours. Distilled water does not."),
+          {
+            max: model.max,
+            fullHours: formatAmount(SOLAR_CALCIFICATION_TICKS / TICKS_PER_HOUR),
+            min: model.min,
+            minHours: formatAmount(minTicks / TICKS_PER_HOUR),
+          },
+        ),
       );
     }
     return {
       euPerTick: 0,
       inputs: [liters(read.select("waterKind"), steamPerSecond / 160)],
       outputs: [liters("Steam", steamPerSecond)],
-      stats: [stat("Steam", `${formatAmount(steamPerSecond / 20)} L/t`), stat("Needs", "Open sky")],
+      stats: [stat(msg("Steam"), `${formatAmount(steamPerSecond / 20)} L/t`), stat(msg("Needs"), powerText(msg("Open sky")))],
       warnings,
     };
   },
@@ -456,14 +464,14 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
     {
       type: "select",
       id: "fluid",
-      label: "Hot fluid",
+      label: msg("Hot fluid"),
       options: fluidNames.map((name) => ({ key: name, label: name })),
       defaultKey: fluidNames[0],
     },
     {
       type: "number",
       id: "intake",
-      label: "Hot fluid rate",
+      label: msg("Hot fluid rate"),
       min: 1,
       max: 10_000_000,
       step: 1,
@@ -476,7 +484,7 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
     settings.push({
       type: "number",
       id: "tier",
-      label: "Circuit",
+      label: msg("Circuit"),
       min: 1,
       max: 25,
       step: 1,
@@ -489,7 +497,7 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
     settings.push({
       type: "select",
       id: "waterKind",
-      label: "Water supply",
+      label: msg("Water supply"),
       options: [
         { key: "Water", label: "Water" },
         { key: "Distilled Water", label: "Distilled Water" },
@@ -504,10 +512,10 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
     group: "steam",
     unlock: EXCHANGER_UNLOCK[entry.name] ?? "EV",
     blurb: isExtreme
-      ? "Hot fluids to supercritical steam."
+      ? msg("Hot fluids to supercritical steam.")
       : entry.name.startsWith("Whakawhiti")
-        ? "32 heat exchangers in one block."
-        : "Hot fluids to steam; cold comes back.",
+        ? msg("32 heat exchangers in one block.")
+        : msg("Hot fluids to steam; cold comes back."),
     settings,
     compute(read): PowerModel {
       const fluidName = read.select("fluid");
@@ -545,11 +553,11 @@ function buildExchanger(entry: (typeof powerPlannerData.heatExchangers)[number])
         inputs: [liters(fluidName, used), liters(waterName, steamPerSecond / 160)],
         outputs,
         stats: [
-          stat("Steam", `${formatAmount(steamPerSecond / 20)} L/t ${grade}`),
-          stat("Threshold", `${formatAmount(threshold)} L/s`),
+          stat(msg("Steam"), `${formatAmount(steamPerSecond / 20)} L/t ${grade}`),
+          stat(msg("Threshold"), `${formatAmount(threshold)} L/s`),
         ],
         warnings:
-          intake > cap ? [`Intake is capped at ${formatAmount(cap)} L/s for this fluid.`] : undefined,
+          intake > cap ? [powerText(msg("Intake is capped at {cap} L/s for this fluid."), { cap: formatAmount(cap) })] : undefined,
       };
     },
   };

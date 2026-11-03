@@ -14,6 +14,7 @@ import type { Recipe, ResourceAmount } from "@/lib/model/types";
 import { ResourceIcon } from "@/components/nei/ResourceIcon";
 import { MinecraftTooltip } from "@/components/nei/MinecraftTooltip";
 import { useFactoryStore } from "@/store/factory-store";
+import { useT } from "@/lib/i18n";
 
 // One list fetch per kind and dataset version, shared by every picker.
 const cachedLists = new Map<string, { versionId: string; recipes: RecipeSummary[] }>();
@@ -27,12 +28,26 @@ export function recipeChoiceName(recipeName: string): string {
 /** Below this much room above the card the list goes under the bar instead. */
 const MENU_MIN_HEIGHT = 220;
 
+/** The list's own words, whole sentences so each language can inflect its noun. */
+export interface RecipeListPickerText {
+  /** The search box's placeholder: "Search crops or drops...". */
+  searchPlaceholder: string;
+  /** The search box's accessible name: "Search crops". */
+  searchLabel: string;
+  /** While the list loads: "Loading crops...". */
+  loading: string;
+  /** Nothing matches the search: "No crops match.". */
+  empty: string;
+  /** The list failed without a message of its own: "Could not load crops.". */
+  loadFailed: string;
+}
+
 export interface RecipeListPickerProps {
   /** Names the cached list ("crops", "mobs"). */
   cacheKey: string;
   load: (manifestUrl: string, version: DatasetVersion) => Promise<RecipeSummary[]>;
-  /** The plural the search box and messages use: "crops", "mobs". */
-  noun: string;
+  /** The search box's and messages' words. */
+  text: RecipeListPickerText;
   /** The opener's own selector: a press on it is "inside", so it can toggle. */
   toggleSelector: string;
   onPick: (recipe: Recipe) => void;
@@ -55,7 +70,7 @@ export interface RecipeListPickerProps {
 export function RecipeListPicker({
   cacheKey,
   load,
-  noun,
+  text,
   toggleSelector,
   onPick,
   onClose,
@@ -66,6 +81,7 @@ export function RecipeListPicker({
   hover,
   dimmed,
 }: RecipeListPickerProps) {
+  const t = useT();
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const selectedDatasetVersionId = useFactoryStore((state) => state.selectedDatasetVersionId);
@@ -99,7 +115,7 @@ export function RecipeListPicker({
       })
       .catch((cause) => {
         if (!cancelled) {
-          setError(cause instanceof Error ? cause.message : `Could not load ${noun}.`);
+          setError(cause instanceof Error ? cause.message : text.loadFailed);
         }
       })
       .finally(() => {
@@ -112,7 +128,7 @@ export function RecipeListPicker({
     };
     // `load` is a fresh closure every render; the list is keyed by kind and version.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, manifestUrl, version, noun]);
+  }, [cacheKey, manifestUrl, version]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -179,7 +195,7 @@ export function RecipeListPicker({
       onPick(recipe);
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load the pick.");
+      setError(cause instanceof Error ? cause.message : t("Could not load the pick."));
     }
   };
 
@@ -205,13 +221,13 @@ export function RecipeListPicker({
             onClose();
           }
         }}
-        placeholder={`Search ${noun} or drops...`}
+        placeholder={text.searchPlaceholder}
         className="mb-1 h-7 w-full border border-[var(--mc-33)] bg-[var(--mc-85)] px-2 text-[12px] font-bold text-[var(--mc-ink)] shadow-[inset_1px_1px_0_var(--mc-100),inset_-1px_-1px_0_var(--mc-54)] outline-none focus:border-cyan-700 focus:bg-[var(--mc-100)]"
-        aria-label={`Search ${noun}`}
+        aria-label={text.searchLabel}
       />
       {isLoading ? (
         <div className="flex items-center gap-2 px-2 py-3 text-[12px] font-bold text-[var(--mc-ink)]">
-          <LoaderCircle className="h-4 w-4 animate-spin" /> Loading {noun}...
+          <LoaderCircle className="h-4 w-4 animate-spin" /> {text.loading}
         </div>
       ) : error ? (
         <div className="px-2 py-3 text-[12px] font-bold text-[var(--mc-bad)]">{error}</div>
@@ -269,7 +285,7 @@ export function RecipeListPicker({
           })}
           {filtered.length === 0 ? (
             <div className="col-span-5 px-2 py-3 text-[12px] font-bold text-[var(--mc-ink-muted)]">
-              No {noun} match.
+              {text.empty}
             </div>
           ) : null}
         </div>

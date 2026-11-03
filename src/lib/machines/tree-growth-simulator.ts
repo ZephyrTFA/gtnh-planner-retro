@@ -1,5 +1,6 @@
 import treeData from "./data/tgs-trees.json";
 import { formulaNumber, knob, type FormulaLine } from "./formula-lines";
+import { msg, t, td, tPlural } from "@/lib/i18n";
 import type { MachineConfigControl, MachineConfigTierOption, Recipe, RecipeOutput } from "@/lib/model/types";
 import { GT_VOLTAGE_TIERS, getVoltageTierForEuT, getVoltageTierIndex } from "@/lib/model/tiers";
 
@@ -22,7 +23,27 @@ const TGS_SECONDS = TGS_TICKS / 20;
 export type TgsMode = "log" | "sapling" | "leaves" | "fruit";
 export const TGS_MODES: TgsMode[] = ["log", "sapling", "leaves", "fruit"];
 const MODE_MULTIPLIER: Record<TgsMode, number> = { log: 5, sapling: 5, leaves: 2, fruit: 1 };
-const MODE_PLURAL: Record<TgsMode, string> = { log: "logs", sapling: "saplings", leaves: "leaves", fruit: "fruit" };
+/** Each mode's product, as its formula line is labelled. */
+const MODE_PLURAL: Record<TgsMode, string> = { log: msg("logs"), sapling: msg("saplings"), leaves: msg("leaves"), fruit: msg("fruit") };
+const MODE_TOOL_LABEL: Record<TgsMode, string> = {
+  log: msg("Logs tool"),
+  sapling: msg("Saplings tool"),
+  leaves: msg("Leaves tool"),
+  fruit: msg("Fruit tool"),
+};
+/** A tool's hint by mode: [hand tool, electric tool]; {multiplier} is the tool's. */
+const MODE_TOOL_DETAIL: Record<TgsMode, [string, string]> = {
+  log: [msg("{multiplier}x logs."), msg("{multiplier}x logs; 100 EU of its own charge a use.")],
+  sapling: [msg("{multiplier}x saplings."), msg("{multiplier}x saplings; 100 EU of its own charge a use.")],
+  leaves: [msg("{multiplier}x leaves."), msg("{multiplier}x leaves; 100 EU of its own charge a use.")],
+  fruit: [msg("{multiplier}x fruit."), msg("{multiplier}x fruit; 100 EU of its own charge a use.")],
+};
+const MODE_NO_TOOL: Record<TgsMode, string> = {
+  log: msg("No logs: a mode makes nothing without its tool."),
+  sapling: msg("No saplings: a mode makes nothing without its tool."),
+  leaves: msg("No leaves: a mode makes nothing without its tool."),
+  fruit: msg("No fruit: a mode makes nothing without its tool."),
+};
 
 export interface TgsForestry {
   species: string;
@@ -126,7 +147,7 @@ function toolControl(mode: TgsMode): MachineConfigControl {
       resource: configResource(
         `${id}_${tool.key}`,
         tool.label,
-        `${tool.multiplier}x ${MODE_PLURAL[mode]}${tool.electric ? "; 100 EU of its own charge a use" : ""}.`,
+        td(MODE_TOOL_DETAIL[mode][tool.electric ? 1 : 0], { multiplier: tool.multiplier }),
         tool.itemId,
       ),
     })),
@@ -137,20 +158,20 @@ function toolControl(mode: TgsMode): MachineConfigControl {
       resource: configResource(
         `${id}_multitool`,
         MULTITOOL.label,
-        "1x in every mode; worn once a run for each mode it serves.",
+        msg("1x in every mode; worn once a run for each mode it serves."),
         MULTITOOL.itemId,
       ),
     },
     {
       key: "none",
-      label: "No tool",
+      label: msg("No tool"),
       outputMultiplier: 0,
-      resource: configResource(`${id}_none`, "No tool", `No ${MODE_PLURAL[mode]}: a mode makes nothing without its tool.`),
+      resource: configResource(`${id}_none`, msg("No tool"), td(MODE_NO_TOOL[mode])),
     },
   ];
   return {
     id,
-    label: `${MODE_PLURAL[mode][0].toUpperCase()}${MODE_PLURAL[mode].slice(1)} tool`,
+    label: MODE_TOOL_LABEL[mode],
     minimumKey: TGS_TOOLS[mode][0].key,
     defaultKey: TGS_TOOLS[mode][0].key,
     tiers: tools,
@@ -175,7 +196,7 @@ function geneControl(id: string, label: string, alleles: Array<[string, number]>
     tiers: alleles.map(([name, value]) => ({
       key: name.toLowerCase(),
       label: `${name} (${value})`,
-      resource: configResource(`${id}_${name}`, `${label}: ${name}`, `${what} ${value}.`),
+      resource: configResource(`${id}_${name}`, `${label}: ${name}`, td(what, { value })),
     })),
   } satisfies MachineConfigControl;
 }
@@ -188,13 +209,13 @@ export function getTgsControls(recipe: Partial<Pick<Recipe, "outputs" | "machine
   const forestry = match?.tree.forestry;
   if (forestry) {
     if (modes.includes("log")) {
-      controls.push(geneControl(TGS_HEIGHT, "Height", HEIGHTS, forestry.height, "The sapling's height gene:"));
+      controls.push(geneControl(TGS_HEIGHT, msg("Height"), HEIGHTS, forestry.height, msg("The sapling's height gene: {value}.")));
     }
     if (modes.includes("sapling")) {
-      controls.push(geneControl(TGS_FERTILITY, "Saplings", FERTILITIES, forestry.fertility, "The sapling's fertility gene:"));
+      controls.push(geneControl(TGS_FERTILITY, msg("Saplings"), FERTILITIES, forestry.fertility, msg("The sapling's fertility gene: {value}.")));
     }
     if (modes.includes("fruit")) {
-      controls.push(geneControl(TGS_YIELD, "Yield", YIELDS, forestry.yield, "The sapling's yield gene:"));
+      controls.push(geneControl(TGS_YIELD, msg("Yield"), YIELDS, forestry.yield, msg("The sapling's yield gene: {value}.")));
     }
   }
   return controls;
@@ -375,15 +396,15 @@ export function getTgsFormulas(
 ): FormulaLine[] {
   const match = matchTgsTree(recipe);
   const pool = voltageEuT * amps;
-  const t = tgsTier(pool);
-  const mult = tgsTierMultiplier(t);
+  const tier = tgsTier(pool);
+  const mult = tgsTierMultiplier(tier);
   const lines: FormulaLine[] = [
     {
-      label: "tier",
+      label: t("tier"),
       math: [knob(formulaNumber(voltageEuT), "tier"), " V · ", knob(formulaNumber(amps), "amps"), " A"],
-      result: `${TIER_NAMES[t]}, t = ${t}`,
+      result: `${TIER_NAMES[tier]}, t = ${tier}`,
     },
-    { label: "mult", math: [`2·${t}`, { sup: "2" }, `−2·${t}+5`], result: `${mult}x` },
+    { label: t("mult"), math: [`2·${tier}`, { sup: "2" }, `−2·${tier}+5`], result: `${mult}x` },
   ];
   if (!match) return lines;
   const parsed = getTgsSettings(settings, match.tree);
@@ -392,22 +413,24 @@ export function getTgsFormulas(
     const base = forestry.base;
     if (match.modes.includes("log") && base.log !== undefined) {
       const height = parsed.height ?? forestry.height;
+      const product = tgsForestryProduct(forestry, "log", parsed);
       lines.push({
-        label: "height",
+        label: t("height"),
         math: [`${base.log}·(3·(`, knob(height, TGS_HEIGHT), `−1)+1)·${forestry.girth}`],
-        result: `${tgsForestryProduct(forestry, "log", parsed)} logs`,
+        // English says "logs" whatever the count; other languages decline it.
+        result: tPlural(product ?? 0, "{count} logs", "{count} logs", { count: String(product) }),
       });
     }
     if (match.modes.includes("sapling") && base.sapling !== undefined) {
       lines.push({
-        label: "fertility",
+        label: t("fertility"),
         math: [`max(1, ⌊${base.sapling}·`, knob(parsed.fertility ?? forestry.fertility, TGS_FERTILITY), "·10⌋)"],
         result: `${tgsForestryProduct(forestry, "sapling", parsed)}`,
       });
     }
     if (match.modes.includes("fruit") && base.fruit !== undefined) {
       lines.push({
-        label: "yield",
+        label: t("yield"),
         math: [`max(1, ⌊${base.fruit}·`, knob(parsed.yield ?? forestry.yield, TGS_YIELD), "·10⌋)"],
         result: `${tgsForestryProduct(forestry, "fruit", parsed)}`,
       });
@@ -419,24 +442,24 @@ export function getTgsFormulas(
     const tool = parsed.tools[mode];
     const nei = tgsNeiAmount(match.tree, mode, parsed);
     if (!tool) {
-      lines.push({ label: MODE_PLURAL[mode], math: ["no tool"], result: "0/s", tone: "bad" });
+      lines.push({ label: td(MODE_PLURAL[mode]), math: [t("no tool")], result: "0/s", tone: "bad" });
       continue;
     }
     tools += 1;
     if ("electric" in tool && tool.electric) electric += 1;
     const perRun = nei * mult * tool.multiplier;
     lines.push({
-      label: MODE_PLURAL[mode],
+      label: td(MODE_PLURAL[mode]),
       math: [`${nei}·${mult}·`, knob(`${tool.multiplier}`, TGS_TOOL_CONTROL[mode]), ` ÷ ${TGS_SECONDS}s`],
       result: `${formulaNumber(perRun / TGS_SECONDS)}/s`,
     });
   }
-  lines.push({ label: "power", math: [`${formulaNumber(GT_VOLTAGE_TIERS[t].maxEuT)}·30/32`], result: `${formulaNumber(tgsEuPerTick(t))} EU/t` });
+  lines.push({ label: t("power"), math: [`${formulaNumber(GT_VOLTAGE_TIERS[tier].maxEuT)}·30/32`], result: `${formulaNumber(tgsEuPerTick(tier))} EU/t` });
   if (tools > 0) {
     lines.push({
-      label: "wear",
-      math: [`${tools} tool${tools === 1 ? "" : "s"}, 1 use ÷ ${TGS_SECONDS}s`],
-      result: electric > 0 ? `720/h; electric 20 EU/s` : "720 uses/h",
+      label: t("wear"),
+      math: [tPlural(tools, "{count} tool, 1 use ÷ {seconds}s", "{count} tools, 1 use ÷ {seconds}s", { count: tools, seconds: TGS_SECONDS })],
+      result: electric > 0 ? t("720/h; electric 20 EU/s") : t("720 uses/h"),
     });
   }
   return lines;

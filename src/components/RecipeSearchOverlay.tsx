@@ -1,6 +1,7 @@
 "use client";
 
 import { useItemNamesVersion } from "@/lib/item-names";
+import { msg, td, useT } from "@/lib/i18n";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 
 import {
@@ -63,7 +64,7 @@ import {
 } from "@/lib/power/power-search";
 import { getPowerMachineIcon, resolvePowerResource } from "@/lib/power/planner-data";
 import { formatAmount } from "@/lib/power/sources/helpers";
-import { buildPowerSettingsReader, type PowerSourceDefinition } from "@/lib/power/types";
+import { buildPowerSettingsReader, powerSourceBlurb, type PowerSourceDefinition } from "@/lib/power/types";
 import { useFactoryStore } from "@/store/factory-store";
 
 /**
@@ -96,14 +97,14 @@ const RATE_VIEW_UNITS: Record<TimeRateUnit, { multiplier: number; per: string }>
 };
 
 const RATE_VIEW_CHOICES: Array<{ view: RateView; label: string; title: string }> = [
-  { view: "recipe", label: "Recipe", title: "Amounts per craft, as the recipe is written" },
+  { view: "recipe", label: msg("Recipe"), title: "Amounts per craft, as the recipe is written" },
   { view: "tick", label: "/t", title: "Rates per tick, one machine at full speed" },
   { view: "second", label: "/s", title: "Rates per second, one machine at full speed" },
   { view: "minute", label: "/min", title: "Rates per minute, one machine at full speed" },
   { view: "hour", label: "/hr", title: "Rates per hour, one machine at full speed" },
   {
     view: "ratio",
-    label: "Ratio",
+    label: msg("Ratio"),
     title: "Amounts reduced to lowest terms; time plays no part",
   },
   {
@@ -277,6 +278,7 @@ export function RecipeSearchOverlay({
   /** SHARED MACHINES: the search is pinned to one card's machine; only its recipes show and the add joins that card. */
   machinePin?: RecipeBrowserMachinePin;
 }) {
+  const t = useT();
   useItemNamesVersion();
   const machineIconEntries = useMachineHandlerIconEntries();
   const recipeMapIcons = useRecipeMapIcons();
@@ -867,7 +869,7 @@ export function RecipeSearchOverlay({
   const machineChipRow = (
     <>
       <MachineChip
-        label="All"
+        label={t("All")}
         count={totalAcrossMaps}
         active={allRecipeMapsSelected && (powerHits.length === 0 || generatorsSelected)}
         onClick={() => {
@@ -882,7 +884,7 @@ export function RecipeSearchOverlay({
       />
       {powerHits.length > 0 ? (
         <MachineChip
-          label="Generators"
+          label={t("Generators")}
           count={powerHits.length}
           active={generatorsSelected}
           onClick={toggleGenerators}
@@ -909,7 +911,7 @@ export function RecipeSearchOverlay({
         type="button"
         onClick={onBack}
         disabled={!canGoBack}
-        aria-label="Back to the previous search"
+        aria-label={t("Back to the previous search")}
         className={[
           "flex shrink-0 items-center justify-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] text-[var(--mc-ink)]",
           compact ? "h-10 w-10" : "h-9 w-9",
@@ -922,7 +924,7 @@ export function RecipeSearchOverlay({
         type="button"
         onClick={onForward}
         disabled={!canGoForward}
-        aria-label="Forward to the next search"
+        aria-label={t("Forward to the next search")}
         className={[
           "flex shrink-0 items-center justify-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] text-[var(--mc-ink)]",
           compact ? "h-10 w-10" : "h-9 w-9",
@@ -941,7 +943,7 @@ export function RecipeSearchOverlay({
       {RATE_VIEW_CHOICES.map((choice) => (
         <OpPill
           key={choice.view}
-          label={choice.label}
+          label={td(choice.label)}
           active={rateView === choice.view}
           gold={choice.view === "eu"}
           onClick={() => {
@@ -967,7 +969,7 @@ export function RecipeSearchOverlay({
       <input
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="Filter by name..."
+        placeholder={t("Filter by name...")}
         className="min-w-0 flex-1 bg-transparent text-neutral-100 outline-none placeholder:text-neutral-500"
       />
       {query ? (
@@ -975,7 +977,7 @@ export function RecipeSearchOverlay({
           type="button"
           onClick={() => onQueryChange("")}
           className="text-neutral-400 hover:text-white"
-          aria-label="Clear the name filter"
+          aria-label={t("Clear the name filter")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -989,13 +991,13 @@ export function RecipeSearchOverlay({
         playBoardSound("tick");
         onMaxTierChange(event.target.value as TierFilter);
       }}
-      aria-label="Maximum machine tier"
+      aria-label={t("Maximum machine tier")}
       className={[
         "shrink-0 border-2 border-[var(--mc-33)] bg-[#17191d] px-1.5 text-sm text-neutral-100 outline-none shadow-[inset_2px_2px_0_#30343b,inset_-2px_-2px_0_#050607]",
         compact ? "h-7 w-[92px] text-[12px]" : "h-9 w-28",
       ].join(" ")}
     >
-      <option value="all">{compact ? "Any tier" : "All tiers"}</option>
+      <option value="all">{compact ? t("Any tier") : t("All tiers")}</option>
       {GT_VOLTAGE_TIERS.map((entry) => (
         <option key={entry.tier} value={entry.tier}>
           ≤ {entry.tier}
@@ -1006,7 +1008,7 @@ export function RecipeSearchOverlay({
   const closeButton = (
     <button
       type="button"
-      aria-label="Close recipe search"
+      aria-label={t("Close recipe search")}
       onClick={closeSearch}
       className={[
         "flex shrink-0 cursor-pointer items-center justify-center border-2 border-[var(--mc-33)] bg-[var(--mc-61)] text-[var(--mc-ink)] hover:bg-[var(--mc-85)]",
@@ -1046,7 +1048,7 @@ export function RecipeSearchOverlay({
       <section
         ref={panelRef}
         className="pointer-events-auto relative flex flex-col font-mono"
-        aria-label="Recipe search"
+        aria-label={t("Recipe search")}
         style={{
           width: sheet ? "100%" : `min(${layout.width}px, 100%)`,
           height: sheet ? "100%" : `min(${layout.height}px, 100%)`,
@@ -1121,7 +1123,7 @@ export function RecipeSearchOverlay({
               </div>
             ) : clauses.length === 0 && !query.trim() ? (
               <div className="grid min-h-[260px] place-items-center border-2 border-[var(--mc-47)] bg-[var(--mc-71)] p-3 text-sm shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
-                Add an item to either side of the card below.
+                {t("Add an item to either side of the card below.")}
               </div>
             ) : (
               <>
@@ -1131,7 +1133,7 @@ export function RecipeSearchOverlay({
                   // header folds them, and their chip up top agrees.
                   <section className="mb-3">
                     <MachineSectionHeader
-                      label="Generators"
+                      label={t("Generators")}
                       count={powerHits.length}
                       iconNode={<Zap className="h-6 w-6 fill-current text-amber-400" aria-hidden />}
                       open={generatorsSelected}
@@ -1159,7 +1161,7 @@ export function RecipeSearchOverlay({
                             onCardMenu={(event) =>
                               openCardMenu(event, {
                                 label: hit.source.name,
-                                machineLabel: "generators",
+                                machineLabel: t("generators"),
                                 add: () => placePowerHit(hit),
                                 hide: hideGenerators,
                               })
@@ -1179,7 +1181,7 @@ export function RecipeSearchOverlay({
                         : "repeat(auto-fill, minmax(480px, 1fr))",
                     }}
                     role="status"
-                    aria-label="Loading recipes"
+                    aria-label={t("Loading recipes")}
                   >
                     {Array.from({ length: sheet ? 4 : 9 }, (_, index) => (
                       <SkeletonResultCard key={index} delay={index * 110} />
@@ -1189,12 +1191,12 @@ export function RecipeSearchOverlay({
                   powerHits.length > 0 && generatorsSelected ? null : (
                     <div className="grid min-h-[260px] place-items-center border-2 border-[var(--mc-47)] bg-[var(--mc-71)] p-3 text-sm shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
                       {asksWhatTakesPower
-                        ? "Nearly every machine takes power, so that list would be the whole pack. Search for what makes power instead."
+                        ? t("Nearly every machine takes power, so that list would be the whole pack. Search for what makes power instead.")
                         : machinePin && clauses.length === 0 && query.trim() === ""
-                          ? `Pick an item or type a name. Only recipes the ${machinePin.label} runs will show.`
+                          ? t("Pick an item or type a name. Only recipes the {machine} runs will show.", { machine: machinePin.label })
                           : machinePin
-                            ? `Nothing the ${machinePin.label} runs matches.`
-                            : "No matching recipes."}
+                            ? t("Nothing the {machine} runs matches.", { machine: machinePin.label })
+                            : t("No matching recipes.")}
                     </div>
                   )
                 ) : (
@@ -1262,7 +1264,7 @@ export function RecipeSearchOverlay({
                                 <div
                                   className="contents"
                                   role="status"
-                                  aria-label={`Loading ${section.label} recipes`}
+                                  aria-label={t("Loading {machine} recipes", { machine: section.label })}
                                 >
                                   {Array.from(
                                     { length: Math.min(sheet ? 2 : 3, awaited) },
@@ -1313,12 +1315,12 @@ export function RecipeSearchOverlay({
                     </span>
                     <span className="w-full truncate text-[13px] font-bold">{machinePin.label}</span>
                     <span className="text-[11px] uppercase tracking-wide text-[var(--mc-ink-muted)]">
-                      Pinned
+                      {t("Pinned")}
                     </span>
                   </div>
                 ) : null}
                 <StencilSide
-                  label="Takes"
+                  label={t("Takes")}
                   role="takes"
                   sideClauses={takesClauses}
                   clauses={clauses}
@@ -1336,7 +1338,7 @@ export function RecipeSearchOverlay({
                     playBoardSound("tick");
                     onSwapSides();
                   }}
-                  aria-label="Swap the takes and makes sides"
+                  aria-label={t("Swap the takes and makes sides")}
                   className="group flex w-14 shrink-0 items-center justify-center self-center border-2 border-transparent text-[var(--mc-ink-muted)] hover:border-[var(--mc-33)] hover:bg-[var(--mc-71)] hover:text-[var(--mc-ink)] compact:w-9"
                   style={{ height: "72px" }}
                 >
@@ -1352,7 +1354,7 @@ export function RecipeSearchOverlay({
                   <ArrowLeftRight aria-hidden className="hidden h-7 w-7 group-hover:block" />
                 </button>
                 <StencilSide
-                  label="Makes"
+                  label={t("Makes")}
                   role="makes"
                   sideClauses={makesClauses}
                   clauses={clauses}
@@ -1426,16 +1428,16 @@ export function RecipeSearchOverlay({
                 {cardMenu.label}
               </div>
               {[
-                ...(!isReadOnly ? [{ label: "Add to board", act: cardMenu.add }] : []),
-                { label: `Hide ${cardMenu.machineLabel}`, act: cardMenu.hide },
+                ...(!isReadOnly ? [{ label: t("Add to board"), act: cardMenu.add }] : []),
+                { label: t("Hide {target}", { target: cardMenu.machineLabel }), act: cardMenu.hide },
                 ...(cardMenu.only
-                  ? [{ label: `Only ${cardMenu.machineLabel}`, act: cardMenu.only }]
+                  ? [{ label: t("Only {target}", { target: cardMenu.machineLabel }), act: cardMenu.only }]
                   : []),
                 ...(allRecipeMapsSelected
                   ? []
                   : [
                       {
-                        label: "Show every machine",
+                        label: t("Show every machine"),
                         act: () => {
                           playBoardSound("tick");
                           onToggleAllRecipeMaps();
@@ -1470,19 +1472,19 @@ export function RecipeSearchOverlay({
               {(
                 [
                   {
-                    label: "Find what makes it",
+                    label: t("Find what makes it"),
                     act: () => onBrowseResource({ ...chipMenu.resource, amount: 1 }, "recipes"),
                   },
                   {
-                    label: "Find what uses it",
+                    label: t("Find what uses it"),
                     act: () => onBrowseResource({ ...chipMenu.resource, amount: 1 }, "uses"),
                   },
                   {
-                    label: "Add to takes",
+                    label: t("Add to takes"),
                     act: () => addResourceClause(chipMenu.resource, "takes"),
                   },
                   {
-                    label: "Add to makes",
+                    label: t("Add to makes"),
                     act: () => addResourceClause(chipMenu.resource, "makes"),
                   },
                 ] as const
@@ -1503,7 +1505,7 @@ export function RecipeSearchOverlay({
                 <>
                   <div className="mx-2 my-1 border-t-2 border-[var(--mc-47)]" />
                   <div className="px-2 py-1 text-[11px] font-bold text-[var(--mc-ink-muted)]">
-                    This slot also takes
+                    {t("This slot also takes")}
                   </div>
                   <div className="recipe-search-scroll max-h-[180px] overflow-y-auto">
                     {chipMenu.picker.faces.map((face) => (
@@ -1587,6 +1589,7 @@ function StencilSide({
   registerListRef: (role: RecipeQueryRole, element: HTMLDivElement | null) => void;
   onOpenPicker: () => void;
 }) {
+  const t = useT();
   useItemNamesVersion();
   const dragActive = drag?.active ?? false;
   const layoutClauses = dragActive
@@ -1609,17 +1612,17 @@ function StencilSide({
         </span>
         <span className="flex items-center border-2 border-[var(--mc-47)] bg-[var(--mc-25)]">
           <OpPill
-            label="Any"
+            label={t("Any")}
             active={op === "any"}
             onClick={() => changeOp("any")}
           />
           <OpPill
-            label="All"
+            label={t("All")}
             active={op === "all"}
             onClick={() => changeOp("all")}
           />
           <OpPill
-            label="Only"
+            label={t("Only")}
             active={op === "only"}
             onClick={() => changeOp("only")}
           />
@@ -1664,7 +1667,7 @@ function StencilSide({
                 type="button"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onRemove(index)}
-                aria-label={`Remove ${displayNameFor(clause.id, clause.displayName ?? clause.id)} from the search`}
+                aria-label={t("Remove {name} from the search", { name: displayNameFor(clause.id, clause.displayName ?? clause.id) })}
                 className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--mc-ink-muted)] hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
@@ -1676,13 +1679,13 @@ function StencilSide({
           type="button"
           onClick={onOpenPicker}
           aria-label={
-            role === "takes" ? "Add an input to the search" : "Add an output to the search"
+            role === "takes" ? t("Add an input to the search") : t("Add an output to the search")
           }
           style={{ transform: gapAt !== undefined ? `translateY(${pitch}px)` : undefined }}
           className="flex h-10 w-full shrink-0 items-center justify-center gap-1.5 border-2 border-dashed border-[var(--mc-47)] px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--mc-ink-muted)] transition-transform duration-150 hover:border-[var(--mc-33)] hover:text-[var(--mc-ink)]"
         >
           <Plus className="h-3.5 w-3.5" />
-          {role === "takes" ? "Input" : "Output"}
+          {role === "takes" ? t("Input") : t("Output")}
         </button>
       </div>
     </div>
@@ -1890,6 +1893,7 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
   /** Right click (or a held press on the header): the card's menu. */
   onCardMenu: (event: ReactMouseEvent, machineLabel: string, add: () => void) => void;
 }) {
+  const t = useT();
   useItemNamesVersion();
   const preview = useMemo(
     () => contextualizePreviewRecipe(summaryToPreviewRecipe(recipe), contextResource),
@@ -1915,7 +1919,7 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
   const minimumTier = isAutoWorkbench ? primary.minimumTier : recipe.minimumTier;
   const seconds = durationTicks / 20;
   const secondsText = `${formatRate(seconds, seconds >= 10 ? 0 : 1)}s`;
-  const powerText = eut > 0 ? `${eut.toLocaleString()} EU/t` : "no power";
+  const powerText = eut > 0 ? `${eut.toLocaleString()} EU/t` : t("no power");
   const tierColor =
     eut > 0 ? GT_TIER_COLORS[minimumTier as Exclude<MachineTier, "DEMO">] : undefined;
   // Crafting-grid recipes arrive one slot at a time, so identical items merge
@@ -2005,7 +2009,7 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
   }, [cancelPrefetch, onPrefetch, recipe.id]);
   useEffect(() => cancelPrefetch, [cancelPrefetch]);
   const openMenu = (event: ReactMouseEvent) =>
-    onCardMenu(event, `${machineLabel} recipes`, () => void onAdd(recipe, undefined, inputPicks));
+    onCardMenu(event, t("{machine} recipes", { machine: machineLabel }), () => void onAdd(recipe, undefined, inputPicks));
   const headPress = useLongPress(openMenu);
 
   return (
@@ -2055,9 +2059,9 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
         </span>
         <button
           type="button"
-          aria-label="Add recipe node"
+          aria-label={t("Add recipe node")}
           disabled={isReadOnly}
-          title={isReadOnly ? "Open a copy to add recipes" : undefined}
+          title={isReadOnly ? t("Open a copy to add recipes") : undefined}
           onClick={(event) => {
             event.stopPropagation();
             void onAdd(recipe, undefined, inputPicks);
@@ -2087,9 +2091,9 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
                 resource={chip.resource}
                 amountText={
                   isFreeRecipeInput(chip.raw) && !isControllerSlotInput(chip.raw)
-                    ? { text: "FREE" }
+                    ? { text: t("FREE") }
                     : chip.raw.consumed === false
-                    ? { text: "NC" }
+                    ? { text: t("NC") }
                     : rateView === "eu"
                       ? formatChipEnergy(chip.resource, "input", eut, durationTicks)
                       : formatChipAmount(chip.resource, rateView, durationTicks, ratioDivisor)
@@ -2159,7 +2163,7 @@ function powerDialNote(
     return undefined;
   }
   const option = setting.options.find((entry) => entry.key === optionKey);
-  return option ? `${setting.label}: ${option.label}` : undefined;
+  return option ? `${td(setting.label)}: ${td(option.label)}` : undefined;
 }
 
 /** Per-second power flows in the card's chosen reading; no craft, no ratio. */
@@ -2200,6 +2204,7 @@ function PowerHitCard({
   onHideMachine: () => void;
   onCardMenu: (event: ReactMouseEvent) => void;
 }) {
+  const t = useT();
   const tilePress = useLongPress(onCardMenu);
   const icon = getPowerMachineIcon(hit.source.id);
   const tierColor = hit.source.unlock
@@ -2219,7 +2224,7 @@ function PowerHitCard({
   const dials = Object.entries(hit.settings ?? {})
     .map(([settingId, optionKey]) => powerDialNote(hit.source, settingId, optionKey))
     .filter((note): note is string => note !== undefined);
-  const stats = dials.length > 0 ? dials.join(" · ") : hit.source.blurb;
+  const stats = dials.length > 0 ? dials.join(" · ") : powerSourceBlurb(hit.source);
   const flowChip = (direction: "takes" | "makes", flow: { name: string; perSecond: number }) => {
     const resolved = resolvePowerResource(flow.name);
     if (!resolved) {
@@ -2256,7 +2261,7 @@ function PowerHitCard({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          aria-label="Hide the generators"
+          aria-label={t("Hide the generators")}
           {...tilePress.handlers}
           onClick={(event) => {
             event.stopPropagation();
@@ -2312,7 +2317,7 @@ function PowerHitCard({
         </span>
         <button
           type="button"
-          aria-label={`Add ${hit.source.name}`}
+          aria-label={t("Add {name}", { name: hit.source.name })}
           onClick={(event) => {
             event.stopPropagation();
             onPlace();

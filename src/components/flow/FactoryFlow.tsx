@@ -401,6 +401,7 @@ import { getSetupRules } from "@/lib/model/setup-rules";
 import { nearestFreeSpot, type PlacementRect, type PlacementRegion } from "./board-placement";
 import { registerBoardResize, type BoardResizeDraft } from "./board-resize";
 import { RESOURCE_DRAG_TYPE, readResourceDrag } from "@/lib/resource-drag";
+import { msg, t, td, tPlural, useLanguage, useT } from "@/lib/i18n";
 
 /** How long after the last camera step the settled camera work runs. */
 const MOVE_END_SETTLE_MS = 120;
@@ -465,12 +466,12 @@ const BOARD_GRID_SIZE = BOARD_GRID;
 /** Stable identity: a fresh array each render would re-init React Flow's snap. */
 const BOARD_GRID_SNAP: [number, number] = [BOARD_GRID_SIZE, BOARD_GRID_SIZE];
 const CANVAS_PATTERN_LABEL: Record<CanvasPattern, string> = {
-  dots: "Dots",
-  lines: "Grid lines",
-  cross: "Crosses",
-  ruled: "Ruled lines",
-  graph: "Graph paper",
-  none: "Blank",
+  dots: msg("Dots"),
+  lines: msg("Grid lines"),
+  cross: msg("Crosses"),
+  ruled: msg("Ruled lines"),
+  graph: msg("Graph paper"),
+  none: msg("Blank"),
 };
 
 /** One glyph per background pattern, for the view menu's pattern row. */
@@ -1549,7 +1550,7 @@ function getMissingRecipePlaceholder(recipeId: string) {
 
   const placeholder = {
     id: recipeId,
-    name: "Missing recipe",
+    name: t("Missing recipe"),
     machineType: "Unknown",
     minimumTier: "DEMO",
     durationTicks: 20,
@@ -1742,7 +1743,7 @@ let publishedSolidCardIds = new Set<string>();
  */
 let voidDropWillSpawn = false;
 /** Why a void release does nothing, for the ghost's reason card. */
-let voidDropReason = "Drawer already exists";
+let voidDropReason = msg("Drawer already exists");
 
 /**
  * The exact drawer a void release would spawn, for the ghost to render with
@@ -1872,6 +1873,7 @@ interface ResolvedResourceHandle {
 }
 
 export function FactoryFlow() {
+  const t = useT();
   const isReadOnly = useFactoryStore((state) => state.isReadOnly);
   const project = useFactoryStore((state) => state.project);
   const result = useFactoryStore((state) => state.lastResult);
@@ -4055,13 +4057,13 @@ export function FactoryFlow() {
         spawnSide,
         spawnHandleId,
       );
-      voidDropReason = "Drawer already exists";
+      voidDropReason = msg("Drawer already exists");
       // POOL MODE: no sources (the pool feeds every input), and ONE product
       // drawer per resource - a second would only be the same ask twice.
       if (project.poolMode) {
         if (spawnSide === "input") {
           voidDropWillSpawn = false;
-          voidDropReason = "Pool mode feeds inputs by itself";
+          voidDropReason = msg("Pool mode feeds inputs by itself");
         } else if (
           (project.storages ?? []).some(
             (storage) =>
@@ -4071,7 +4073,7 @@ export function FactoryFlow() {
           )
         ) {
           voidDropWillSpawn = false;
-          voidDropReason = "You already have a product drawer for this";
+          voidDropReason = msg("You already have a product drawer for this");
         }
       }
       voidDropGhostStorage = {
@@ -4510,7 +4512,7 @@ export function FactoryFlow() {
             }
           }
         } catch (error) {
-          failure = error instanceof Error ? error.message : "Worksheet image export failed.";
+          failure = error instanceof Error ? error.message : t("Worksheet image export failed.");
         } finally {
           dispatchImageExportComplete(requestId, capture, failure);
         }
@@ -4656,7 +4658,7 @@ export function FactoryFlow() {
 
         const imageBlob = await toBlob(viewportElement, { ...options, pixelRatio });
         if (!imageBlob) {
-          failure = "The render came back empty.";
+          failure = t("The render came back empty.");
           return;
         }
 
@@ -4671,7 +4673,7 @@ export function FactoryFlow() {
         const pngBlob = await embedProjectJsonInPng(imageBlob, projectJson, background);
         downloadBlob(pngBlob, `${fileName}.png`);
       } catch (error) {
-        failure = error instanceof Error ? error.message : "Plan image export failed.";
+        failure = error instanceof Error ? error.message : t("Plan image export failed.");
         console.error(failure);
       } finally {
         restoreAtlasCells?.();
@@ -4685,7 +4687,7 @@ export function FactoryFlow() {
         dispatchImageExportComplete(requestId, capture, failure);
       }
     },
-    [flowNodes, canvasTheme.base],
+    [flowNodes, canvasTheme.base, t],
   );
 
   const exportFlowImage = useCallback(
@@ -5313,7 +5315,7 @@ export function FactoryFlow() {
       return;
     }
     arrangeRunningRef.current = true;
-    setArrangeProgress({ seq: 0, step: 0, stage: "Reading the board", done: 0, total: 1 });
+    setArrangeProgress({ seq: 0, step: 0, stage: msg("Reading the board"), done: 0, total: 1 });
     const state = useFactoryStore.getState();
     // Unless Keep boards is on, every board is dissolved first (members
     // surface where the frame stood) and the arrange lays out one flat set
@@ -5946,10 +5948,10 @@ export function FactoryFlow() {
           size: { width, height },
         });
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : "Image upload failed.");
+        window.alert(error instanceof Error ? error.message : t("Image upload failed."));
       }
     },
-    [activeColorTag, addAnnotation],
+    [activeColorTag, addAnnotation, t],
   );
 
   // Ctrl+V with a picture on the OS clipboard drops it on the board. Real
@@ -6412,13 +6414,13 @@ export function FactoryFlow() {
           data-timelapse-chip
           className="absolute bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded border border-line-strong bg-surface/90 px-2.5 py-1.5 text-xs text-fg-muted shadow-lg"
         >
-          <span>Build timelapse</span>
+          <span>{t("Build timelapse")}</span>
           <button
             type="button"
             onClick={() => stopBoardTimelapse()}
             className="rounded border border-line px-1.5 py-0.5 hover:border-line-strong hover:text-fg"
           >
-            Stop
+            {t("Stop")}
           </button>
         </div>
       ) : null}
@@ -6432,11 +6434,12 @@ export function FactoryFlow() {
           ].join(" ")}
         >
           {overwritePicking.create ? (
-            <>Pick a pocket on the board. It lands on your shelf. Esc cancels.</>
+            <>{t("Pick a pocket on the board. It lands on your shelf. Esc cancels.")}</>
           ) : (
             <>
-              Pick a pocket on the board. It becomes &ldquo;{overwritePicking.name}&rdquo;. Esc
-              cancels.
+              {t("Pick a pocket on the board. It becomes “{name}”. Esc cancels.", {
+                name: overwritePicking.name,
+              })}
             </>
           )}
         </div>
@@ -6489,6 +6492,7 @@ const UnwiredNotice = memo(function UnwiredNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const unwired = useMemo(
@@ -6502,19 +6506,22 @@ const UnwiredNotice = memo(function UnwiredNotice({
 
   return (
     <div className="unwired-notice nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#c8d2e0] bg-[#2b3038] px-2 py-1.5 font-mono text-[12px] text-[#e8ecf2] shadow-[inset_2px_2px_0_#5d6877,inset_-2px_-2px_0_#171a1f,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#eef2f8]">NOT WIRED UP</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#eef2f8]">{t("NOT WIRED UP")}</span>
       {/* One line, always: the cards explain themselves. */}
       <span className="text-[#c2cad6]">
-        {unwired.length === 1
-          ? "1 machine has a slot with nothing on it"
-          : `${unwired.length} machines have slots with nothing on them`}
+        {tPlural(
+          unwired.length,
+          "{count} machine has a slot with nothing on it",
+          "{count} machines have slots with nothing on them",
+          { count: unwired.length },
+        )}
       </span>
       <button
         type="button"
         onClick={() => onShow(unwired)}
         className="shrink-0 border border-[#c8d2e0] bg-[#454f5e] px-2 py-0.5 font-bold text-[#ffffff] hover:bg-[#566275]"
       >
-        Show me
+        {t("Show me")}
       </button>
     </div>
   );
@@ -6532,6 +6539,7 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
@@ -6548,11 +6556,11 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
 
   return (
     <div className="nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#c34c4c] bg-[#2b1c1c] px-2 py-1.5 font-mono text-[12px] text-[#f2e4e4] shadow-[inset_2px_2px_0_#7a3636,inset_-2px_-2px_0_#1a1010,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#ff9c9c]">DEAD LOOP</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#ff9c9c]">{t("DEAD LOOP")}</span>
       <span className="text-[#e6d2d2]">{story.short}</span>
       {spirals.length > 1 ? (
         <span className="shrink-0 text-[#b89a9a]">
-          +{spirals.length - 1} more
+          {t("+{count} more", { count: spirals.length - 1 })}
         </span>
       ) : null}
       <button
@@ -6560,13 +6568,13 @@ const DeathSpiralNotice = memo(function DeathSpiralNotice({
         onClick={() => onShow(spiral.machineIds)}
         className="shrink-0 border border-[#c34c4c] bg-[#4a2424] px-2 py-0.5 font-bold text-[#ffd0d0] hover:bg-[#63302f]"
       >
-        Show me
+        {t("Show me")}
       </button>
       <button
         type="button"
         onClick={() => setDismissedId(spiral.id)}
-        title="Dismiss"
-        aria-label="Dismiss this notice"
+        title={t("Dismiss")}
+        aria-label={t("Dismiss this notice")}
         className="flex h-5 w-5 shrink-0 items-center justify-center border border-[#7a3636] text-[#e0b3b3] hover:bg-[#4a2424]"
       >
         ×
@@ -6585,6 +6593,7 @@ const ClogLockNotice = memo(function ClogLockNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   const project = useFactoryStore((state) => state.project);
   const lastResult = useFactoryStore((state) => state.lastResult);
   const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
@@ -6607,11 +6616,11 @@ const ClogLockNotice = memo(function ClogLockNotice({
 
   return (
     <div className="nodrag pointer-events-auto flex max-w-[min(calc(92*var(--ui-vw)),560px)] flex-wrap items-center justify-center gap-x-2 gap-y-1.5 border-2 border-[#4c7ec3] bg-[#1a222b] px-2 py-1.5 font-mono text-[12px] text-[#e4ecf2] shadow-[inset_2px_2px_0_#365d7a,inset_-2px_-2px_0_#10161a,4px_4px_0_rgba(0,0,0,0.35)]">
-      <span className="shrink-0 font-bold tracking-[0.5px] text-[#9cc9ff]">CLOG LOCK</span>
+      <span className="shrink-0 font-bold tracking-[0.5px] text-[#9cc9ff]">{t("CLOG LOCK")}</span>
       <span className="text-[#d2e0e6]">{story.short}</span>
       {locks.length > 1 ? (
         <span className="shrink-0 text-[#9aaab8]">
-          +{locks.length - 1} more
+          {t("+{count} more", { count: locks.length - 1 })}
         </span>
       ) : null}
       <button
@@ -6622,13 +6631,15 @@ const ClogLockNotice = memo(function ClogLockNotice({
         }}
         className="shrink-0 border border-[#4c7ec3] bg-[#24384a] px-2 py-0.5 font-bold text-[#d0e6ff] hover:bg-[#2f4a63]"
       >
-        {showTargets.length > 1 ? `Show me (${showAt + 1}/${showTargets.length})` : "Show me"}
+        {showTargets.length > 1
+          ? t("Show me ({index}/{total})", { index: showAt + 1, total: showTargets.length })
+          : t("Show me")}
       </button>
       <button
         type="button"
         onClick={() => setDismissedId(lock.id)}
-        title="Dismiss"
-        aria-label="Dismiss this notice"
+        title={t("Dismiss")}
+        aria-label={t("Dismiss this notice")}
         className="flex h-5 w-5 shrink-0 items-center justify-center border border-[#365d7a] text-[#b3cbe0] hover:bg-[#24384a]"
       >
         ×
@@ -6763,6 +6774,7 @@ const SelectionActionsBar = memo(function SelectionActionsBar({
   canCombine: boolean;
   onCombine: () => boolean;
 }) {
+  const t = useT();
   const isCompact = useIsCompactViewport();
   if (selectionCount < 2 || (!canWrap && !canCombine)) {
     return null;
@@ -6785,23 +6797,23 @@ const SelectionActionsBar = memo(function SelectionActionsBar({
         <button
           type="button"
           onClick={onCombine}
-          title="One machine runs all of these recipes"
+          title={t("One machine runs all of these recipes")}
           className="flex h-9 items-center gap-1.5 whitespace-nowrap border-2 border-[var(--selection)] bg-[#0b5563] px-3 font-mono text-[12px] font-bold text-white shadow-[inset_2px_2px_0_var(--selection-soft),inset_-2px_-2px_0_#063640] hover:brightness-110"
         >
           <Combine className="h-4 w-4" />
-          Combine {selectionCount} into one machine
+          {t("Combine {count} into one machine", { count: selectionCount })}
         </button>
       ) : null}
       {canWrap ? (
       <button
         type="button"
         onClick={onWrap}
-        title="Wrap in a board (Ctrl+G)"
+        title={t("Wrap in a board (Ctrl+G)")}
         // Plain chrome, like every other button: boards have no house colour.
         className="flex h-9 items-center gap-1.5 whitespace-nowrap border-2 border-[var(--mc-15)] bg-[var(--mc-49)] px-3 font-mono text-[12px] font-bold text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:brightness-110"
       >
         <Box className="h-4 w-4" />
-        Wrap {selectionCount} in a board
+        {t("Wrap {count} in a board", { count: selectionCount })}
       </button>
       ) : null}
     </div>
@@ -6895,6 +6907,7 @@ function ToolGroup({
   side,
   children,
 }: ToolGroupProps) {
+  const t = useT();
   if (!folded) {
     return <>{children}</>;
   }
@@ -6932,8 +6945,8 @@ function ToolGroup({
         // still in the DOM but invisible, so the ring goes on this button.
         data-help-anchor={id}
         aria-expanded={isOpen}
-        aria-label={isOpen ? `Hide ${label}` : `Show ${label}`}
-        title={isOpen ? `Hide ${label}` : label}
+        aria-label={isOpen ? t("Hide {label}", { label }) : t("Show {label}", { label })}
+        title={isOpen ? t("Hide {label}", { label }) : label}
         className={[
           "pointer-events-auto relative z-10 flex h-8 w-8 shrink-0 items-center justify-center border-2 border-[var(--mc-15)]",
           isOpen ? TOOL_FACE_ON : TOOL_FACE_OFF,
@@ -6972,6 +6985,7 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
   /** Zoom out until the whole plan is on screen, and centre it. */
   onFitView: () => void;
 }) {
+  const t = useT();
   const buttonClass = (active: boolean) =>
     [
       "pointer-events-auto flex h-9 w-9 items-center justify-center border-2 border-[var(--mc-15)]",
@@ -6990,8 +7004,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={onFitView}
           className={buttonClass(false)}
-          title="Fit on screen"
-          aria-label="Fit the plan on the screen"
+          title={t("Fit on screen")}
+          aria-label={t("Fit the plan on the screen")}
         >
           <Focus className="h-4 w-4" />
         </button>
@@ -7003,8 +7017,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={() => onModeChange("identity")}
           className={buttonClass(glanceMode === "identity")}
-          title="Big icons"
-          aria-label="Big icons"
+          title={t("Big icons")}
+          aria-label={t("Big icons")}
           aria-pressed={glanceMode === "identity"}
         >
           <Box className="h-4 w-4" />
@@ -7013,8 +7027,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={() => onModeChange("status")}
           className={buttonClass(glanceMode === "status")}
-          title="Speed"
-          aria-label="Speed"
+          title={t("Speed")}
+          aria-label={t("Speed")}
           aria-pressed={glanceMode === "status"}
         >
           <Gauge className="h-4 w-4" />
@@ -7023,8 +7037,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={() => onModeChange("usage")}
           className={buttonClass(glanceMode === "usage")}
-          title="Usage"
-          aria-label="Usage"
+          title={t("Usage")}
+          aria-label={t("Usage")}
           aria-pressed={glanceMode === "usage"}
         >
           <TriangleAlert className="h-4 w-4" />
@@ -7033,8 +7047,8 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
           type="button"
           onClick={() => onModeChange("power")}
           className={buttonClass(glanceMode === "power")}
-          title="Power"
-          aria-label="Power"
+          title={t("Power")}
+          aria-label={t("Power")}
           aria-pressed={glanceMode === "power"}
         >
           <Zap className="h-4 w-4" />
@@ -7045,13 +7059,13 @@ const SmartViewToolbar = memo(function SmartViewToolbar({
 });
 
 const RATE_UNIT_CHOICES: Array<{ unit: RateUnit; label: string; title: string }> = [
-  { unit: "tick", label: "/t", title: "Per tick" },
-  { unit: "second", label: "/s", title: "Per second" },
-  { unit: "minute", label: "/m", title: "Per minute" },
-  { unit: "hour", label: "/h", title: "Per hour" },
+  { unit: "tick", label: "/t", title: msg("Per tick") },
+  { unit: "second", label: "/s", title: msg("Per second") },
+  { unit: "minute", label: "/m", title: msg("Per minute") },
+  { unit: "hour", label: "/h", title: msg("Per hour") },
   // The odd one out, and dressed as such (gold face, its own sound): not a
   // clock but the EU each output cost to make. See rate-unit.ts.
-  { unit: "eu", label: "EU", title: "EU per unit made" },
+  { unit: "eu", label: "EU", title: msg("EU per unit made") },
 ];
 
 /** The rate key's face while it reads energy: gold, like the readings. */
@@ -7085,6 +7099,7 @@ const SolveModeNotice = memo(function SolveModeNotice({
 }: {
   onShow: (nodeIds: string[]) => void;
 }) {
+  const t = useT();
   // A primitive out of each selector, so the role walk (per store write,
   // one subscriber) never re-renders on an unchanged answer.
   const asking = useFactoryStore(
@@ -7106,11 +7121,11 @@ const SolveModeNotice = memo(function SolveModeNotice({
       ? "border-[#6f9cff] bg-[#1a2233] text-[#d3dff4] shadow-[inset_2px_2px_0_#3e567d,inset_-2px_-2px_0_#101622,4px_4px_0_rgba(0,0,0,0.35)]"
       : "border-[#9a6fd1] bg-[#241a2e] text-[#e0d3ec] shadow-[inset_2px_2px_0_#5a4380,inset_-2px_-2px_0_#150e1c,4px_4px_0_rgba(0,0,0,0.35)]"}`}>
       <span className={`shrink-0 font-bold tracking-[0.5px] ${poolMode ? "text-[#adc7ff]" : "text-[#d9b8ff]"}`}>
-        {poolMode ? "POOL MODE" : "SOLVE MODE"}
+        {poolMode ? t("POOL MODE") : t("SOLVE MODE")}
       </span>
       {/* One line, never a count: what the solve needs is one number,
           anywhere. The button still points at the products missing theirs. */}
-      <span className="whitespace-nowrap compact:whitespace-normal">Set an input/output rate or pin a machine count.</span>
+      <span className="whitespace-nowrap compact:whitespace-normal">{t("Set an input/output rate or pin a machine count.")}</span>
       {missingCount > 0 ? (
         <button
           type="button"
@@ -7119,7 +7134,7 @@ const SolveModeNotice = memo(function SolveModeNotice({
             ? "border-[#6f9cff] bg-[#273957] text-[#dce7ff] hover:bg-[#334b70]"
             : "border-[#9a6fd1] bg-[#3a2a52] text-[#ead9ff] hover:bg-[#4a3766]"}`}
         >
-          Show me
+          {t("Show me")}
         </button>
       ) : null}
     </div>
@@ -7146,6 +7161,8 @@ type BoardMode = "build" | "solve" | "pool";
 const MODE_KEYS: Array<{
   mode: BoardMode;
   label: string;
+  /** The key's face, shown in capitals. */
+  short: string;
   setup: string;
   result: string;
   details?: string[];
@@ -7159,10 +7176,11 @@ const MODE_KEYS: Array<{
 }> = [
   {
     mode: "build",
-    label: "Build mode",
-    setup: "Set machine counts and connect inputs and outputs.",
-    result: "Production rates for the connected machines.",
-    note: "Switching modes keeps your setup and existing wires. Recipes added in Pool need wiring here.",
+    label: msg("Build mode"),
+    short: msg("Build"),
+    setup: msg("Set machine counts and connect inputs and outputs."),
+    result: msg("Production rates for the connected machines."),
+    note: msg("Switching modes keeps your setup and existing wires. Recipes added in Pool need wiring here."),
     Icon: Blocks,
     ink: "text-[#f5b642]",
     dim: "text-[#b48a3b]",
@@ -7170,10 +7188,11 @@ const MODE_KEYS: Array<{
   },
   {
     mode: "solve",
-    label: "Solve mode",
-    setup: "Connect machines and set input or output rates.",
-    result: "Required machine counts.",
-    note: "Switching modes keeps your setup and existing wires. Recipes added in Pool need wiring here.",
+    label: msg("Solve mode"),
+    short: msg("Solve"),
+    setup: msg("Connect machines and set input or output rates."),
+    result: msg("Required machine counts."),
+    note: msg("Switching modes keeps your setup and existing wires. Recipes added in Pool need wiring here."),
     Icon: Sigma,
     // Violet, not cyan: cyan and pool's blue read as one colour.
     ink: "text-[#c78bff]",
@@ -7182,11 +7201,12 @@ const MODE_KEYS: Array<{
   },
   {
     mode: "pool",
-    label: "Pool mode",
-    setup: "Add recipes and set input or output rates.",
-    result: "Required machine counts.",
-    details: ["Resources are shared without wires.", "Inputs with no producer are imported automatically."],
-    note: "Switching modes keeps your setup and existing wires. Pool shares materials automatically; Build and Solve need wires.",
+    label: msg("Pool mode"),
+    short: msg("Pool"),
+    setup: msg("Add recipes and set input or output rates."),
+    result: msg("Required machine counts."),
+    details: [msg("Resources are shared without wires."), msg("Inputs with no producer are imported automatically.")],
+    note: msg("Switching modes keeps your setup and existing wires. Pool shares materials automatically; Build and Solve need wires."),
     Icon: Waves,
     ink: "text-[#6f9cff]",
     dim: "text-[#5273b8]",
@@ -7195,6 +7215,7 @@ const MODE_KEYS: Array<{
 ];
 
 const ModeKeys = memo(function ModeKeys({ forceIcons = false }: { forceIcons?: boolean }) {
+  const t = useT();
   const compact = useIsCompactViewport();
   const iconsOnly = forceIcons || compact;
   const modeStep = iconsOnly ? 44 : 96;
@@ -7302,7 +7323,7 @@ const ModeKeys = memo(function ModeKeys({ forceIcons = false }: { forceIcons?: b
     <div
       ref={rowRef}
       role="radiogroup"
-      aria-label="Board mode"
+      aria-label={t("Board mode")}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -7316,26 +7337,26 @@ const ModeKeys = memo(function ModeKeys({ forceIcons = false }: { forceIcons?: b
         dragX === undefined ? "" : "cursor-grabbing",
       ].join(" ")}
     >
-      {MODE_KEYS.map(({ mode: key, label, setup, result, details, note, Icon, ink, dim }, at) => (
+      {MODE_KEYS.map(({ mode: key, label, short, setup, result, details, note, Icon, ink, dim }, at) => (
         <MinecraftTooltip
           key={key}
           content={
             <div className="w-[340px] max-w-[calc(100*var(--ui-vw)-44px)] space-y-3 text-sm leading-5 text-fg-subtle">
-              <div className={`text-base font-semibold leading-6 ${ink}`}>{label}</div>
+              <div className={`text-base font-semibold leading-6 ${ink}`}>{td(label)}</div>
               <p>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-fg-muted">Setup</span>
-                {setup}
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-fg-muted">{t("Setup")}</span>
+                {td(setup)}
               </p>
               <p>
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-fg-muted">Calculates</span>
-                {result}
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-fg-muted">{t("Calculates")}</span>
+                {td(result)}
               </p>
               {details && (
                 <ul className="list-disc space-y-1 pl-4 marker:text-fg-muted">
-                  {details.map((detail) => <li key={detail}>{detail}</li>)}
+                  {details.map((detail) => <li key={detail}>{td(detail)}</li>)}
                 </ul>
               )}
-              {note && <p className="border-t border-line pt-2.5 text-fg-muted">{note}</p>}
+              {note && <p className="border-t border-line pt-2.5 text-fg-muted">{td(note)}</p>}
               {/* Canvas modes keep their flow picture; Pool uses the list. */}
               {key !== "pool" && <div className="border-t border-line pt-3">
                 <img
@@ -7356,8 +7377,8 @@ const ModeKeys = memo(function ModeKeys({ forceIcons = false }: { forceIcons?: b
             role="radio"
             aria-checked={mode === key}
             onClick={() => pick(key)}
-            aria-label={label}
-            aria-description={`${setup} Calculates ${result.charAt(0).toLowerCase()}${result.slice(1)}${details ? ` ${details.join(" ")}` : ""}${note ? ` ${note}` : ""}`}
+            aria-label={td(label)}
+            aria-description={`${td(setup)} ${t("Calculates {result}", { result: `${td(result).charAt(0).toLowerCase()}${td(result).slice(1)}` })}${details ? ` ${details.map((detail) => td(detail)).join(" ")}` : ""}${note ? ` ${td(note)}` : ""}`}
             className={[
               "flex h-full shrink-0 items-center justify-center gap-2 font-mono text-[11px] font-black tracking-wide transition-colors duration-200",
               TOOL_FACE_OFF,
@@ -7369,7 +7390,7 @@ const ModeKeys = memo(function ModeKeys({ forceIcons = false }: { forceIcons?: b
             style={{ width: modeStep }}
           >
             <Icon className="h-4 w-4" />
-            {!iconsOnly && label.replace(" mode", "").toUpperCase()}
+            {!iconsOnly && td(short).toUpperCase()}
           </button>
         </MinecraftTooltip>
       ))}
@@ -7411,6 +7432,7 @@ const SourceToolbar = memo(function SourceToolbar({
   /** A banner has the top line: step down one. */
   shiftedDown: boolean;
 }) {
+  const t = useT();
   const rateUnit = useFactoryStore((state) => state.rateUnit);
   const setRateUnit = useFactoryStore((state) => state.setRateUnit);
   const rateChoice =
@@ -7468,8 +7490,8 @@ const SourceToolbar = memo(function SourceToolbar({
           onClick={undo}
           disabled={!canUndo}
           className={historyButtonClass(canUndo)}
-          title={canUndo ? "Undo (Ctrl+Z)" : "Nothing to undo"}
-          aria-label="Undo"
+          title={canUndo ? t("Undo (Ctrl+Z)") : t("Nothing to undo")}
+          aria-label={t("Undo")}
         >
           <Undo2 className="h-4 w-4" />
         </button>
@@ -7478,8 +7500,8 @@ const SourceToolbar = memo(function SourceToolbar({
           onClick={redo}
           disabled={!canRedo}
           className={historyButtonClass(canRedo)}
-          title={canRedo ? "Redo (Ctrl+Shift+Z)" : "Nothing to redo"}
-          aria-label="Redo"
+          title={canRedo ? t("Redo (Ctrl+Shift+Z)") : t("Nothing to redo")}
+          aria-label={t("Redo")}
         >
           <Redo2 className="h-4 w-4" />
         </button>
@@ -7492,7 +7514,7 @@ const SourceToolbar = memo(function SourceToolbar({
         openGroup={openGroup}
         onToggle={onToggleGroup}
         icon={Hammer}
-        label="build tools"
+        label={t("build tools")}
         side="left"
       >
       {folded && !readOnly ? <ToolTray helpAnchor="rules"><ModeKeys forceIcons /></ToolTray> : null}
@@ -7518,7 +7540,7 @@ const SourceToolbar = memo(function SourceToolbar({
               }
             }}
             aria-expanded={isRateMenuOpen}
-            aria-label={`Rate unit: ${rateChoice.title.toLowerCase()}`}
+            aria-label={t("Rate unit: {unit}", { unit: td(rateChoice.title).toLowerCase() })}
             className={[
               "pointer-events-auto relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)] font-mono text-[12px] font-black",
               isRateMenuOpen ? TOOL_FACE_ON : rateUnit === "eu" ? TOOL_FACE_ENERGY : TOOL_FACE_OFF,
@@ -7553,12 +7575,12 @@ const SourceToolbar = memo(function SourceToolbar({
                     {choice.label}
                   </span>
                   <span className="whitespace-nowrap font-mono text-[11px] font-semibold">
-                    {choice.title}
+                    {td(choice.title)}
                   </span>
                 </button>
               ))}
               <div className="pt-0.5 text-center font-mono text-[9px] font-semibold uppercase tracking-[0.5px] text-[var(--mc-ink-muted)]">
-                Display only
+                {t("Display only")}
               </div>
             </div>
           ) : null}
@@ -7591,8 +7613,8 @@ const SourceToolbar = memo(function SourceToolbar({
             aria-expanded={isPowerUnitMenuOpen}
             aria-label={
               powerDisplayUnit === "eu"
-                ? "Power unit: EU per tick"
-                : `Power unit: amps of ${powerDisplayUnit}`
+                ? t("Power unit: EU per tick")
+                : t("Power unit: amps of {tier}", { tier: powerDisplayUnit })
             }
             className={[
               // Fixed width: the tier names run two to three letters and a
@@ -7648,7 +7670,7 @@ const SourceToolbar = memo(function SourceToolbar({
                   setPowerUnitMenuOpen(false);
                 }}
                 aria-pressed={powerDisplayUnit === "eu"}
-                aria-label="EU per tick"
+                aria-label={t("EU per tick")}
                 className={[
                   // The EU/t cell wears the same bevel as the tier chips,
                   // on the toolbar's dark face with the amber bolt.
@@ -7672,7 +7694,7 @@ const SourceToolbar = memo(function SourceToolbar({
                     setPowerUnitMenuOpen(false);
                   }}
                   aria-pressed={powerDisplayUnit === tier}
-                  aria-label={`Amps of ${tier}`}
+                  aria-label={t("Amps of {tier}", { tier })}
                   className={[
                     // The machine cards' own chip treatment: bevel, text
                     // shadow, bold - the menu is a tray of the real chips.
@@ -7691,7 +7713,7 @@ const SourceToolbar = memo(function SourceToolbar({
                 </button>
               ))}
               <div className="col-span-4 pt-0.5 text-center font-mono text-[9px] font-semibold uppercase tracking-[0.5px] text-[var(--mc-ink-muted)]">
-                Display only
+                {t("Display only")}
               </div>
             </div>
           ) : null}
@@ -7716,6 +7738,7 @@ const SourceToolbar = memo(function SourceToolbar({
  * of the plan, for boards where every solve is a wait.
  */
 const AutoSolveKeys = memo(function AutoSolveKeys() {
+  const t = useT();
   const auto = useSyncExternalStore(subscribeAutoSolve, getAutoSolve, () => true);
   const held = useFactoryStore((state) => Boolean(state.lastResult.held));
   const solveNow = useFactoryStore((state) => state.solveNow);
@@ -7732,8 +7755,8 @@ const AutoSolveKeys = memo(function AutoSolveKeys() {
           }
         }}
         aria-pressed={auto}
-        aria-label={auto ? "Recalculating on every change" : "Recalculating only when asked"}
-        title={auto ? "Recalculates on every change" : "Recalculates only when asked"}
+        aria-label={auto ? t("Recalculating on every change") : t("Recalculating only when asked")}
+        title={auto ? t("Recalculates on every change") : t("Recalculates only when asked")}
         className={[
           "pointer-events-auto flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
           auto ? TOOL_FACE_ON : TOOL_FACE_OFF,
@@ -7748,8 +7771,8 @@ const AutoSolveKeys = memo(function AutoSolveKeys() {
             playBoardSound("tick");
             solveNow();
           }}
-          aria-label={held ? "Recalculate now: the board has changed" : "Recalculate now"}
-          title={held ? "Recalculate: the board has changed" : "Recalculate"}
+          aria-label={held ? t("Recalculate now: the board has changed") : t("Recalculate now")}
+          title={held ? t("Recalculate: the board has changed") : t("Recalculate")}
           className={[
             "pointer-events-auto relative flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
             TOOL_FACE_OFF,
@@ -7968,6 +7991,7 @@ const CHIP_CLASS =
 const HOP_MAP_SETTLE_MS = 90;
 
 const HopMapLegend = memo(function HopMapLegend() {
+  const t = useT();
   const map = useHopMapSummary();
   // Any map gets a key, including a card wired to nothing (maxDepth 0): a
   // lone card in a field of grey needs the explanation most.
@@ -7995,7 +8019,7 @@ const HopMapLegend = memo(function HopMapLegend() {
       // a picker is open. bottom-16 leaves the corner to the view buttons.
       className="nodrag pointer-events-none absolute bottom-16 right-3 z-40 flex flex-col gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] px-3 py-2.5 font-mono font-bold text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),4px_4px_0_rgba(0,0,0,0.35)]"
     >
-      <span className="text-[13px] uppercase tracking-[1px]">Hops needed</span>
+      <span className="text-[13px] uppercase tracking-[1px]">{t("Hops needed")}</span>
       {chipped ? (
         <div className="flex items-center gap-1.5">
           {/* The hub (the card under the cursor) is step 0. */}
@@ -8034,6 +8058,7 @@ const HopMapLegend = memo(function HopMapLegend() {
 });
 
 function FlowLoadingOverlay() {
+  const t = useT();
   return (
     <div
       role="status"
@@ -8042,7 +8067,7 @@ function FlowLoadingOverlay() {
     >
       <div className="flex items-center gap-3 border-2 border-[var(--mc-15)] bg-[var(--mc-78)] px-4 py-3 text-sm font-semibold text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-100),inset_-2px_-2px_0_var(--mc-33),4px_4px_0_rgba(0,0,0,0.18)]">
         <LoaderCircle className="h-5 w-5 animate-spin" />
-        <span>Loading flowchart...</span>
+        <span>{t("Loading flowchart...")}</span>
       </div>
     </div>
   );
@@ -8156,6 +8181,7 @@ function AnnotationDraftPreview({
  * The button spins while the upload is out.
  */
 function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promise<void> }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   return (
@@ -8188,8 +8214,8 @@ function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promis
           "flex items-center gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] p-1 pr-2 text-left text-white hover:bg-[var(--mc-61)]",
           busy ? "cursor-wait opacity-70" : "",
         ].join(" ")}
-        title="Add an image"
-        aria-label="Add an image"
+        title={t("Add an image")}
+        aria-label={t("Add an image")}
       >
         <span className="flex h-7 w-7 items-center justify-center">
           {busy ? (
@@ -8198,7 +8224,7 @@ function AddImageButton({ onPlaceImage }: { onPlaceImage: (file: File) => Promis
             <ImagePlus className="h-4 w-4" />
           )}
         </span>
-        <span className="whitespace-nowrap font-mono text-[11px] font-semibold">Add an image</span>
+        <span className="whitespace-nowrap font-mono text-[11px] font-semibold">{t("Add an image")}</span>
       </button>
     </>
   );
@@ -8209,11 +8235,11 @@ const ANNOTATION_TOOLS: Array<{
   label: string;
   Icon: typeof Square;
 }> = [
-  { kind: "board", label: "Draw board", Icon: AppWindow },
-  { kind: "box", label: "Draw box", Icon: Square },
-  { kind: "zone", label: "Draw zone", Icon: Hexagon },
-  { kind: "arrow", label: "Draw arrow", Icon: MoveUpRight },
-  { kind: "text", label: "Add text note", Icon: Type },
+  { kind: "board", label: msg("Draw board"), Icon: AppWindow },
+  { kind: "box", label: msg("Draw box"), Icon: Square },
+  { kind: "zone", label: msg("Draw zone"), Icon: Hexagon },
+  { kind: "arrow", label: msg("Draw arrow"), Icon: MoveUpRight },
+  { kind: "text", label: msg("Add text note"), Icon: Type },
 ];
 
 /** A theme row's little preview: its paper, its texture, three of its dots. */
@@ -8258,6 +8284,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
     onArrange: (options: { keepBoards: boolean }) => void;
   };
 }) {
+  const t = useT();
   const { canvasPattern } = view;
   // Motion is device taste, not plan state: read and written through its own
   // store (board-motion.tsx), never through the plan-view snapshot.
@@ -8277,7 +8304,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
     {
       id: "fixed-edge-width",
       on: view.fixedEdgeWidth,
-      label: "Fixed edge width",
+      label: t("Fixed edge width"),
       Icon: Minus,
       flip: () => onChange({ fixedEdgeWidth: !view.fixedEdgeWidth }),
     },
@@ -8286,16 +8313,16 @@ const BoardViewMenu = memo(function BoardViewMenu({
     {
       id: "smooth",
       on: boardMotion.moveMotion,
-      label: "Smooth movement",
-      line: "Cards move smoothly instead of jumping.",
+      label: t("Smooth movement"),
+      line: t("Cards move smoothly instead of jumping."),
       Icon: Magnet,
       flip: () => writeBoardMotion({ moveMotion: !boardMotion.moveMotion }),
     },
     {
       id: "numbers",
       on: boardMotion.valueMotion,
-      label: "Live numbers",
-      line: "Numbers change smoothly.",
+      label: t("Live numbers"),
+      line: t("Numbers change smoothly."),
       Icon: Activity,
       flip: () => writeBoardMotion({ valueMotion: !boardMotion.valueMotion }),
     },
@@ -8311,8 +8338,8 @@ const BoardViewMenu = memo(function BoardViewMenu({
           "relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
           open ? TOOL_FACE_ON : TOOL_FACE_OFF,
         ].join(" ")}
-        title="View options"
-        aria-label="View options"
+        title={t("View options")}
+        aria-label={t("View options")}
       >
         <Eye className="h-4 w-4" />
       </button>
@@ -8331,12 +8358,12 @@ const BoardViewMenu = memo(function BoardViewMenu({
                     ? "border-white bg-[var(--mc-85)] ring-2 ring-cyan-300"
                     : "border-[var(--mc-15)] bg-[var(--mc-49)] hover:bg-[var(--mc-61)]",
                 ].join(" ")}
-                aria-label={`Background style: ${theme.name}`}
+                aria-label={t("Background style: {name}", { name: td(theme.name) })}
                 aria-pressed={view.canvasTheme === theme.id}
               >
                 <ThemeSwatch theme={theme} />
                 <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-[var(--mc-ink)]">
-                  {theme.name}
+                  {td(theme.name)}
                 </span>
               </button>
             ))}
@@ -8350,8 +8377,8 @@ const BoardViewMenu = memo(function BoardViewMenu({
                   key={pattern}
                   type="button"
                   onClick={() => onChange({ canvasPattern: pattern })}
-                  title={CANVAS_PATTERN_LABEL[pattern]}
-                  aria-label={`Background pattern: ${CANVAS_PATTERN_LABEL[pattern]}`}
+                  title={td(CANVAS_PATTERN_LABEL[pattern])}
+                  aria-label={t("Background pattern: {name}", { name: td(CANVAS_PATTERN_LABEL[pattern]) })}
                   aria-pressed={canvasPattern === pattern}
                   className={[
                     "flex h-9 flex-1 items-center justify-center border-2 border-[var(--mc-15)]",
@@ -8388,7 +8415,7 @@ const BoardViewMenu = memo(function BoardViewMenu({
                       on ? "text-[var(--mc-good)]" : "text-[var(--mc-ink-muted)]",
                     ].join(" ")}
                   >
-                    {on ? "ON" : "OFF"}
+                    {on ? t("ON") : t("OFF")}
                   </span>
                 </span>
                 {line ? <span className="font-mono text-[11px] leading-snug opacity-80">{line}</span> : null}
@@ -8412,14 +8439,14 @@ const BoardViewMenu = memo(function BoardViewMenu({
               <Network className="mt-[1px] h-4 w-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono text-[12px] font-black uppercase">Keep boards on rearrange</span>
+                  <span className="font-mono text-[12px] font-black uppercase">{t("Keep boards on rearrange")}</span>
                   <span
                     className={[
                       "font-mono text-[10px] font-black tracking-[1px]",
                       arrange.keepBoards ? "text-[var(--mc-good)]" : "text-[var(--mc-ink-muted)]",
                     ].join(" ")}
                   >
-                    {arrange.keepBoards ? "ON" : "OFF"}
+                    {arrange.keepBoards ? t("ON") : t("OFF")}
                   </span>
                 </span>
               </span>
@@ -8431,10 +8458,10 @@ const BoardViewMenu = memo(function BoardViewMenu({
                 arrange.onArrange({ keepBoards: arrange.keepBoards });
               }}
               className="mt-1 flex w-full items-center justify-center gap-2 border-2 border-[var(--mc-15)] bg-[var(--mc-49)] p-2 font-mono text-[12px] font-black uppercase text-white shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25)] hover:brightness-110"
-              aria-label="Arrange the board"
+              aria-label={t("Arrange the board")}
             >
               <Network className="h-4 w-4" />
-              Arrange
+              {t("Arrange")}
             </button>
           </div>
         </div>
@@ -8456,6 +8483,7 @@ function ArrangeLoader({
   progress: ArrangeProgress;
   onCancel: () => void;
 }) {
+  const t = useT();
   const steps = ARRANGE_STEPS.length;
   const within = Math.min(progress.done, progress.total) / Math.max(progress.total, 1);
   const overall = Math.min(1, (Math.min(progress.step, steps) + within) / steps);
@@ -8470,7 +8498,7 @@ function ArrangeLoader({
     >
       <div className="pointer-events-auto w-[26rem] max-w-[calc(100*var(--ui-vw)-32px)] border-2 border-[var(--mc-15)] bg-[var(--mc-49)] text-[var(--mc-ink)] shadow-[inset_2px_2px_0_var(--mc-85),inset_-2px_-2px_0_var(--mc-25),4px_4px_0_rgba(0,0,0,0.45)]">
         <div className="flex items-center justify-between border-b-2 border-[var(--mc-15)] px-4 py-2.5">
-          <h2 className="text-sm font-bold">Arranging the board</h2>
+          <h2 className="text-sm font-bold">{t("Arranging the board")}</h2>
           <span className="font-mono text-sm tabular-nums text-[var(--mc-ink-muted)]">
             {Math.round(overall * 100)}%
           </span>
@@ -8518,10 +8546,12 @@ function ArrangeLoader({
                       ].join(" ")}
                     />
                   )}
-                  <span>{step.label}</span>
+                  <span>{td(step.label)}</span>
                   {state === "now" && progress.stage !== step.label ? (
                     <span className="ml-auto truncate text-[11px] font-normal normal-case text-[var(--mc-ink-muted)]">
-                      {progress.stage}
+                      {progress.crossings !== undefined
+                        ? tPlural(progress.crossings, "{count} crossing to start", "{count} crossings to start", { count: progress.crossings })
+                        : td(progress.stage)}
                     </span>
                   ) : null}
                 </li>
@@ -8530,13 +8560,13 @@ function ArrangeLoader({
           </ol>
         </div>
         <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--mc-15)] px-4 py-2.5">
-          <span className="text-xs text-[var(--mc-ink-muted)]">Every move is checked against the real wires.</span>
+          <span className="text-xs text-[var(--mc-ink-muted)]">{t("Every move is checked against the real wires.")}</span>
           <button
             type="button"
             onClick={onCancel}
             className={`h-7 border-2 border-[var(--mc-15)] px-3 font-mono text-[12px] font-black uppercase ${TOOL_FACE_OFF}`}
           >
-            Cancel
+            {t("Cancel")}
           </button>
         </div>
       </div>
@@ -8595,6 +8625,7 @@ const PaintToolbar = memo(function PaintToolbar({
   onToggleGroup: (group: ToolGroupId | undefined) => void;
   shiftedDown: boolean;
 }) {
+  const t = useT();
   const activeColor = GT_NODE_COLORS[activeColorTag];
   // Every fold-out on this row opens on CLICK (see useFoldoutDismiss). The
   // draw tools live under ONE slot: the menu holds them all with their names;
@@ -8640,8 +8671,8 @@ const PaintToolbar = memo(function PaintToolbar({
             "pointer-events-auto relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
             isDeleteMode ? TOOL_FACE_ON : TOOL_FACE_OFF,
           ].join(" ")}
-          title={isDeleteMode ? "Stop deleting" : "Delete tool"}
-          aria-label={isDeleteMode ? "Stop deleting" : "Delete tool"}
+          title={isDeleteMode ? t("Stop deleting") : t("Delete tool")}
+          aria-label={isDeleteMode ? t("Stop deleting") : t("Delete tool")}
         >
           {/* The pressed face says "on"; the red icon still says what is armed. */}
           <Trash2 className={isDeleteMode ? "h-4 w-4 text-red-500" : "h-4 w-4"} />
@@ -8687,7 +8718,7 @@ const PaintToolbar = memo(function PaintToolbar({
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="whitespace-nowrap font-mono text-[11px] font-semibold">
-                    {label}
+                    {td(label)}
                   </span>
                 </button>
               ))}
@@ -8713,7 +8744,7 @@ const PaintToolbar = memo(function PaintToolbar({
                   {paintMode === null ? <X className="h-4 w-4" /> : <Paintbrush className="h-4 w-4" />}
                 </span>
                 <span className="whitespace-nowrap font-mono text-[11px] font-semibold">
-                  {paintMode === null ? "Erasing colours" : "Paint cards"}
+                  {paintMode === null ? t("Erasing colours") : t("Paint cards")}
                 </span>
                 <span
                   aria-hidden
@@ -8732,8 +8763,8 @@ const PaintToolbar = memo(function PaintToolbar({
                     "flex h-6 w-6 items-center justify-center border-2 bg-[var(--mc-49)] text-white shadow-[inset_1px_1px_0_var(--mc-85),inset_-1px_-1px_0_var(--mc-25)]",
                     paintMode === null ? "border-white ring-2 ring-cyan-300" : "border-[var(--mc-15)]",
                   ].join(" ")}
-                  title="Erase colours"
-                  aria-label="Erase colours"
+                  title={t("Erase colours")}
+                  aria-label={t("Erase colours")}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -8753,8 +8784,8 @@ const PaintToolbar = memo(function PaintToolbar({
                         : "border-[var(--mc-15)]",
                     ].join(" ")}
                     style={{ backgroundColor: entry.color.swatch }}
-                    title={`Paint ${entry.tag}`}
-                    aria-label={`Paint ${entry.tag}`}
+                    title={t("Paint {colour}", { colour: entry.tag })}
+                    aria-label={t("Paint {colour}", { colour: entry.tag })}
                   />
                 ))}
               </div>
@@ -8783,8 +8814,8 @@ const PaintToolbar = memo(function PaintToolbar({
                 "pointer-events-auto relative z-10 flex h-8 w-8 items-center justify-center border-2 border-[var(--mc-15)]",
                 annotationTool !== undefined || paintMode !== undefined ? TOOL_FACE_ON : TOOL_FACE_OFF,
               ].join(" ")}
-              title={annotationTool !== undefined || paintMode !== undefined ? "Stop" : "Markup"}
-              aria-label={annotationTool !== undefined || paintMode !== undefined ? "Stop marking up" : "Markup tools"}
+              title={annotationTool !== undefined || paintMode !== undefined ? t("Stop") : t("Markup")}
+              aria-label={annotationTool !== undefined || paintMode !== undefined ? t("Stop marking up") : t("Markup tools")}
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -8837,7 +8868,7 @@ const PaintToolbar = memo(function PaintToolbar({
         openGroup={openGroup}
         onToggle={onToggleGroup}
         icon={Pencil}
-        label="markup and view tools"
+        label={t("markup and view tools")}
         side="right"
       >
       {viewTray}
@@ -8864,6 +8895,9 @@ function ResourceEdgeComponent({
   selected,
   data,
 }: EdgeProps<ResourceFlowEdge>) {
+  // Repaints the ratio labels' words once the interface language arrives; a
+  // primitive, so it never re-renders the wire otherwise.
+  useLanguage((state) => state.language);
   const updateEdge = useFactoryStore((state) => state.updateEdge);
   // Waypoint dot dragging: a local draft while the pointer is down, committed
   // to the store (snapped to the grid) on release, so no board-wide re-solve
@@ -9468,7 +9502,7 @@ function ResourceEdgeComponent({
                 setDraftWaypoints(undefined);
               }}
             >
-              <title>Drag to steer this wire. Double-click to remove the stop</title>
+              <title>{t("Drag to steer this wire. Double-click to remove the stop")}</title>
             </circle>
           ))
         : null}
@@ -9728,7 +9762,7 @@ function VoidDropGhost() {
             className="flex h-full w-full items-center justify-center rounded-[4px] border-2 border-dashed border-[#ef4444] p-1.5 text-center text-[11px] font-bold leading-tight text-[#ff9d9d]"
             style={{ background: "#0d1117" }}
           >
-            {voidDropReason}
+            {td(voidDropReason)}
           </div>
         )}
       </div>
@@ -10555,7 +10589,8 @@ function publishRatioLabelInputs(inputs: typeof ratioLabelInputs) {
   ratioLabelInputsKey = key;
 }
 function getRatioLabelsForEdge(edgeId: string): RatioWireLabel[] {
-  const key = `${gridSolveSignature}|${ratioLabelInputsKey}`;
+  // The language rides the key: the labels carry translated words (Out / In).
+  const key = `${useLanguage.getState().language}|${gridSolveSignature}|${ratioLabelInputsKey}`;
   if (key !== ratioLabelLayoutKey) {
     ratioLabelLayoutKey = key;
     ratioLabelLayout = layoutRatioLabels(ratioLabelInputs.map((entry) => ({
@@ -13084,6 +13119,7 @@ function nextPaint(): Promise<void> {
  * re-renders for it, and blocks nothing.
  */
 function SolvingBooksOverlay() {
+  const t = useT();
   const solving = useSolvingBooks();
   if (!solving) {
     return null;
@@ -13092,7 +13128,7 @@ function SolvingBooksOverlay() {
     <div className="pointer-events-none absolute bottom-16 left-1/2 z-30 -translate-x-1/2">
       <div className="flex items-center gap-3 whitespace-nowrap border-2 border-neutral-600 bg-neutral-950/90 px-4 py-2 font-mono text-neutral-200 shadow-[4px_4px_0_rgba(0,0,0,0.45)]">
         <div className="h-5 w-5 animate-spin rounded-full border-[3px] border-neutral-700 border-t-cyan-400" />
-        <div className="text-[13px]">Working out the numbers... you can keep editing.</div>
+        <div className="text-[13px]">{t("Working out the numbers... you can keep editing.")}</div>
       </div>
     </div>
   );

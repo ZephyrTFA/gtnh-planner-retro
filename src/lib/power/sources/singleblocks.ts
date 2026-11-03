@@ -10,6 +10,7 @@
  * A fuel too thin for its tank, or an item too small for its tier, derates
  * the output instead of running at V.
  */
+import { msg } from "@/lib/i18n";
 import {
   findFuel,
   fuelOptions,
@@ -24,6 +25,7 @@ import {
   items,
   liters,
   percent,
+  powerText,
   stat,
   tierPower,
 } from "./helpers";
@@ -77,7 +79,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Steam Turbine",
     family: "steamTurbine",
     unlock: "LV",
-    blurb: "Turns 7, 8 or 9 L of steam into 3 EU (LV, MV, HV).",
+    blurb: msg("Turns 7, 8 or 9 L of steam into 3 EU (LV, MV, HV)."),
     fuels: "steam",
     // MTESteamTurbine.getCapacity()
     capacity: (gtTier) => 24_000 * gtTier,
@@ -87,7 +89,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Gas Turbine",
     family: "gasTurbine",
     unlock: "LV",
-    blurb: "Burns benzene and the other gas fuels.",
+    blurb: msg("Burns benzene and the other gas fuels."),
     fuels: powerPlannerData.gasFuels,
     defaultFuel: "Benzene",
   },
@@ -96,7 +98,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Combustion Generator",
     family: "combustion",
     unlock: "LV",
-    blurb: "Burns the diesel-line fuels.",
+    blurb: msg("Burns the diesel-line fuels."),
     fuels: powerPlannerData.combustionFuels,
     defaultFuel: "Diesel",
   },
@@ -105,7 +107,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Semifluid Generator",
     family: "semifluid",
     unlock: "LV",
-    blurb: "Burns heavy oils and semifluids.",
+    blurb: msg("Burns heavy oils and semifluids."),
     fuels: powerPlannerData.semifluidFuels,
     defaultFuel: "Creosote Oil",
   },
@@ -114,7 +116,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Acid Generator",
     family: "chem",
     unlock: "LV",
-    blurb: "Burns the acid-line fluids.",
+    blurb: msg("Burns the acid-line fluids."),
     fuels: powerPlannerData.chemFuels,
     defaultFuel: "Sulfuric Acid",
   },
@@ -123,7 +125,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Geothermal Engine",
     family: "frost",
     unlock: "EV",
-    blurb: "Burns lava, cryotheum and pyrotheum.",
+    blurb: msg("Burns lava, cryotheum and pyrotheum."),
     fuels: powerPlannerData.frostFuels,
     defaultFuel: "Lava",
     // MTEGeothermalGenerator.getCapacity()
@@ -134,7 +136,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Rocket Fuel Generator",
     family: "rocket",
     unlock: "EV",
-    blurb: "Burns mixed rocket fuels.",
+    blurb: msg("Burns mixed rocket fuels."),
     fuels: powerPlannerData.rocketFuels,
     // MTERocketFuelGeneratorBase.getCapacity()
     capacity: () => 32_000,
@@ -149,7 +151,7 @@ const SPECS: SingleblockSpec[] = [
     family: "plasma",
     // Mark I's crafting recipe takes a LuV hull (MTERecipeLoader).
     unlock: "LuV",
-    blurb: "Burns plasma from fusion.",
+    blurb: msg("Burns plasma from fusion."),
     fuels: powerPlannerData.plasmas,
     defaultFuel: "Helium Plasma",
   },
@@ -158,7 +160,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Naquadah Reactor",
     family: "naquadah",
     unlock: "EV",
-    blurb: "Depletes naquadah and tiberium rods.",
+    blurb: msg("Depletes naquadah and tiberium rods."),
     fuels: "naquadah",
     solid: true,
   },
@@ -167,7 +169,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Magic Energy Converter",
     family: "magicConverter",
     unlock: "LV",
-    blurb: "Consumes magical items for power.",
+    blurb: msg("Consumes magical items for power."),
     fuels: powerPlannerData.magicSolids,
     solid: true,
     defaultFuel: "Quicksilver",
@@ -178,7 +180,7 @@ const SPECS: SingleblockSpec[] = [
     name: "Magic Energy Absorber",
     family: "magicAbsorber",
     unlock: "LV",
-    blurb: "Consumes magical items for power.",
+    blurb: msg("Consumes magical items for power."),
     fuels: powerPlannerData.magicSolids,
     solid: true,
     sheetModel: true,
@@ -257,7 +259,7 @@ function fluidModel(
       inputs: [],
       outputs: [],
       stats,
-      warnings: ["Makes 0 EU per L at this tier, so the generator will not burn it."],
+      warnings: [powerText(msg("Makes 0 EU per L at this tier, so the generator will not burn it."))],
     };
   }
   const packet = voltage + ampLoss;
@@ -277,7 +279,11 @@ function fluidModel(
     outputs: [],
     stats,
     warnings: [
-      `Burns at most ${formatAmount(tankLiters)} L per 10 ticks (the tank), so it runs at ${eu(euPerTick)} EU/t, not ${eu(voltage)}.`,
+      powerText(msg("Burns at most {liters} L per 10 ticks (the tank), so it runs at {euT} EU/t, not {voltage}."), {
+        liters: formatAmount(tankLiters),
+        euT: eu(euPerTick),
+        voltage: eu(voltage),
+      }),
     ],
   };
 }
@@ -306,12 +312,15 @@ function itemModel(
     outputs,
     stats: [
       efficiencyStat,
-      stat("Fuel per hour", formatAmount(perSecond * 3600)),
-      stat("EU per item", formatAmount(euPerItem)),
+      stat(msg("Fuel per hour"), formatAmount(perSecond * 3600)),
+      stat(msg("EU per item"), formatAmount(euPerItem)),
     ],
     warnings: capped
       ? [
-          `Burns at most 1 item per 10 ticks, so it runs at ${eu(euPerTick)} EU/t, not ${eu(voltage)}.`,
+          powerText(msg("Burns at most 1 item per 10 ticks, so it runs at {euT} EU/t, not {voltage}."), {
+            euT: eu(euPerTick),
+            voltage: eu(voltage),
+          }),
         ]
       : undefined,
   };
@@ -323,7 +332,7 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
     {
       type: "select",
       id: "tier",
-      label: "Tier",
+      label: msg("Tier"),
       options: tiers.options,
       defaultKey: tiers.options[0]?.key ?? "LV",
     },
@@ -333,7 +342,7 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
     settings.push({
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: NAQUADAH_FUEL_OPTIONS,
       defaultKey: "naquadah",
       legacyKeys: NAQUADAH_LEGACY_KEYS,
@@ -342,7 +351,7 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
     settings.push({
       type: "select",
       id: "fuel",
-      label: "Fuel",
+      label: msg("Fuel"),
       options: fuelOptions(spec.fuels),
       defaultKey: spec.defaultFuel ?? spec.fuels[0]?.name ?? "",
     });
@@ -366,14 +375,14 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
         const litersPerOperation = 6 + gtTier;
         const euPerLiter = 3 / litersPerOperation;
         return fluidModel("Steam", voltage, ampLoss, euPerLiter, tankLiters, [
-          stat("Efficiency", percent(6 / litersPerOperation)),
-          stat("EU per L", formatAmount(euPerLiter)),
+          stat(msg("Efficiency"), percent(6 / litersPerOperation)),
+          stat(msg("EU per L"), formatAmount(euPerLiter)),
         ]);
       }
 
       // getEfficiency() is a whole percent.
       const efficiencyPercent = Math.round(tiers.efficiencyFor(tier) * 100);
-      const efficiencyStat = stat("Efficiency", percent(efficiencyPercent / 100));
+      const efficiencyStat = stat(msg("Efficiency"), percent(efficiencyPercent / 100));
 
       if (spec.fuels === "naquadah") {
         const mark = NAQUADAH_MARKS[tier] ?? NAQUADAH_MARKS.EV;
@@ -410,9 +419,9 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
           inputs: [items(fuel.name, perHour / 3600)],
           outputs: [],
           stats: [
-            stat("Efficiency", percent(efficiency)),
-            stat("Fuel per hour", formatAmount(perHour)),
-            stat("EU per item", formatAmount(euPerItem * efficiency)),
+            stat(msg("Efficiency"), percent(efficiency)),
+            stat(msg("Fuel per hour"), formatAmount(perHour)),
+            stat(msg("EU per item"), formatAmount(euPerItem * efficiency)),
           ],
         };
       }
@@ -434,7 +443,7 @@ function buildSingleblock(spec: SingleblockSpec): PowerSourceDefinition {
       const euPerLiter = Math.floor((fuelValue * efficiencyPercent) / 100);
       return fluidModel(fuel.name, voltage, ampLoss, euPerLiter, tankLiters, [
         efficiencyStat,
-        stat("EU per L", formatAmount(euPerLiter)),
+        stat(msg("EU per L"), formatAmount(euPerLiter)),
       ]);
     },
   };
@@ -468,7 +477,7 @@ const RTG_PELLETS = [
     euPerPellet,
     seconds,
     label: `${pellet.isotope} (${pellet.euPerTick} EU/t, ${formatAmount(realDays)} days)`,
-    runs: `${formatAmount(realDays)} real ${realDays === 1 ? "day" : "days"}`,
+    realDays,
   };
 });
 
@@ -478,12 +487,12 @@ const rtg: PowerSourceDefinition = {
   group: "burners",
   // Its assembler recipe runs at IV (GT++ RecipesMachines).
   unlock: "IV",
-  blurb: "Pellets decay into steady EU for real days.",
+  blurb: msg("Pellets decay into steady EU for real days."),
   settings: [
     {
       type: "select",
       id: "pellet",
-      label: "Pellet",
+      label: msg("Pellet"),
       options: RTG_PELLETS.map(({ key, label }) => ({ key, label })),
       defaultKey: "pu238",
     },
@@ -495,9 +504,14 @@ const rtg: PowerSourceDefinition = {
       inputs: [items(pellet.name, 1 / pellet.seconds)],
       outputs: [],
       stats: [
-        stat("One pellet runs", pellet.runs),
-        stat("EU per pellet", formatAmount(pellet.euPerPellet)),
-        stat("Pollution", "None"),
+        stat(
+          msg("One pellet runs"),
+          powerText(pellet.realDays === 1 ? msg("{days} real day") : msg("{days} real days"), {
+            days: formatAmount(pellet.realDays),
+          }),
+        ),
+        stat(msg("EU per pellet"), formatAmount(pellet.euPerPellet)),
+        stat(msg("Pollution"), powerText(msg("None"))),
       ],
     };
   },

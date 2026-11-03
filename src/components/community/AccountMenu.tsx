@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import { openLibrary } from "@/lib/library/library-tab";
 import { ONLINE_FEATURES } from "@/lib/site";
 import { AuthForm, useCommunityUser } from "./auth";
+import { useT } from "@/lib/i18n";
 
 /**
  * Top-right account control: a Sign in button when logged out, a username
@@ -17,6 +18,7 @@ export function AccountMenu() {
 }
 
 function OnlineAccountMenu() {
+  const t = useT();
   const { user, isLoading, setUser, signOut } = useCommunityUser();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isAuthOpen, setAuthOpen] = useState(false);
@@ -36,7 +38,7 @@ function OnlineAccountMenu() {
           onClick={() => setAuthOpen(true)}
           className="inline-flex h-5 shrink-0 items-center gap-1.5 whitespace-nowrap rounded border border-line-strong bg-surface px-2.5 font-medium text-fg hover:bg-surface-raised"
         >
-          <User className="h-3.5 w-3.5" /> Sign in
+          <User className="h-3.5 w-3.5" /> {t("Sign in")}
         </button>
         {isAuthOpen ? (
           <div
@@ -47,9 +49,9 @@ function OnlineAccountMenu() {
               className="w-full max-w-sm rounded border border-line-strong bg-surface p-4 shadow-xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <h2 className="mb-1 text-base font-semibold">Community account</h2>
+              <h2 className="mb-1 text-base font-semibold">{t("Community account")}</h2>
               <p className="mb-3 text-xs text-fg-muted">
-                Just a username and password. Needed to share plans and manage your posts.
+                {t("Just a username and password. Needed to share plans and manage your posts.")}
               </p>
               <AuthForm
                 onSignedIn={(signedInUser) => {
@@ -90,7 +92,7 @@ function OnlineAccountMenu() {
             }}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-raised"
           >
-            <Factory className="h-3.5 w-3.5 text-fg-muted" /> My setups
+            <Factory className="h-3.5 w-3.5 text-fg-muted" /> {t("My setups")}
           </button>
           <button
             type="button"
@@ -100,7 +102,7 @@ function OnlineAccountMenu() {
             }}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-raised"
           >
-            <LogOut className="h-3.5 w-3.5 text-fg-muted" /> Sign out
+            <LogOut className="h-3.5 w-3.5 text-fg-muted" /> {t("Sign out")}
           </button>
         </div>
       ) : null}
