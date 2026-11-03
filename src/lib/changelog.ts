@@ -40,6 +40,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.1",
+    date: "2026-11-02",
+    headline: "Programmed circuits and casts leave the item list",
+    notes: [
+      "Programmed circuits and Tinkers' casts no longer fill the item list and its search: they only ever sit in a machine's settings slot.",
+      "Clicking the circuit slot on a card still shows its recipes and uses. Lenses, molds and extruder shapes stay listed.",
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-11-02",
     headline: "GTNH Planner Retro: the 3.x planner with GTNH 2.9.0 recipes",

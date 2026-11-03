@@ -56,6 +56,7 @@ import {
   type TextSearchIndex,
 } from "@/lib/search";
 import { getDatasetFileSource } from "./source";
+import { isSettingsOnlyItem } from "@/lib/model/programmed-circuit";
 
 type TierFilter = "all" | Exclude<MachineTier, "DEMO">;
 type SearchableResource = Pick<
@@ -691,6 +692,7 @@ async function searchDatasetResources(
         if (
           !resource ||
           isVirtualChoiceResource(resource) ||
+          isSettingsOnlyItem(resource) ||
           (!resource.iconPath && !resource.iconAtlas)
         ) {
           continue;

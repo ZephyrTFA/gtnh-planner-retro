@@ -69,7 +69,8 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 
 ## Releases and deploys
 
-- Deploy only when explicitly told to. `APP_VERSION` in `src/lib/version.ts` is bumped
+- Deploy only when explicitly told to, with `bash tools/deploy.sh` (needs `nix shell nixpkgs#nodejs_22 nixpkgs#jq` on NixOS):
+  it builds and deploys only a clean HEAD that is on origin/main. `APP_VERSION` in `src/lib/version.ts` is bumped
   once per release, with an entry in `src/lib/changelog.ts`: concrete bullets about what
   changed for players.
 - The recipe dataset is built here from the official GTNH pack:

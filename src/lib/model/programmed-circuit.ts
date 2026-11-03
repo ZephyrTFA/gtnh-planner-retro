@@ -16,6 +16,27 @@ export function isProgrammedCircuitResource(
   );
 }
 
+/**
+ * Items that only ever sit in a machine's settings slot and are never made or
+ * used up in a plan: the programmed circuits and Tinkers' casts (and the GTNH
+ * casts that work like them). The item list and its search leave them out,
+ * since they crowd the top of every "most used" page; a card's circuit slot
+ * still opens their recipes and uses. Lenses, molds and extruder shapes stay
+ * listed: players craft those.
+ */
+const SETTINGS_ONLY_ITEM_IDS = new Set([
+  PROGRAMMED_CIRCUIT_ITEM_ID,
+  "tconstruct:metalpattern",
+  "tconstruct:cast",
+  "tgregworks:tgregworks.shardcast",
+  "dreamcraft:bowfletchingcast",
+  "dreamcraft:bowstringcast",
+]);
+
+export function isSettingsOnlyItem(resource: Pick<ResourceAmount, "kind" | "id">): boolean {
+  return resource.kind === "item" && SETTINGS_ONLY_ITEM_IDS.has(resource.id.replace(/@\d+$/, ""));
+}
+
 export interface RecipeProgrammedCircuit {
   /** The number the slot has to be dialled to, or undefined for "any". */
   setting?: string;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getRecipeProgrammedCircuit,
   isProgrammedCircuitResource,
+  isSettingsOnlyItem,
 } from "./programmed-circuit";
 import type { Recipe } from "./types";
 
@@ -71,5 +72,34 @@ describe("getRecipeProgrammedCircuit", () => {
     expect(
       getRecipeProgrammedCircuit(makeRecipe({ kind: "crop_produce", programmedCircuit: "2" })),
     ).toBeUndefined();
+  });
+});
+
+describe("isSettingsOnlyItem", () => {
+  it("covers every programmed circuit and the casts", () => {
+    for (const id of [
+      "gregtech:gt.integrated_circuit",
+      "gregtech:gt.integrated_circuit@0",
+      "gregtech:gt.integrated_circuit@24",
+      "tconstruct:metalpattern@3",
+      "tconstruct:cast",
+      "tgregworks:tgregworks.shardcast",
+      "dreamcraft:bowstringcast",
+    ]) {
+      expect(isSettingsOnlyItem({ kind: "item", id }), id).toBe(true);
+    }
+  });
+
+  it("keeps what players craft: lenses, molds, shapes and real circuits", () => {
+    for (const id of [
+      "gregtech:gt.metaitem.01@24500",
+      "ggfab:gt.ggfab.d1@0",
+      "miscutils:mu-metaitem.01@1",
+      "gregtech:gt.metaitem.03@32080",
+      "bartworks:gt.bwmetageneratedlens@1",
+    ]) {
+      expect(isSettingsOnlyItem({ kind: "item", id }), id).toBe(false);
+    }
+    expect(isSettingsOnlyItem({ kind: "fluid", id: "gregtech:gt.integrated_circuit" })).toBe(false);
   });
 });
