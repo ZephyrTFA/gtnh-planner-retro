@@ -195,23 +195,37 @@ export function getEffectiveVoltageOrdinal(
   node: PowerNodeInput,
   tier: VoltageTier,
 ): number {
-  const fullPowerPool = getMachineBehaviour(recipe.machineType)?.fullPowerPool === true;
+  const summedVoltage = getSummedHatchInput(recipe, node, tier);
+  if (summedVoltage === undefined) {
+    return getVoltageTierIndex(tier);
+  }
+  return getVoltageTierIndex(getVoltageTierForEuT(summedVoltage));
+}
+
+/**
+ * What the hatches add up to: summed voltages (`getMaxInputVoltage()`), or for
+ * mega-style machines and when `wholeHatchPower` is asked, every hatch's full
+ * V x A (`getMaxInputEu()`). Undefined when the hatch count is unbounded.
+ */
+export function getSummedHatchInput(
+  recipe: PowerRecipeInput,
+  node: PowerNodeInput,
+  tier: VoltageTier,
+  wholeHatchPower = false,
+): number | undefined {
+  const fullPowerPool = wholeHatchPower || getMachineBehaviour(recipe.machineType)?.fullPowerPool === true;
   const budget = getNodePowerBudget(recipe, node);
   if (budget !== undefined) {
     // A typed budget is read as REGULAR hatches of its tier: two amps each
     // once there is more than one, so the summed voltage is half the
     // budget, and never under the tier's own voltage (one hatch, one amp).
     // Mega-style machines count the amps themselves, so the budget stands.
-    const summedVoltage = fullPowerPool ? budget : Math.max(getVoltageTierMaxEuT(tier), budget / 2);
-    return getVoltageTierIndex(getVoltageTierForEuT(summedVoltage));
+    return fullPowerPool ? budget : Math.max(getVoltageTierMaxEuT(tier), budget / 2);
   }
   const hatches = getNodeEnergyHatches(recipe, node);
   // Mega-style machines read `getMaxInputEu()`, which counts each regular
   // hatch's full 2 amps; everything else sums hatch voltages alone.
   const perHatch = fullPowerPool ? 2 : 1;
   const summedVoltage = getVoltageTierMaxEuT(tier) * hatches * perHatch;
-  if (!Number.isFinite(summedVoltage)) {
-    return getVoltageTierIndex(tier);
-  }
-  return getVoltageTierIndex(getVoltageTierForEuT(summedVoltage));
+  return Number.isFinite(summedVoltage) ? summedVoltage : undefined;
 }

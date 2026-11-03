@@ -28,6 +28,25 @@ computes in float: replicate it.
 - Still on scraped data on purpose: Nano Forge, PCB Factory, Component Assembly Line, QFT,
   Eye of Harmony (their coefficients read recipe metadata).
 
+## Addon machines (Twist Space Technology)
+
+- TST 0.8.0 entries sit in their own section of `machine-table.ts`, transcribed from the
+  mod's classes and the defaults its `Config.java` ships (`github.com/Nxer/Twist-Space-
+  Technology-Mod`, tag 0.8.0). `GTCM_MultiMachineBase` takes four knobs: getSpeedBonus()
+  multiplies DURATION (the table's `speed` is its inverse), getEuModifier() is `power`,
+  getMaxParallelRecipes() is `parallels`, isEnablePerfectOverclock() picks (4,4).
+- Two power tiers: `voltageTier` is GT's getTier(getMaxInputVoltage()) (summed voltages);
+  TST's getTotalPowerTier() reads `ctx.totalPowerEuT` (every hatch's V x A) rounded UP
+  (`tstPowerTierCovering`); the Thermal Energy Devourer rounds it DOWN (`tstPowerTierWithin`).
+- A machine's mode is its recipe map (`ctx.recipeMap`). A one-machine TST map runs on a
+  placeholder named after the map, so the entry takes the map name as an alias, except
+  where the map shares a GT machine's name (the fake cutting saw is "Cutting Machine").
+- Left out on purpose (they stay "Unchecked"): generators, wireless-only paths
+  (`ofNoOverclock` ignores speed and EU), execution cores, output multipliers, essentia
+  and the steam pair (their GT++ steam billing is unverified). An entry with a wireless
+  mode covers its hatch mode and says so in its note.
+- `machineTableNameCollisions()` must stay empty: an alias must never take over a name.
+
 ## Overclocks and ticks (src/lib/solver/overclock.ts)
 
 - Parallels are paid for with power BEFORE overclocks; only leftover voltage buys steps.

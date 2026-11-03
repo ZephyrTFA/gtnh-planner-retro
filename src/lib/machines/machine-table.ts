@@ -117,6 +117,12 @@ export interface MachineContext {
    */
   voltageTier: number;
   /**
+   * The hatches' whole power, V x A of every hatch (`getMaxInputEu()`), which
+   * Twist Space machines turn into a tier (`tstPowerTierCovering`,
+   * `tstPowerTierWithin`). Optional because test harnesses omit it.
+   */
+  totalPowerEuT?: number;
+  /**
    * Voltage tier ordinal of the recipe's own EU/t draw, for the machines whose
    * discounts compare against the recipe rather than the hatch (the Mega Alloy
    * Blast Smelter). Optional because test harnesses omit it.
@@ -672,6 +678,103 @@ const NEUTRON_PIPE_CONTROL: MachineConfigControl = {
  * Keyed by the machine name our dataset uses. `aliases` cover the reference's
  * name where it differs, plus any handler name the dataset also emits.
  */
+/*
+ * Twist Space Technology 0.8.0 (addon set "tst"), transcribed from the mod's
+ * own source (github.com/Nxer/Twist-Space-Technology-Mod, tag 0.8.0) with the
+ * defaults its Config.java ships. Most machines extend GTCM_MultiMachineBase,
+ * whose ProcessingLogic takes four knobs: getSpeedBonus() multiplies DURATION
+ * (so `speed` here is its inverse), getEuModifier() is `power`,
+ * getMaxParallelRecipes() is `parallels`, and isEnablePerfectOverclock()
+ * picks (4,4) over (2,4) overclocks. Machines whose logic those knobs cannot
+ * carry (generators, wireless-only machines, execution cores, output
+ * multipliers, essentia) are left out on purpose and stay "Unchecked".
+ */
+
+/**
+ * GTUtility.getTierExtended: the lowest tier whose voltage covers `euT`
+ * (TST's getTotalPowerTier() reads it off getMaxInputEu()), not capped at MAX.
+ */
+export function tstPowerTierCovering(euT: number): number {
+  if (!(euT > 8)) return 0;
+  return Math.floor((Math.ceil(Math.log2(euT)) - 2) / 2);
+}
+
+/** TSTUtils.calculateVoltageTier cast to int: the highest tier whose voltage fits inside `euT`. */
+export function tstPowerTierWithin(euT: number): number {
+  if (!(euT > 0)) return 0;
+  return Math.max(0, Math.floor((Math.log2(euT) - 3) / 2));
+}
+
+/** getTotalPowerTier() of the node's hatches; the summed-voltage tier when no total is known. */
+const tstTotalPowerTier = (c: MachineContext) =>
+  c.totalPowerEuT !== undefined ? tstPowerTierCovering(c.totalPowerEuT) : c.voltageTier;
+/** The same total rounded down, as the Thermal Energy Devourer reads it. */
+const tstTotalPowerTierWithin = (c: MachineContext) =>
+  c.totalPowerEuT !== undefined ? tstPowerTierWithin(c.totalPowerEuT) : c.voltageTier;
+
+/** Java's Integer.MAX_VALUE parallels: power and inputs are the only limit. */
+const TST_UNLIMITED_PARALLELS = 2147483647;
+
+/** Heat of a coil by its tier (HeatingCoilLevel: 1801 K for cupronickel, +900 K a tier). */
+const coilHeat = (c: MachineContext) => 1801 + 900 * c.tier(COIL);
+
+/** GlassTier: the voltage tier the glass is rated for, borosilicate (HV, 3) to UMV (12). */
+const TST_GLASS = "tstGlassTier";
+const TST_GLASS_NAMES = ["HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV"];
+const TST_GLASS_CONTROL = choiceControl(
+  TST_GLASS,
+  "Glass",
+  TST_GLASS_NAMES.map((tier) => `${tier} Glass`),
+  TST_GLASS_NAMES.length - 1,
+);
+const tstGlassTier = (c: MachineContext) => c.tier(TST_GLASS) + 3;
+
+/**
+ * The field generator tier SpaceScaler and CrystallineInfinitier share: TecTech
+ * casing 6 is 1, casing 14 is 2, Stabilisation Field Generator meta m is m + 3.
+ */
+const TST_FIELD_TIER = "tstFieldTier";
+const TST_FIELD_TIER_CONTROL = countControl(TST_FIELD_TIER, "Field Tier", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+/** "Recipe tier at most the glass tier, unless the glass is UMV." */
+const tstGlassGate = (c: MachineContext) =>
+  tstGlassTier(c) < 12 && (c.recipeVoltageTier ?? 0) > tstGlassTier(c)
+    ? "This recipe needs glass of at least its own voltage tier."
+    : undefined;
+
+const HOLY_SEPARATOR_PIECES = "holySeparatorPieces";
+const MAGNETIC_DOMAIN_RINGS = "magneticDomainRings";
+const MIRACLE_TOP_RINGS = "miracleTopRings";
+const MOLECULE_DECONSTRUCTOR_PIECES = "moleculeDeconstructorPieces";
+const SILKSONG_PIECES = "silksongPieces";
+const PHOTON_UPGRADES = "photonUpgradeCasings";
+/** Photon Controller Upgrade casings, LV to MAX: each one's speed increment (Config.java). */
+const PHOTON_UPGRADE_INCREMENTS = [100, 200, 300, 400, 500, 1000, 2000, 4000, 7000, 10000, 14000, 19000, 25000, 32000];
+const PHOTON_UPGRADE_TIERS = ["LV", "MV", "HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV", "UXV", "MAX"];
+const ASSEMBLY_MATRIX_NANITES = "assemblyMatrixNanites";
+/** [label, duration multiplier, gold?] for TST_IntegratedAssemblyMatrix's nanite bus. */
+const ASSEMBLY_MATRIX_NANITE_OPTIONS: Array<[string, number, boolean]> = [
+  // speedBonus 1.5 with no nanites; silver 1 + 0.5 x (256 - n) / 256; gold 0.5 + (1024 - n) / 1024.
+  ["No Nanites", 1.5, false],
+  ["64 Silver Nanites", 1 + (0.5 * (256 - 64)) / 256, false],
+  ["128 Silver Nanites", 1 + (0.5 * (256 - 128)) / 256, false],
+  ["256 Silver Nanites", 1, false],
+  ["256 Gold Nanites", 0.5 + (1024 - 256) / 1024, true],
+  ["512 Gold Nanites", 0.5 + (1024 - 512) / 1024, true],
+  ["1024 Gold Nanites", 0.5, true],
+];
+const MANUFACTURING_CORE = "manufacturingCenterCore";
+const FRAGMENTIZER_BLOCK = "fragmentizerContainment";
+const SOLAR_FACTORY_CASING = "solarFactoryCasing";
+const MSTF_FIELD_TIER = "spaceTimeFieldTier";
+const DEVOURER_MODE = "thermalDevourerMode";
+const GENESIS_PARALLEL = "genesisParallel";
+const DRYING_FURNACE_PIECES = "dryingFurnacePieces";
+const SPACETIME_FUSION_COIL = "spacetimeFusionCoil";
+const SPACETIME_COOLING = "spacetimeCooling";
+const SPACETIME_MATRIX = "spacetimeEnergyMatrix";
+const TENTACLE_CASING = "tentacleComponentCasing";
+
 const MACHINES: Record<string, MachineBehaviour> = {
   // -- Heat: the machines that overclock on coil heat -----------------------
   // Heat formulas below are transcribed from each machine's setMachineHeat
@@ -1398,14 +1501,351 @@ const MACHINES: Record<string, MachineBehaviour> = {
     cycleTicks: 20,
     overclock: OVERCLOCK.none(),
   },
+  // ---- Twist Space Technology 0.8.0 (see the note above TST_UNLIMITED_PARALLELS) ----
+
+  "Holy Separator": {
+    // GT_TileEntity_HolySeparator: speedBonus 0.9^T (T = getTotalPowerTier), 8 parallels per
+    // middle piece, perfect overclocks from 16 pieces. Not aliased to its fake-cutting-saw map,
+    // whose display name "Cutting Machine" is GT's own singleblock.
+    speed: (c) => 1 / 0.9 ** tstTotalPowerTier(c),
+    parallels: (c) => 8 * c.value(HOLY_SEPARATOR_PIECES),
+    overclock: (c) => (c.value(HOLY_SEPARATOR_PIECES) >= 16 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [countControl(HOLY_SEPARATOR_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32, 64])],
+  },
+  "Intensify Chemical Distorter": {
+    // Own map: 16 parallels at base speed; Large Chemical Reactor mode: 1024 parallels, 10x.
+    // Always perfect. validateRecipe refuses a special value above the coil's heat.
+    aliases: ["Intense Chemical Distorter"],
+    speed: (c) => (c.recipeMap === "Large Chemical Reactor" ? 10 : 1),
+    parallels: (c) => (c.recipeMap === "Large Chemical Reactor" ? 1024 : 16),
+    overclock: OVERCLOCK.perfect(),
+    controls: [HEATING_COIL_CONTROL],
+    recipeGate: (c) =>
+      (c.recipeSpecialValue ?? 0) > coilHeat(c)
+        ? `This recipe needs coils of at least ${c.recipeSpecialValue} K.`
+        : undefined,
+  },
+  "Magnetic Domain Constructor": {
+    // speedBonus 0.75^T; 64 parallels per ring (the main piece is the first).
+    speed: (c) => 1 / 0.75 ** tstTotalPowerTier(c),
+    parallels: (c) => 64 * c.value(MAGNETIC_DOMAIN_RINGS),
+    overclock: OVERCLOCK.normal(),
+    controls: [countControl(MAGNETIC_DOMAIN_RINGS, "Rings", [1, 2, 3, 4, 6, 8, 12, 16])],
+  },
+  "Magnetic Drive Pressure Former": {
+    // Extruder mode 8x, bender, press and hammer 16x, each times (1 + coil tier); 0.75 EU;
+    // 1024 parallels; perfect except in extruder mode below Infinity coils (tier 11).
+    speed: (c) => (c.recipeMap === "Extruder" ? 8 : 16) * (1 + c.tier(COIL)),
+    power: 0.75,
+    parallels: 1024,
+    overclock: (c) =>
+      c.recipeMap !== "Extruder" || c.tier(COIL) >= 11 ? OVERCLOCK.perfect() : OVERCLOCK.normal(),
+    controls: [HEATING_COIL_CONTROL],
+  },
+  '"Mini" Magnetic Mixer': {
+    // GT_TileEntity_MagneticMixer: speedBonus 0.8^T, unlimited parallels, normal overclocks.
+    speed: (c) => 1 / 0.8 ** tstTotalPowerTier(c),
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.normal(),
+    // The mixer map's primary machine lends every handler its parallels-per-tier knob.
+    hidesControls: ["voltageParallel"],
+  },
+  "Miracle Top": {
+    // R rings (top + middles + end, 2 to 16): speedBonus 1 / 4R, 128R parallels, perfect from 8.
+    aliases: ["Quantum Inversion"],
+    speed: (c) => 4 * c.value(MIRACLE_TOP_RINGS),
+    parallels: (c) => 128 * c.value(MIRACLE_TOP_RINGS),
+    overclock: (c) => (c.value(MIRACLE_TOP_RINGS) >= 8 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [countControl(MIRACLE_TOP_RINGS, "Rings", [2, 4, 6, 8, 10, 12, 14, 16])],
+  },
+  "Molecule Deconstructor": {
+    // speedBonus 0.9^T; 24 parallels per piece (1 + middles); perfect from 16 pieces.
+    speed: (c) => 1 / 0.9 ** tstTotalPowerTier(c),
+    parallels: (c) => 24 * c.value(MOLECULE_DECONSTRUCTOR_PIECES),
+    overclock: (c) => (c.value(MOLECULE_DECONSTRUCTOR_PIECES) >= 16 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [countControl(MOLECULE_DECONSTRUCTOR_PIECES, "Pieces", [1, 2, 4, 8, 16, 32])],
+    hidesControls: ["voltageParallel"],
+  },
+  "Physical Form Switcher": {
+    // speedBonus 0.9^T, unlimited parallels, normal overclocks; recipe tier at most the glass's.
+    speed: (c) => 1 / 0.9 ** tstTotalPowerTier(c),
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.normal(),
+    controls: [TST_GLASS_CONTROL],
+    recipeGate: tstGlassGate,
+  },
+  "Precise High-Energy Photonic Quantum Master": {
+    // speedBonus 10000 / (10000 + summed casing increments), halved again in laser engraver
+    // mode; 256 parallels engraving, 16 on its own map; perfect with any UMV+ casing.
+    aliases: ["Precise High-Energy Photonic Quantum Manipulator"],
+    speed: (c) => {
+      const casing = c.tier(PHOTON_UPGRADES);
+      const increment = casing === 0 ? 0 : 25 * PHOTON_UPGRADE_INCREMENTS[casing - 1]!;
+      return ((10000 + increment) / 10000) * (c.recipeMap === "Laser Engraver" ? 2 : 1);
+    },
+    parallels: (c) => (c.recipeMap === "Laser Engraver" ? 256 : 16),
+    overclock: (c) => (c.tier(PHOTON_UPGRADES) >= 12 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [
+      choiceControl(PHOTON_UPGRADES, "Upgrade Casings", [
+        "None",
+        ...PHOTON_UPGRADE_TIERS.map((tier) => `25 ${tier} Upgrades`),
+      ]),
+    ],
+    note: "Assumes all 25 upgrade casings are one tier.",
+  },
+  Silksong: {
+    // Hatch mode: speedBonus 0.85^T / coil (1 to 14), 32 x pieces x coil parallels, perfect from
+    // 94 pieces. With 94+ pieces and no energy hatch it runs wireless instead: fixed 188-tick
+    // batches at the recipe's own EU, which these numbers do not describe.
+    speed: (c) => (c.tier(COIL) + 1) / 0.85 ** tstTotalPowerTier(c),
+    parallels: (c) => 32 * c.value(SILKSONG_PIECES) * (c.tier(COIL) + 1),
+    overclock: (c) => (c.value(SILKSONG_PIECES) >= 94 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [HEATING_COIL_CONTROL, countControl(SILKSONG_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32, 64, 94])],
+    note: "With energy hatches. Wireless mode (94+ pieces, no hatches) runs fixed batches not shown here.",
+  },
+  "Space Scaler": {
+    // Field tier 1: base speed, normal overclocks; tier 2+: 10x and perfect. Unlimited parallels.
+    speed: (c) => (c.value(TST_FIELD_TIER) >= 2 ? 10 : 1),
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: (c) => (c.value(TST_FIELD_TIER) >= 2 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [TST_FIELD_TIER_CONTROL],
+    hidesControls: ["machineParallel"],
+    note: "Particle collider mode from field tier 4 multiplies outputs by 1 + 4 x (tier - 3); not counted here.",
+  },
+  "Crystalline Infinitier": {
+    // Autoclave 4x, chemical bath 16x, own map 1x; EU 1 / field tier; parallels glass tier x
+    // field tier x T; perfect from field tier 3. validateRecipe: special value at most the field tier.
+    speed: (c) => (c.recipeMap === "Autoclave" ? 4 : c.recipeMap === "Chemical Bath" ? 16 : 1),
+    power: (c) => 1 / Math.max(1, c.value(TST_FIELD_TIER)),
+    parallels: (c) => tstGlassTier(c) * c.value(TST_FIELD_TIER) * tstTotalPowerTier(c),
+    overclock: (c) => (c.value(TST_FIELD_TIER) >= 3 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [TST_FIELD_TIER_CONTROL, TST_GLASS_CONTROL],
+    recipeGate: (c) =>
+      (c.recipeSpecialValue ?? 0) > c.value(TST_FIELD_TIER)
+        ? `This recipe needs field tier ${c.recipeSpecialValue} or higher.`
+        : undefined,
+    note: "A new controller runs autoclave mode at base speed until its mode is switched once.",
+  },
+  ElvenWorkshop: {
+    // GTCM_ElvenWorkshop (and its Legacy twin): one parallel, base speed, always perfect.
+    aliases: ["Mana Infuser", "Rune Engraver"],
+    parallels: 1,
+    overclock: OVERCLOCK.perfect(),
+  },
+  "Industrial Magnetar Separator": {
+    // speedBonus 0.25, EU 0.8, 4 parallels per getTier(summed hatch voltage); normal hatches only.
+    speed: 4,
+    power: 0.8,
+    parallels: (c) => 4 * c.voltageTier,
+    overclock: OVERCLOCK.normal(),
+  },
+  "Integrated Assembly Matrix": {
+    // Nanites in its one nanite bus (never consumed) set speed; gold doubles the 128 parallels.
+    speed: (c) => 1 / ASSEMBLY_MATRIX_NANITE_OPTIONS[c.tier(ASSEMBLY_MATRIX_NANITES)]![1],
+    parallels: (c) => (ASSEMBLY_MATRIX_NANITE_OPTIONS[c.tier(ASSEMBLY_MATRIX_NANITES)]![2] ? 256 : 128),
+    overclock: OVERCLOCK.normal(),
+    controls: [
+      choiceControl(
+        ASSEMBLY_MATRIX_NANITES,
+        "Nanites",
+        ASSEMBLY_MATRIX_NANITE_OPTIONS.map(([label]) => label),
+      ),
+    ],
+    note: "Runs only recipes on its data sticks, and only those whose EU/t fits one hatch's voltage.",
+  },
+  "Large Canner": {
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.perfect(),
+  },
+  "Large Industrial Coking Factory": {
+    // speedBonus 1 / (coil tier + 1), unlimited parallels, normal overclocks.
+    aliases: ["Coking Factory Recipes"],
+    speed: (c) => c.tier(COIL) + 1,
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.normal(),
+    controls: [HEATING_COIL_CONTROL],
+  },
+  "Manufacturing Center": {
+    // MultiUse Core IV to UV: speedBonus 1 / (1.2 + 0.5 x steps), EU 1 - 0.15 x steps; 2
+    // parallels per getTier(summed hatch voltage); recipe tier at most the core's.
+    speed: (c) => 1.2 + 0.5 * c.tier(MANUFACTURING_CORE),
+    power: (c) => 1 - 0.15 * c.tier(MANUFACTURING_CORE),
+    parallels: (c) => 2 * c.voltageTier,
+    overclock: OVERCLOCK.normal(),
+    controls: [choiceControl(MANUFACTURING_CORE, "Core", ["IV Core", "LuV Core", "ZPM Core", "UV Core"])],
+    recipeGate: (c) =>
+      (c.recipeVoltageTier ?? 0) > 5 + c.tier(MANUFACTURING_CORE)
+        ? "This recipe needs a core of at least its own voltage tier."
+        : undefined,
+    note: "A single energy hatch gives it 2 amps, but extra voltage then buys no amperage overclocks.",
+  },
+  '"Mini" Household Cell Fragmentizer': {
+    // TST_MegaMacerator: 8x when the glass outranks the recipe (or is UMV), else 1x; normal
+    // overclocks (its perfect-overclock setting is never read); parallels by containment block.
+    speed: (c) => (tstGlassTier(c) >= 12 || tstGlassTier(c) > (c.recipeVoltageTier ?? 0) ? 8 : 1),
+    parallels: (c) => [128, 32768, TST_UNLIMITED_PARALLELS][c.tier(FRAGMENTIZER_BLOCK)]!,
+    overclock: OVERCLOCK.normal(),
+    controls: [
+      TST_GLASS_CONTROL,
+      choiceControl(FRAGMENTIZER_BLOCK, "Containment", ["Damascus Steel Block", "Neutronium Block", "Universium Block"]),
+    ],
+    recipeGate: tstGlassGate,
+  },
+  "Mega Solar Panel Factory": {
+    // speedBonus 1 / (component casing meta + 1), LV casing 1x to MAX 14x; perfect.
+    speed: (c) => c.tier(SOLAR_FACTORY_CASING) + 1,
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.perfect(),
+    controls: [
+      choiceControl(SOLAR_FACTORY_CASING, "Component Casing", PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
+    ],
+  },
+  "Micro SpaceTime Fabricatorio": {
+    // Field tier t above 2 gives speedBonus 2 / ((t - 1)(t - 2)); 16 parallels; perfect from tier 2.
+    aliases: ["Micro SpaceTime Fabricatorio Recipes"],
+    speed: (c) => {
+      const above = c.value(MSTF_FIELD_TIER) - 2;
+      return above > 0 ? ((above + 1) * above) / 2 : 1;
+    },
+    parallels: 16,
+    overclock: (c) => (c.value(MSTF_FIELD_TIER) > 1 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [countControl(MSTF_FIELD_TIER, "Field Tier", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])],
+    note: "A Seed of Space and Time doubles every output of a run; not counted here.",
+  },
+  Scavenger: {
+    // speedBonus 0.8^T, EU 0.6, unlimited parallels, normal overclocks.
+    speed: (c) => 1 / 0.8 ** tstTotalPowerTier(c),
+    power: 0.6,
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.normal(),
+  },
+  "Thermal Energy Devourer": {
+    // coef = 1 + the highest tier inside the hatches' total EU/t. High Speed mode: speedBonus
+    // 0.5 / coef, 1024 parallels; Devourer mode: EU 1 / coef, unlimited parallels.
+    speed: (c) => (c.tier(DEVOURER_MODE) === 0 ? 2 * (1 + tstTotalPowerTierWithin(c)) : 1),
+    power: (c) => (c.tier(DEVOURER_MODE) === 1 ? 1 / (1 + tstTotalPowerTierWithin(c)) : 1),
+    parallels: (c) => (c.tier(DEVOURER_MODE) === 0 ? 1024 : TST_UNLIMITED_PARALLELS),
+    overclock: OVERCLOCK.normal(),
+    controls: [choiceControl(DEVOURER_MODE, "Mode", ["High Speed", "Devourer"])],
+    note: "With energy hatches. An Energised Tesseract switches it to wireless batches not shown here.",
+  },
+  "Vacuum Filter Extractor": {
+    // speedBonus 1 / (1 + T), EU 0.5, unlimited parallels; perfect in distillery mode only.
+    speed: (c) => 1 + tstTotalPowerTier(c),
+    power: 0.5,
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: (c) => (c.recipeMap === "Distillery" ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+  },
+  "Advanced Mega Oil Cracker": {
+    // speedBonus 0.5, EU 1 / (coil tier + 1), 256 parallels, perfect with Hypogen coils or better.
+    speed: 2,
+    power: (c) => 1 / (c.tier(COIL) + 1),
+    parallels: 256,
+    overclock: (c) => (c.tier(COIL) >= 12 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [HEATING_COIL_CONTROL],
+  },
+  "Advanced Circuit Assembly Line": {
+    // 16 parallels at base speed and EU, always perfect.
+    parallels: 16,
+    overclock: OVERCLOCK.perfect(),
+    note: "Needs the circuit's imprint, and runs only recipes whose EU/t fits one amp of its single hatch.",
+  },
+  "Core Device of Human Power Generation Facility": {
+    // A fluid heater: speedBonus 1 / (coil tier + 1), unlimited parallels, perfect.
+    speed: (c) => c.tier(COIL) + 1,
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.perfect(),
+    controls: [HEATING_COIL_CONTROL],
+  },
+  "Giant Vacuum Drying Furnace": {
+    // speedBonus 0.8^T / (0.5 x (coil tier + 1)); 32 x pieces x (coil tier + 1) parallels; normal.
+    speed: (c) => (0.5 * (c.tier(COIL) + 1)) / 0.8 ** tstTotalPowerTier(c),
+    parallels: (c) => 32 * c.value(DRYING_FURNACE_PIECES) * (c.tier(COIL) + 1),
+    overclock: OVERCLOCK.normal(),
+    controls: [HEATING_COIL_CONTROL, countControl(DRYING_FURNACE_PIECES, "Middle Pieces", [1, 2, 4, 8, 16, 32])],
+    // Both its maps' primary machines lend a parallels knob it does not have.
+    hidesControls: ["machineParallel"],
+  },
+  HyperSpacetimeTransformer: {
+    // speedBonus 1 / fusion coil tier (1 to 6); 256 parallels; perfect with tier 2 cooling;
+    // the Energy Sustainment Matrix (1 to 6) caps recipe EU/t at V[UHV + matrix - 1].
+    aliases: ["Hyper Spacetime Transformer"],
+    speed: (c) => c.value(SPACETIME_FUSION_COIL),
+    parallels: 256,
+    overclock: (c) => (c.tier(SPACETIME_COOLING) === 1 ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
+    controls: [
+      countControl(SPACETIME_FUSION_COIL, "Fusion Coil Tier", [1, 2, 3, 4, 5, 6]),
+      choiceControl(SPACETIME_COOLING, "Cooling", ["Tier 1 Cooling Casing", "Tier 2 Cooling Casing"]),
+      countControl(SPACETIME_MATRIX, "Energy Matrix Tier", [1, 2, 3, 4, 5, 6]),
+    ],
+    recipeGate: (c) =>
+      (c.recipeVoltageTier ?? 0) > 8 + c.value(SPACETIME_MATRIX)
+        ? "This recipe needs a higher Energy Sustainment Matrix tier."
+        : undefined,
+  },
+  "Hyper Thermal Convector": {
+    // No energy hatch: 20-tick recipes at 0 EU/t, unlimited parallels, run up to 128 (heat
+    // exchange) or 16 (cooling) times a cycle; inputs are the only limit.
+    aliases: ["Rapid Cooling Down", "Rapid Heat Exchange"],
+    parallels: TST_UNLIMITED_PARALLELS,
+    overclock: OVERCLOCK.none(),
+  },
+  "PULSAR - Incompact Cyclotron": {
+    // TST_IncompactCyclotron: speedBonus 0.5, EU 1.6, 256 parallels, normal overclocks.
+    speed: 2,
+    power: 1.6,
+    parallels: 256,
+    overclock: OVERCLOCK.normal(),
+  },
+  "Indistinct Tentacle": {
+    // Hatch mode (TST_IndistinctTentacle): assembly line 1x, component assembly line 2x,
+    // assembler and precise assembler 4x; 256 parallels; perfect when the component casing
+    // (meta 0 = LV) is above the recipe's tier. validateRecipe: recipe tier at most casing
+    // meta + 2, and a component assembly line recipe's casing tier at most meta + 1.
+    speed: (c) => (c.recipeMap === "Component Assembly Line" ? 2 : c.recipeMap === "Mega Assembly Line" ? 1 : 4),
+    parallels: 256,
+    overclock: (c) =>
+      (c.recipeVoltageTier ?? 0) <= c.tier(TENTACLE_CASING) ? OVERCLOCK.perfect() : OVERCLOCK.normal(),
+    controls: [
+      choiceControl(TENTACLE_CASING, "Component Casing", PHOTON_UPGRADE_TIERS.map((tier) => `${tier} Casing`)),
+    ],
+    recipeGate: (c) => {
+      if ((c.recipeVoltageTier ?? 0) > c.tier(TENTACLE_CASING) + 2) {
+        return "This recipe needs a component casing at most one tier below it.";
+      }
+      return c.recipeMap === "Component Assembly Line" && (c.recipeSpecialValue ?? 0) > c.tier(TENTACLE_CASING) + 1
+        ? "This recipe needs a higher component casing tier."
+        : undefined;
+    },
+    // The precise assembler map's own machine lends its casing and parallel knobs.
+    hidesControls: ["parallel-precise-casing-tier", "machineParallel", "preciseCasing"],
+    note: "With energy hatches, glass at least their tier. Wireless mode runs fixed batches not shown here.",
+  },
+  "Mass Fabricator : Genesis": {
+    // 1 + the sum of its parallel controllers (any number of them); perfect overclocks.
+    parallels: (c) => c.value(GENESIS_PARALLEL),
+    overclock: OVERCLOCK.perfect(),
+    controls: [
+      countControl(GENESIS_PARALLEL, "Parallels", [1, 9, 129, 2049, 32769, 524289, 8388609, 134217729]),
+    ],
+  },
 };
 
 const BY_NAME = new Map<string, MachineBehaviour>();
+/** Names two entries both claim; the later one would silently win. */
+const NAME_COLLISIONS: string[] = [];
 for (const [name, behaviour] of Object.entries(MACHINES)) {
-  BY_NAME.set(normalizeMachineName(name), behaviour);
-  for (const alias of behaviour.aliases ?? []) {
-    BY_NAME.set(normalizeMachineName(alias), behaviour);
+  for (const label of [name, ...(behaviour.aliases ?? [])]) {
+    const key = normalizeMachineName(label);
+    const existing = BY_NAME.get(key);
+    if (existing && existing !== behaviour) NAME_COLLISIONS.push(label);
+    BY_NAME.set(key, behaviour);
   }
+}
+
+/** Table names or aliases claimed by two different entries (should be none). */
+export function machineTableNameCollisions(): string[] {
+  return [...NAME_COLLISIONS];
 }
 
 export function getMachineBehaviour(machineType: string | undefined): MachineBehaviour | undefined {

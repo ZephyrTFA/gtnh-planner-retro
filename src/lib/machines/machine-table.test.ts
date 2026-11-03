@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   getMachineBehaviour,
   HEAT_OVERCLOCK,
+  machineTableNameCollisions,
   machineTableNames,
   normalizeMachineName,
   OVERCLOCK,
   resolveCoefficient,
   resolveOverclockSpec,
+  tstPowerTierCovering,
+  tstPowerTierWithin,
 } from "./machine-table";
 import referenceCoefficients from "./__fixtures__/reference-coefficients.json";
 import {
@@ -337,6 +340,41 @@ describe("curated machine table", () => {
         // kubatech's MTEExtremeEntityCrusher and MobHandlerLoader; the
         // reference never modelled it. extreme-entity-crusher.test.ts.
         "Extreme Entity Crusher",
+        // Twist Space Technology 0.8.0 (the "tst" addon set), from the mod's own
+        // classes and Config.java defaults; the reference never covered addons.
+        "Holy Separator",
+        "Intensify Chemical Distorter",
+        "Magnetic Domain Constructor",
+        "Magnetic Drive Pressure Former",
+        '"Mini" Magnetic Mixer',
+        "Miracle Top",
+        "Molecule Deconstructor",
+        "Physical Form Switcher",
+        "Precise High-Energy Photonic Quantum Master",
+        "Silksong",
+        "Space Scaler",
+        "Crystalline Infinitier",
+        "ElvenWorkshop",
+        "Industrial Magnetar Separator",
+        "Integrated Assembly Matrix",
+        "Large Canner",
+        "Large Industrial Coking Factory",
+        "Manufacturing Center",
+        '"Mini" Household Cell Fragmentizer',
+        "Mega Solar Panel Factory",
+        "Micro SpaceTime Fabricatorio",
+        "Scavenger",
+        "Thermal Energy Devourer",
+        "Vacuum Filter Extractor",
+        "Mass Fabricator : Genesis",
+        "Advanced Mega Oil Cracker",
+        "Advanced Circuit Assembly Line",
+        "Core Device of Human Power Generation Facility",
+        "Giant Vacuum Drying Furnace",
+        "HyperSpacetimeTransformer",
+        "Hyper Thermal Convector",
+        "PULSAR - Incompact Cyclotron",
+        "Indistinct Tentacle",
       ].map(normalizeMachineName),
     );
     // Every entry must trace back to a reference definition or a direct source
@@ -563,5 +601,121 @@ describe("pipe casings", () => {
       "pipeCasing",
       "itemPipeCasing",
     ]);
+  });
+});
+
+describe("Twist Space Technology machines", () => {
+  // Transcribed from TST 0.8.0's source with its shipped Config.java defaults; see the
+  // section comment in machine-table.ts. Each pin names the Java it reproduces.
+  const at = (overrides: Partial<Parameters<typeof resolveCoefficient>[1]> & { values?: Record<string, number> }) => ({
+    tier: (id: string) => overrides.values?.[id] ?? 0,
+    value: (id: string) => overrides.values?.[id] ?? 0,
+    voltageTier: 5,
+    ...overrides,
+  });
+  const speed = (name: string, ctx: ReturnType<typeof at>) => resolveCoefficient(getMachineBehaviour(name)?.speed, ctx, 1);
+  const power = (name: string, ctx: ReturnType<typeof at>) => resolveCoefficient(getMachineBehaviour(name)?.power, ctx, 1);
+  const parallels = (name: string, ctx: ReturnType<typeof at>) =>
+    resolveCoefficient(getMachineBehaviour(name)?.parallels, ctx, 1);
+  const overclock = (name: string, ctx: ReturnType<typeof at>) => resolveOverclockSpec(getMachineBehaviour(name)!, ctx);
+
+  it("no name or alias is claimed by two entries", () => {
+    expect(machineTableNameCollisions()).toEqual([]);
+  });
+
+  it("reads the hatches' total power the way TST rounds it", () => {
+    // GTUtility.getTierExtended rounds up; TSTUtils.calculateVoltageTier, cast to int, rounds down.
+    expect(tstPowerTierCovering(32)).toBe(1); // one LV amp
+    expect(tstPowerTierCovering(64)).toBe(2); // a 2 A LV hatch reads as MV
+    expect(tstPowerTierWithin(64)).toBe(1);
+    expect(tstPowerTierCovering(4 * 8192)).toBe(6); // 4 A IV covers LuV exactly
+    expect(tstPowerTierWithin(4 * 8192)).toBe(6);
+  });
+
+  it("Holy Separator: 0.9^T duration, 8 parallels a piece, perfect from 16 pieces", () => {
+    const ctx = at({ totalPowerEuT: 524288, values: { holySeparatorPieces: 16 } }); // 1 A UV: T = 8
+    expect(speed("Holy Separator", ctx)).toBeCloseTo(1 / 0.9 ** 8, 9);
+    expect(parallels("Holy Separator", ctx)).toBe(128);
+    expect(overclock("Holy Separator", ctx)).toEqual(OVERCLOCK.perfect());
+    expect(overclock("Holy Separator", at({ values: { holySeparatorPieces: 8 } }))).toEqual(OVERCLOCK.normal());
+  });
+
+  it("Magnetic Drive Pressure Former: 8x extruding, 16x otherwise, times 1 + coil tier", () => {
+    const extruder = at({ recipeMap: "Extruder", values: { heatingCoil: 3 } });
+    expect(speed("Magnetic Drive Pressure Former", extruder)).toBe(32);
+    expect(power("Magnetic Drive Pressure Former", extruder)).toBe(0.75);
+    expect(overclock("Magnetic Drive Pressure Former", extruder)).toEqual(OVERCLOCK.normal());
+    expect(overclock("Magnetic Drive Pressure Former", at({ recipeMap: "Extruder", values: { heatingCoil: 11 } })))
+      .toEqual(OVERCLOCK.perfect());
+    expect(speed("Magnetic Drive Pressure Former", at({ recipeMap: "Bending Machine", values: { heatingCoil: 3 } }))).toBe(64);
+  });
+
+  it("Intensify Chemical Distorter: LCR mode 10x and 1024 parallels; a coil-heat gate", () => {
+    expect(speed("Intensify Chemical Distorter", at({ recipeMap: "Large Chemical Reactor" }))).toBe(10);
+    expect(parallels("Intensify Chemical Distorter", at({ recipeMap: "Intense Chemical Distorter" }))).toBe(16);
+    const gate = getMachineBehaviour("Intense Chemical Distorter")!.recipeGate!;
+    expect(gate(at({ recipeSpecialValue: 5000, values: { heatingCoil: 3 } }))).toMatch(/5000 K/); // TPV 4501 K
+    expect(gate(at({ recipeSpecialValue: 4501, values: { heatingCoil: 3 } }))).toBeUndefined();
+  });
+
+  it("Precise Photonic Quantum Master: 10000 / (10000 + increments), halved engraving", () => {
+    // 25 UV casings (index 8): 25 x 4000 = 100000 increment.
+    const engraving = at({ recipeMap: "Laser Engraver", values: { photonUpgradeCasings: 8 } });
+    expect(speed("Precise High-Energy Photonic Quantum Master", engraving)).toBeCloseTo(22, 9);
+    expect(overclock("Precise High-Energy Photonic Quantum Master", engraving)).toEqual(OVERCLOCK.normal());
+    expect(overclock("Precise High-Energy Photonic Quantum Master", at({ values: { photonUpgradeCasings: 12 } })))
+      .toEqual(OVERCLOCK.perfect()); // UMV
+  });
+
+  it("Thermal Energy Devourer and Vacuum Filter Extractor round the same power differently", () => {
+    const twoAmpLv = { totalPowerEuT: 64 };
+    expect(speed("Thermal Energy Devourer", at({ ...twoAmpLv, values: { thermalDevourerMode: 0 } }))).toBe(4); // 0.5 / 2
+    expect(power("Thermal Energy Devourer", at({ ...twoAmpLv, values: { thermalDevourerMode: 1 } }))).toBe(0.5);
+    expect(speed("Vacuum Filter Extractor", at(twoAmpLv))).toBe(3); // 1 / (1 + 2)
+    expect(overclock("Vacuum Filter Extractor", at({ recipeMap: "Distillery" }))).toEqual(OVERCLOCK.perfect());
+  });
+
+  it("Manufacturing Center: core tier sets speed, EU and the highest recipe tier", () => {
+    const uv = at({ values: { manufacturingCenterCore: 3 }, voltageTier: 8, recipeVoltageTier: 9 });
+    expect(speed("Manufacturing Center", uv)).toBeCloseTo(2.7, 9);
+    expect(power("Manufacturing Center", uv)).toBeCloseTo(0.55, 9);
+    expect(parallels("Manufacturing Center", uv)).toBe(16);
+    expect(getMachineBehaviour("Manufacturing Center")!.recipeGate!(uv)).toMatch(/core/);
+  });
+
+  it("Giant Vacuum Drying Furnace and the Hyper Spacetime Transformer's matrix gate", () => {
+    // 0.8^T / (0.5 x (coil + 1)) as duration: Eternal coils (14) at T = 9.
+    const furnace = at({ totalPowerEuT: 524288 * 4, values: { heatingCoil: 13, dryingFurnacePieces: 2 } });
+    expect(speed("Giant Vacuum Drying Furnace", furnace)).toBeCloseTo(7 / 0.8 ** 9, 9);
+    expect(parallels("Giant Vacuum Drying Furnace", furnace)).toBe(32 * 2 * 14);
+    // Matrix tier 2 allows recipes up to UEV (V[10]); a UIV recipe (tier 11) is refused.
+    const gate = getMachineBehaviour("Hyper Spacetime Transformer")!.recipeGate!;
+    expect(gate(at({ recipeVoltageTier: 10, values: { spacetimeEnergyMatrix: 2 } }))).toBeUndefined();
+    expect(gate(at({ recipeVoltageTier: 11, values: { spacetimeEnergyMatrix: 2 } }))).toMatch(/Matrix/);
+  });
+
+  it("Indistinct Tentacle: speed by map, perfect below the casing tier, two recipe gates", () => {
+    const zpmCasing = { tentacleComponentCasing: 6 }; // meta 6 = ZPM casing
+    expect(speed("Indistinct Tentacle", at({ recipeMap: "Assembler", values: zpmCasing }))).toBe(4);
+    expect(speed("Indistinct Tentacle", at({ recipeMap: "Component Assembly Line", values: zpmCasing }))).toBe(2);
+    expect(overclock("Indistinct Tentacle", at({ recipeVoltageTier: 6, values: zpmCasing }))).toEqual(OVERCLOCK.perfect());
+    expect(overclock("Indistinct Tentacle", at({ recipeVoltageTier: 7, values: zpmCasing }))).toEqual(OVERCLOCK.normal());
+    const gate = getMachineBehaviour("Indistinct Tentacle")!.recipeGate!;
+    expect(gate(at({ recipeVoltageTier: 8, values: zpmCasing }))).toBeUndefined();
+    expect(gate(at({ recipeVoltageTier: 9, values: zpmCasing }))).toMatch(/casing/);
+  });
+
+  it("single-machine TST maps reach their machine by the map's name", () => {
+    for (const [map, machine] of [
+      ["Coking Factory Recipes", "Large Industrial Coking Factory"],
+      ["Intense Chemical Distorter", "Intensify Chemical Distorter"],
+      ["Micro SpaceTime Fabricatorio Recipes", "Micro SpaceTime Fabricatorio"],
+      ["Mass Fabricator: Genesis", "Mass Fabricator : Genesis"],
+      ["Quantum Inversion", "Miracle Top"],
+    ] as const) {
+      expect(getMachineBehaviour(map)).toBe(getMachineBehaviour(machine));
+    }
+    // The fake cutting saw map shares GT's "Cutting Machine" name: never the Holy Separator.
+    expect(getMachineBehaviour("Cutting Machine")).not.toBe(getMachineBehaviour("Holy Separator"));
   });
 });

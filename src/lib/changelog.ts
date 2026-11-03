@@ -46,7 +46,8 @@ export const CHANGELOG: ChangelogEntry[] = [
     notes: [
       "The Game picker in the top bar now offers GTNH 2.9.0 + Twist Space Technology 0.8.0: about 8,000 more recipes and 60 more machines.",
       "Each plan remembers its pack and opens on it. A new plan starts on the pack of the plan you had open.",
-      "Twist Space machines say Unchecked when you hover them: their speed, power and parallels come from their tooltips, not from the mod's code.",
+      "33 Twist Space machines run on numbers taken from the mod's own code, with their structure knobs (coils, rings, pieces, casings) on the card.",
+      "The rest (generators, wireless-only and essentia machines) say Unchecked when you hover them: their numbers come from their tooltips.",
     ],
   },
   {

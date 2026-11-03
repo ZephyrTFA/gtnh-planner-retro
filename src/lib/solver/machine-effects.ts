@@ -45,7 +45,7 @@ import {
 } from "@/lib/model/bee-maths";
 import { getVoltageTierForEuT, getVoltageTierIndex } from "@/lib/model/tiers";
 import { getHeatDiscountMultiplier } from "./heat";
-import { getEffectiveVoltageOrdinal, getNodeRunTier, getPowerPoolEuT } from "./power";
+import { getEffectiveVoltageOrdinal, getNodeRunTier, getPowerPoolEuT, getSummedHatchInput } from "./power";
 import {
   getMachineBehaviour,
   resolveCoefficient,
@@ -135,6 +135,9 @@ export function buildMachineContext(
     // SUMMED hatch voltage, so stacked hatches raise the ordinal the
     // "parallels per voltage tier" formulas scale on.
     voltageTier: getEffectiveVoltageOrdinal(recipe, node, getNodeRunTier(recipe as Recipe, node)),
+    // `getMaxInputEu()`: every hatch's full V x A, whatever pool the machine
+    // draws from. Twist Space machines read their tier off it.
+    totalPowerEuT: getSummedHatchInput(recipe, node, getNodeRunTier(recipe as Recipe, node), true),
     recipeVoltageTier: getVoltageTierIndex(getVoltageTierForEuT(Math.abs(recipe.eut ?? 0))),
     recipeSpecialValue: getRecipeSpecialValue(recipe),
     recipeMap: recipe.source?.recipeMap ?? recipe.machineType,
