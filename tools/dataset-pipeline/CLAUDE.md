@@ -41,6 +41,33 @@ reorder, re-minting ~37,000 ids. When an export only ADDS fields, graft them ont
 published export (`~/graft-sparge.js`, matching recipes by content key) and confirm with
 a shard diff (`~/cmp-field.js`). The 2.9 export in WSL is such a graft.
 
+## Addon sets
+
+`GTNH_ADDON_SET=<id> bash tools/dataset-pipeline/scripts/run-dataset-in-docker.sh stable`
+exports the official pack plus the mods in `addons/<id>.json` as dataset
+`<version id>-<id>` (for example `stable-2.9.0-tst`), beside the plain pack's.
+`install-addon-mods.mjs` drops the jars into `mods/` after the pack unpacks, in both
+export phases. Every jar is pinned by https URL and sha256, and a set names the GTNH
+version it was built for: a changed upstream jar or a different pack stops the run.
+Pin new versions by downloading the release asset and hashing it; never copy a hash
+from anywhere else. Exam: `scripts/install-addon-mods.test.mjs`.
+
+A set must load on the server AND the client: the client pass renders the icons, and
+a client-only crash (a mixin into Angelica, NEI loading) shows up only there. List
+every library the addon needs: read the `dependencies` string in its `@Mod` class
+(`required-after:`), since READMEs miss them. Before a full run, start the prepared
+client once with the set's jars and look for "Forge Mod Loader has successfully loaded".
+
+The oracle reads every GregTech map from `RecipeMap.ALL_RECIPE_MAPS`, so addon maps
+come through on their own. Recipes an addon shows only through its own NEI handler do
+not; check a new addon's jar for `registerRecipeHandler` before trusting its coverage.
+Addon multiblocks have no machine-table entries (`src/lib/machines/CLAUDE.md`).
+
+The Docker runner caches the oracle jar in `.pipeline/oracle-build-cache`, keyed by a
+hash of the oracle source, so a run needs GTNH's Maven only when the oracle changed.
+The pack's server script restarts a crashed server forever; the runner treats a
+restart before the export exists as a failure.
+
 ## Import principles
 
 - Prefer data exported from NEI or the runtime over hand-written tables and fallbacks.

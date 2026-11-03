@@ -80,6 +80,13 @@ fi
 export GTNH_INSTANCE_ROOT="$instance_root"
 mkdir -p "$instance_root/mods"
 
+# An addon set adds pinned mod jars to the official pack (both export phases
+# pass through here, so server and client see the same mods).
+if [[ -n "${GTNH_ADDON_SET:-}" ]]; then
+  node tools/dataset-pipeline/scripts/install-addon-mods.mjs \
+    "$GTNH_ADDON_SET" "$instance_root/mods" "$GTNH_RAW_EXPORT_DIR/addon-set.json"
+fi
+
 oracle_project="tools/dataset-pipeline/gtnh-calc-oracle"
 oracle_patch_hash="$(
   {
@@ -140,6 +147,12 @@ EOF
 mkdir -p "$rendered_icon_dir"
 mkdir -p "$nei_layout_dir"
 mkdir -p "$oracle_output_dir"
+# Any JSON here counts as the finished export, so a leftover from an earlier
+# run would end the wait at once with stale recipes. The client phase keeps the
+# server phase's file: it may be the only export the run has.
+if [[ "${GTNH_EXPORT_PHASE:-runtime}" != "client" ]]; then
+  find "$oracle_output_dir" -maxdepth 1 -type f -name '*.json' -delete
+fi
 mkdir -p "$GTNH_ICON_CACHE_DIR"
 
 if [[ -f "$instance_root/server.properties" ]]; then
@@ -194,9 +207,13 @@ fi
 runtime_pid=""
 tail_pid=""
 runtime_attempt=0
+# The runtime log is appended across phases and runs; checks read only what
+# the current attempt wrote.
+runtime_log_offset=0
 
 start_runtime() {
   runtime_attempt=$((runtime_attempt + 1))
+  runtime_log_offset="$(stat -c%s "$runtime_log" 2>/dev/null || echo 0)"
   echo "Starting GTNH runtime attempt $runtime_attempt at $(date -u --iso-8601=seconds)"
   {
     echo ""
@@ -252,13 +269,29 @@ fail_from_runtime_log() {
   exit 1
 }
 
+runtime_log_since_start() {
+  tail -c "+$((runtime_log_offset + 1))" "$runtime_log" 2>/dev/null
+}
+
 detect_fatal_runtime_log() {
   [[ "$GTNH_EXPORT_FAIL_FAST_ON_FATAL_LOGS" == "true" ]] || return 1
   [[ -s "$runtime_log" ]] || return 1
 
+  # Process substitution, not a pipe: under pipefail, grep -q stopping at the
+  # first match makes tail die of SIGPIPE and the match would read as a miss.
   grep -Eq \
     'Fatal errors were detected during the transition|Minecraft ran into a problem! Report saved to:|---- Minecraft Crash Report ----|Caught exception from [A-Za-z0-9_.:-]+' \
-    "$runtime_log"
+    < <(runtime_log_since_start)
+}
+
+# The pack's server start script loops: when the JVM exits it prints
+# "Rebooting in:" and starts it again. After the oracle writes its export that
+# is the normal shutdown; before it, the server died while loading (a missing
+# dependency, say) and would loop forever.
+detect_server_restart_before_export() {
+  [[ "$GTNH_EXPORT_FAIL_FAST_ON_FATAL_LOGS" == "true" ]] || return 1
+  [[ -z "$raw_oracle_json" ]] || return 1
+  grep -q 'Rebooting in:' < <(runtime_log_since_start)
 }
 
 raw_oracle_json=""
@@ -268,6 +301,11 @@ start_runtime
 while (( SECONDS < deadline )); do
   if detect_fatal_runtime_log; then
     fail_from_runtime_log "GTNH runtime emitted a fatal Forge/Minecraft crash log before completing the oracle export."
+  fi
+
+  raw_oracle_json="$(find "$oracle_output_dir" -type f -name '*.json' 2>/dev/null | sort | tail -n 1 || true)"
+  if detect_server_restart_before_export; then
+    fail_from_runtime_log "GTNH server exited and its start script is restarting it before the oracle export was written."
   fi
 
   raw_oracle_json="$(find "$oracle_output_dir" -type f -name '*.json' 2>/dev/null | sort | tail -n 1 || true)"

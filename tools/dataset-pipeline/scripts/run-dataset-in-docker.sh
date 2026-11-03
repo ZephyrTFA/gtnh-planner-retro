@@ -12,6 +12,13 @@ docker_cpus="${GTNH_DATASET_DOCKER_CPUS:-8}"
 # The normalizer holds the whole raw export (about 330 MB of JSON for 2.9.0) in memory.
 node_heap_mb="${GTNH_DATASET_NODE_HEAP_MB:-7168}"
 dataset_root="${GTNH_DATASETS_ROOT:-public/datasets/gtnh}"
+# GTNH_ADDON_SET=<id> exports the pack plus tools/dataset-pipeline/addons/<id>.json
+# under its own dataset id (<version id>-<set id>), beside the plain pack's.
+addon_set="${GTNH_ADDON_SET:-}"
+if [[ -n "$addon_set" && ! -f "tools/dataset-pipeline/addons/${addon_set}.json" ]]; then
+  echo "Unknown addon set ${addon_set}: no tools/dataset-pipeline/addons/${addon_set}.json." >&2
+  exit 1
+fi
 
 case "$dataset_root" in
   /*) dataset_root_abs="$dataset_root" ;;
@@ -45,6 +52,9 @@ fi
 
 for line in "${versions[@]}"; do
   IFS=$'\t' read -r version_channel version_id version_label source_kind source_ref source_url <<<"$line"
+  if [[ -n "$addon_set" ]]; then
+    version_id="${version_id}-${addon_set}"
+  fi
   echo "Running ${version_id} in Docker with GTNH_EXPORT_MAX_MEMORY=${memory}."
   docker run --rm \
     --name "gtnh-export-${version_id}" \
@@ -59,6 +69,8 @@ for line in "${versions[@]}"; do
     -e "GTNH_SOURCE_KIND=${source_kind}" \
     -e "GTNH_SOURCE_REF=${source_ref}" \
     -e "GTNH_SOURCE_URL=${source_url}" \
+    -e "GTNH_ADDON_SET=${addon_set}" \
+    -e "GTNH_ORACLE_BUILD_CACHE_DIR=/workspace/.pipeline/oracle-build-cache" \
     -e "GTNH_EXPORT_MAX_MEMORY=${memory}" \
     -e "NODE_OPTIONS=--max-old-space-size=${node_heap_mb}" \
     -e "GTNH_EXPORT_TIMEOUT_SECONDS=${timeout_seconds}" \

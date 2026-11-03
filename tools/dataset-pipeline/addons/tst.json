@@ -1,0 +1,13 @@
+{
+  "id": "tst",
+  "label": "Twist Space Technology",
+  "gtnhVersion": "2.9.0",
+  "mods": [
+    {
+      "name": "Twist Space Technology",
+      "version": "0.8.0",
+      "url": "https://github.com/Nxer/Twist-Space-Technology-Mod/releases/download/0.8.0/TwistSpaceTechnology-0.8.0.jar",
+      "sha256": "7c2b217d2bd31123ed7badc30fc94e3ad82f1b42507b17a0ee2effdfd5a723f8"
+    }
+  ]
+}
