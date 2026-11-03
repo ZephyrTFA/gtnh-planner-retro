@@ -62,6 +62,17 @@ The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLA
 - Power display (EU/t or amps at a tier) and rate units are view dials read through
   `useRateDisplayUnits`; memoized rows subscribe to both themselves.
 
+## Item names in other languages (src/lib/item-names.ts)
+
+- A browser setting (Settings, Item names) overlays item and fluid names from the dataset's
+  `locales/<locale>.json.gz`. Display goes through `resourceDisplayLabel` / `displayNameFor`;
+  `resourceLabel` stays English because its result is stored in plans (edge and drawer
+  labels). Never write a translated name into a plan.
+- A component that shows names calls `useItemNamesVersion()` so it repaints when names
+  arrive or the language changes; nothing rebuilds the board.
+- Item search sends `lang`; the dataset engine adds substring matches on the translated
+  names. English search drops non-Latin letters, so such a query uses translated names only.
+
 ## Shared UI behaviour
 
 - Dropdowns dismiss through `useDropdownDismiss`: the mouse fade counts from the nearest

@@ -1,5 +1,6 @@
 "use client";
 
+import { useItemNamesVersion } from "@/lib/item-names";
 import { memo, useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   getAlternativeCycleFaces,
@@ -11,13 +12,7 @@ import {
 import { Zap } from "lucide-react";
 import type { ResourceAmount, ResourceIconAtlasRef, ResourceKind } from "@/lib/model/types";
 import { NEI_TEXTURES } from "@/lib/nei-renderer/theme/textures";
-import {
-  formatNumberWithThousands,
-  resourceLabel,
-  isOreDictionaryResource,
-  stripOreDictionaryPrefix,
-  trimTrailingDecimalZeros,
-} from "@/lib/model/resources";
+import { formatNumberWithThousands, isOreDictionaryResource, stripOreDictionaryPrefix, trimTrailingDecimalZeros, resourceDisplayLabel } from "@/lib/model/resources";
 import { isProgrammedCircuitResource } from "@/lib/model/programmed-circuit";
 import { MinecraftTooltip } from "./MinecraftTooltip";
 import { getSpriteFitScale, spriteFitStyle } from "./sprite-fit";
@@ -84,6 +79,7 @@ function ResourceIconComponent({
   showConsumedState = true,
   alternativeState,
 }: ResourceIconProps) {
+  useItemNamesVersion();
   // Artwork deliberately exceeds its clipped slot. Every art renderer below
   // must opt out of flex shrinking: Firefox shrinks percentage-sized <img>
   // widths where Chromium keeps their aspect-ratio minimum; atlas spans shrink
@@ -133,7 +129,7 @@ function ResourceIconComponent({
 
       {resource && showName ? (
         <span className="absolute left-0.5 top-0.5 max-w-[calc(100%-4px)] truncate font-mono text-[8px] leading-none text-white drop-shadow-[1px_1px_0_#000]">
-          {resourceLabel(resource)}
+          {resourceDisplayLabel(resource)}
         </span>
       ) : null}
     </div>
@@ -247,12 +243,12 @@ function buildTooltipLabel(
   }
 
   if (isBeeSpeciesResource(resource)) {
-    return resourceLabel(resource);
+    return resourceDisplayLabel(resource);
   }
 
   const baseLines = resource.tooltip?.length
     ? [
-        resourceLabel(resource),
+        resourceDisplayLabel(resource),
         ...resource.tooltip.filter(
           (line) =>
             stripOreDictionaryPrefix(line) &&
@@ -260,7 +256,7 @@ function buildTooltipLabel(
             !isOreDictionaryNoiseLine(line),
         ),
       ]
-    : [resourceLabel(resource)].filter(Boolean);
+    : [resourceDisplayLabel(resource)].filter(Boolean);
   const chanceLine =
     resource.chance !== undefined && Number.isFinite(resource.chance) && resource.chance < 1
       ? `Chance: ${trimAmount(resource.chance * 100)}%`
@@ -597,7 +593,7 @@ function SpriteImage({
           ref={imageRef}
           src={textureUrl(iconPath)}
           crossOrigin={TEXTURE_CROSS_ORIGIN}
-          alt={resourceLabel(resource)}
+          alt={resourceDisplayLabel(resource)}
           draggable={false}
           onLoad={(event) => {
             setFitScale(resource.kind === "item" ? getSpriteFitScale(event.currentTarget) : undefined);
@@ -680,7 +676,7 @@ function AspectIconImage({
   return (
     <span
       role="img"
-      aria-label={resourceLabel(resource)}
+      aria-label={resourceDisplayLabel(resource)}
       className={
         iconPixelSize
           ? "minecraft-pixel-art relative block shrink-0 max-w-none"
@@ -725,7 +721,7 @@ function FluidIconImage({
   return (
     <span
       role="img"
-      aria-label={resourceLabel(resource)}
+      aria-label={resourceDisplayLabel(resource)}
       className={`minecraft-pixel-art relative block shrink-0 overflow-hidden rounded-[1px] ${RESOURCE_ART_SHADOW}`}
       style={
         iconPixelSize
@@ -925,7 +921,7 @@ function AtlasIconImage({
   return (
     <span
       role="img"
-      aria-label={resourceLabel(resource)}
+      aria-label={resourceDisplayLabel(resource)}
       className={[
         iconPixelSize
           ? "minecraft-pixel-art block shrink-0 max-w-none"

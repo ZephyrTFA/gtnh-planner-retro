@@ -1,5 +1,6 @@
 "use client";
 
+import { useItemNames, useItemNamesVersion } from "@/lib/item-names";
 import { Search, X, ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { DragEvent, PointerEvent, RefObject, WheelEvent } from "react";
@@ -10,7 +11,7 @@ import {
   type RecipeDatasetResourceQueryResult,
 } from "@/lib/datasets/browser-loader";
 import type { ResourceAmount } from "@/lib/model/types";
-import { resourceLabel } from "@/lib/model";
+import { resourceDisplayLabel } from "@/lib/model";
 import { applyRecipeInputOverrides } from "@/lib/model/recipe-input-overrides";
 import {
   buildSearchVocabulary,
@@ -84,6 +85,7 @@ export function ResourceIndexPane({
   const [resourceFilter, setResourceFilter] = useState<ResourceFilterMode>("all");
   const [resourceMods, setResourceMods] = useState<Array<{ id: string; count: number }>>([]);
   const [resourceSearchOutcome, setResourceSearchOutcome] = useState<SearchOutcome>(EXACT_SEARCH);
+  const itemLanguage = useItemNames((state) => state.language);
   const [resourceQueryLoading, setResourceQueryLoading] = useState(false);
   const [resourceQueryError, setResourceQueryError] = useState<string | undefined>();
   const resourceQueryCacheRef = useRef<Map<string, ResourceQueryCacheEntry>>(new Map());
@@ -143,7 +145,7 @@ export function ResourceIndexPane({
     (page: number) =>
       selectedDatasetVersion
         ? getResourceQueryCacheKey({
-            versionId: getDatasetVersionCacheKey(selectedDatasetVersion),
+            versionId: `${getDatasetVersionCacheKey(selectedDatasetVersion)}:${itemLanguage}`,
             query: debouncedRecipeSearch.trim(),
             offset: page * resourcePageSize,
             limit: resourcePageSize,
@@ -159,6 +161,7 @@ export function ResourceIndexPane({
       resourcePageSize,
       resourceSort,
       selectedDatasetVersion,
+      itemLanguage,
     ],
   );
   useEffect(() => {
@@ -215,6 +218,7 @@ export function ResourceIndexPane({
         mod: resourceMod || undefined,
         sort: resourceSort,
         source: resourceFilterSource(resourceFilter),
+        language: itemLanguage === "en_US" ? undefined : itemLanguage,
       },
       { signal: controller.signal },
     )
@@ -255,6 +259,7 @@ export function ResourceIndexPane({
     resourcePageSize,
     resourceSort,
     selectedDatasetVersion,
+    itemLanguage,
   ]);
 
   // A filter or search change can empty the selected mod's scope; drop a stale pick.
@@ -475,7 +480,7 @@ function resourceTooltipLines(resource: IndexedResource): string[] {
   ]
     .filter(Boolean)
     .join(" · ");
-  const name = resourceLabel(resource);
+  const name = resourceDisplayLabel(resource);
   return [
     name,
     subtitle,
@@ -759,6 +764,7 @@ function RecentResourceStrip({
 }: {
   onBrowse: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
+  useItemNamesVersion();
   const history = useFactoryStore((state) => state.recipeResourceHistory);
   const clearResourceHistory = useFactoryStore((state) => state.clearResourceHistory);
   const activeResource = useFactoryStore((state) => state.recipeBrowserResource);
@@ -828,7 +834,7 @@ function RecentResourceStrip({
                   onBrowse(indexed, "uses");
                 }}
                 {...rowBrowse.pressProps(indexed)}
-                aria-label={resourceLabel(resource)}
+                aria-label={resourceDisplayLabel(resource)}
                 className={[
                   "minecraft-pixel-art flex aspect-square items-center justify-center overflow-hidden rounded-[4px] border",
                   active
@@ -1054,7 +1060,7 @@ function useResourceBrowseMenu(
       onPointerDown: (event: PointerEvent<HTMLElement>) => {
         pressedRef.current = resource;
         if (event.pointerType !== "mouse") {
-          setPressedName(resourceLabel(resource));
+          setPressedName(resourceDisplayLabel(resource));
         }
         menu.pressHandlers.onPointerDown(event);
       },
@@ -1094,6 +1100,7 @@ function ResourceResultPage({
   isRefreshing: boolean;
   onBrowseResource: (resource: IndexedResource, mode: "recipes" | "uses") => void;
 }) {
+  useItemNamesVersion();
   const [, startBrowseTransition] = useTransition();
 
   const browse = useCallback(
@@ -1137,7 +1144,7 @@ function ResourceResultPage({
                 browse(resource, "uses");
               }}
               {...rowBrowse.pressProps(resource)}
-              aria-label={resourceLabel(resource)}
+              aria-label={resourceDisplayLabel(resource)}
               className={[
                 "flex min-w-0 flex-col items-center overflow-hidden rounded-[4px] border px-0.5",
                 // The power tile's own whisper of amber; selection still wins.
@@ -1177,7 +1184,7 @@ function ResourceResultPage({
                 )}
               </span>
               <span className="line-clamp-2 w-full break-words text-center text-[9px] leading-[10px] text-neutral-400">
-                {resource.id === POWER_EU_CLAUSE_ID ? "Power (EU/t)" : resourceLabel(resource)}
+                {resource.id === POWER_EU_CLAUSE_ID ? "Power (EU/t)" : resourceDisplayLabel(resource)}
               </span>
           </button>
         );

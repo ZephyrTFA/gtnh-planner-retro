@@ -1,5 +1,6 @@
 "use client";
 
+import { useItemNamesVersion } from "@/lib/item-names";
 import {
   memo,
   useCallback,
@@ -16,7 +17,7 @@ import { getUiScale } from "@/lib/ui-scale";
 import "./inspector/panel.css";
 import { DrawerTargetRow } from "./inspector/DrawerTargetRow";
 import { MachineShoppingList } from "./MachineShoppingList";
-import { makeResourceKey, resourceLabel } from "@/lib/model/resources";
+import { makeResourceKey, resourceDisplayLabel } from "@/lib/model/resources";
 import { getCategoryPresentation } from "@/lib/model/category-presentation";
 import { formatSignedRate } from "./inspector/flow-rate";
 import { getStorageRoles } from "@/lib/model/storage-role";
@@ -1359,6 +1360,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
   onMarkChanged?: () => void;
   onFocusBoard: (resourceKey: string) => void;
 }) {
+  useItemNamesVersion();
   // Memoized rows keep the same balance when only a display dial changes.
   useRateDisplayUnits();
   const readOnly = useFactoryStore(state => state.isReadOnly);
@@ -1377,7 +1379,7 @@ const FlowResourceRow = memo(function FlowResourceRow({
   const category = useFactoryStore((state) =>
     getCategoryPresentation(state.project.recipes, balance.kind, balance.resourceId),
   );
-  const name = resourceLabel(category ?? { id: balance.resourceId, displayName: balance.displayName });
+  const name = resourceDisplayLabel(category ?? { id: balance.resourceId, displayName: balance.displayName });
 
   return (
     // The row is a group, not one button: the star and the eye are their own

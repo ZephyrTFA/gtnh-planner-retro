@@ -116,6 +116,7 @@ export const datasetVersionSchema = z.object({
       mods: z.array(z.object({ name: z.string().min(1), version: z.string().min(1) })),
     })
     .optional(),
+  locales: z.array(z.string().regex(/^[a-z]{2}_[A-Z]{2}$/)).optional(),
 });
 
 export const datasetManifestSchema = z.object({

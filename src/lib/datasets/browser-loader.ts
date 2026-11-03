@@ -67,6 +67,8 @@ export interface RecipeDatasetResourceQuery {
   sort?: "relevance" | "name" | "mod" | "recipes" | "made" | "uses" | "common" | "popular";
   /** Narrow to what a crop can grow or a bee can make. */
   source?: "plants" | "bees";
+  /** Also match names in this item language (ru_RU, zh_CN), where the dataset has them. */
+  language?: string;
 }
 
 export interface RecipeDatasetResourceQueryResult {
@@ -300,6 +302,9 @@ export async function queryRecipeDatasetResources(
   }
   if (query.source) {
     url.searchParams.set("source", query.source);
+  }
+  if (query.language) {
+    url.searchParams.set("lang", query.language);
   }
   addDatasetCacheKey(url, version);
 

@@ -2,6 +2,7 @@
 
 import { Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ITEM_LANGUAGES, useItemNames, type ItemLanguage } from "@/lib/item-names";
 import {
   APP_FONTS,
   getStoredAppFont,
@@ -37,6 +38,8 @@ import {
  */
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [font, setFont] = useState<AppFontId>(() => getStoredAppFont());
+  const itemLanguage = useItemNames((state) => state.language);
+  const setItemLanguage = useItemNames((state) => state.setLanguage);
   const [sounds, setSounds] = useState<boolean>(() => areBoardSoundsEnabled());
   const [volume, setVolume] = useState<number>(() => getBoardSoundVolume());
   const canPlayTimelapse = useFactoryStore(
@@ -109,6 +112,21 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             >
               {APP_FONTS.map((option) => (
                 <option key={option.id} value={option.id} style={{ fontFamily: option.stack }}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Row>
+
+          <Row label="Item names">
+            <select
+              aria-label="Item names"
+              value={itemLanguage}
+              onChange={(event) => setItemLanguage(event.target.value as ItemLanguage)}
+              className={`h-7 w-44 border-2 border-[var(--mc-15)] px-1 text-sm ${FACE_OFF}`}
+            >
+              {ITEM_LANGUAGES.map((option) => (
+                <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
               ))}

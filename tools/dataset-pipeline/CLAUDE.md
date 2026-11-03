@@ -68,6 +68,18 @@ hash of the oracle source, so a run needs GTNH's Maven only when the oracle chan
 The pack's server script restarts a crashed server forever; the runner treats a
 restart before the export exists as a failure.
 
+## Item names in other languages
+
+`bash tools/dataset-pipeline/scripts/run-locale-names-in-docker.sh <ru_RU|zh_CN> [addon set]`
+runs the client pass alone with `lang:<locale>` in options.txt (the pack ships its own
+GregTech_<locale>.lang and config/txloader translations, so nothing else is fetched),
+normalizes, and keeps the names that differ from English as
+`<dataset>/locales/<locale>.json.gz` (`extract-locale-names.mjs`). The English dataset
+must exist first; resource ids are registry-based, so they match. Names the planner
+composes itself (`factoryflow:` bees, seeds, spawners) stay English. `rebuild-manifest.mjs`
+lists each dataset's `locales`. A version's source details come from its
+`.pipeline/<id>.pipeline.json`, not from version detection (which skips published packs).
+
 ## Import principles
 
 - Prefer data exported from NEI or the runtime over hand-written tables and fallbacks.

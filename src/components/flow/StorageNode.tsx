@@ -1,4 +1,5 @@
 "use client";
+import { useItemNamesVersion } from "@/lib/item-names";
 import { isInputRate, storageTargetMode } from "@/lib/model/storage-target";
 import { usePortRowBrowse } from "./use-port-row-browse";
 import { formatAmountWithSuffix, parseAmountWithSuffix, RateBox, RuleButton, trimFlow, useRateRule } from "./rate-rule";
@@ -13,7 +14,7 @@ import type {
   StorageDrainMode,
   StorageThroughputResult,
 } from "@/lib/model/types";
-import { formatCompact, formatPowerValue, makeResourceKey } from "@/lib/model";
+import { formatCompact, formatPowerValue, makeResourceKey, resourceDisplayLabel } from "@/lib/model";
 import { effectiveBufferMode, isDrainRole, storageRoleFor, type StorageRole } from "@/lib/model/storage-role";
 import {
   rateMultiplierForKind,
@@ -40,7 +41,6 @@ import { RatioSetupOutput } from "./RatioWireLabel";
 import { ratioExportShare } from "@/lib/model/storage-ratios";
 import { getCategoryPresentation } from "@/lib/model/category-presentation";
 import { STORAGE_NODE_WIDTH, STORAGE_NODE_HEIGHT } from "@/lib/board-grid";
-import { resourceLabel } from "@/lib/model/resources";
 
 
 export interface StorageNodeData extends Record<string, unknown> {
@@ -196,6 +196,7 @@ function storageIconPixelSize(
 }
 
 function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
+  useItemNamesVersion();
   const { storage, result } = data;
   const category = useFactoryStore((state) =>
     getCategoryPresentation(state.project.recipes, storage.kind, storage.resourceId),
@@ -268,7 +269,7 @@ function StorageNodeComponent({ data, selected }: NodeProps<StorageFlowNode>) {
         )
       : undefined;
   const net = result?.netPerSecond ?? 0;
-  const title = resourceLabel(category ?? { id: storage.resourceId, displayName: storage.displayName });
+  const title = resourceDisplayLabel(category ?? { id: storage.resourceId, displayName: storage.displayName });
   const isTank = storage.kind === "fluid";
   const isPlainFluid = isTank && !storage.iconPath && !storage.iconAtlas;
   const ratio = role === "buffer" && storage.bufferMode === "ratio";
@@ -654,7 +655,7 @@ export function StorageTileFace({
           <span className="storage-title-side">
             <span aria-hidden className="storage-title-key storage-title-key--delete" />
           </span>
-          <StorageTitleName title={resourceLabel(category ?? { id: storage.resourceId, displayName: storage.displayName })} />
+          <StorageTitleName title={resourceDisplayLabel(category ?? { id: storage.resourceId, displayName: storage.displayName })} />
           <span className="storage-title-side storage-title-side--end">
             {isDrainRole(role) || role === "buffer" ? (
               <span aria-hidden className="storage-title-key">

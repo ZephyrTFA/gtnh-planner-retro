@@ -20,6 +20,7 @@ import {
   initRecipeDatasetVersion,
 } from "@/lib/datasets/browser-loader";
 import { loadResourceHistory, useFactoryStore } from "@/store/factory-store";
+import { loadItemNames, useItemNames } from "@/lib/item-names";
 import { useCommunityAuthStore } from "@/store/community-auth-store";
 import { useDesignStore } from "@/store/design-store";
 import { recordResourceTrend, resetResourceTrends } from "@/lib/resource-trends";
@@ -78,6 +79,7 @@ export function FactoryPlannerApp() {
   const datasetManifest = useFactoryStore((state) => state.datasetManifest);
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const projectAddonSetId = useFactoryStore((state) => state.project.addonSetId);
+  const itemLanguage = useItemNames((state) => state.language);
   // The dataset version last asked for. A load that finishes after a newer one
   // was asked for (boot loads the plain pack, then the hydrated plan wants its
   // addon set) must not land over it.
@@ -275,6 +277,11 @@ export function FactoryPlannerApp() {
     if (!wanted || wanted.id === requestedDatasetVersionRef.current) return;
     void loadDatasetVersion(wanted.id);
   }, [datasetManifest, loadDatasetVersion, projectAddonSetId]);
+
+  // Item names in the chosen language follow the loaded dataset.
+  useEffect(() => {
+    void loadItemNames(datasetManifest?.versions.find((entry) => entry.id === datasetVersionId), itemLanguage);
+  }, [datasetManifest, datasetVersionId, itemLanguage]);
 
   // The pack picker sets the open plan's pack; the effect above loads it. A
   // read-only plan refuses the edit and keeps its own pack.

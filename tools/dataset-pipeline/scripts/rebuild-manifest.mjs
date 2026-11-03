@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { computeDatasetChecksum } from "./dataset-checksum.mjs";
 import { latestStableVersionId, orderManifestVersions } from "./manifest-order.mjs";
@@ -40,6 +40,7 @@ for (const entry of entries) {
     checksumSha256,
     sourceInfo: dataset.sourceInfo,
     ...(dataset.addonSet ? { addonSet: dataset.addonSet } : {}),
+    ...localesOf(entry.name),
   });
 }
 
@@ -77,6 +78,17 @@ function inferChannel(versionId) {
     return "stable";
   }
   return "experimental";
+}
+
+/** Languages with item names beside the dataset (extract-locale-names.mjs). */
+function localesOf(versionId) {
+  const dir = path.join(rootDir, versionId, "locales");
+  if (!existsSync(dir)) return {};
+  const locales = readdirSync(dir)
+    .map((name) => /^([a-z]{2}_[A-Z]{2})\.json\.gz$/.exec(name)?.[1])
+    .filter(Boolean)
+    .sort();
+  return locales.length > 0 ? { locales } : {};
 }
 
 async function removeIfExists(filePath) {

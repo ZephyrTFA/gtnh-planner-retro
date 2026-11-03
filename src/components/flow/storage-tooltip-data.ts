@@ -9,7 +9,7 @@ import type {
 } from "@/lib/model/types";
 import type { StorageRole } from "@/lib/model/storage-role";
 import { getCategoryPresentation } from "@/lib/model/category-presentation";
-import { resourceLabel } from "@/lib/model/resources";
+import { resourceDisplayLabel } from "@/lib/model/resources";
 import { deriveNodeVerdict } from "./node-verdict";
 import { formatSlotRate } from "./flow-explainers";
 import { tooltipMode, type RecipeTooltipView, type TooltipAction } from "./recipe-tooltip-data";
@@ -62,7 +62,7 @@ export function buildStorageTooltip(
   const figures: StorageThroughputResult | undefined = result?.storages[storage.id];
   const rate = (value: number) => formatSlotRate(value, storage.kind);
   const view: RecipeTooltipView = {
-    title: resourceLabel(getCategoryPresentation(project.recipes, storage.kind, storage.resourceId)
+    title: resourceDisplayLabel(getCategoryPresentation(project.recipes, storage.kind, storage.resourceId)
       ?? { id: storage.resourceId, displayName: storage.displayName }),
     subtitle: role === "buffer" && storage.bufferMode === "ratio" ? "Buffer · Ratio" : strict ? "Buffer · Strict" : ROLE_WORD[role],
     rows: [],

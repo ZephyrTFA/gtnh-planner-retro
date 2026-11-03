@@ -147,6 +147,17 @@ cp "$oracle_jar" "$instance_root/mods/"
 cat > "$instance_root/eula.txt" <<'EOF'
 eula=true
 EOF
+
+# A locale export starts the client in another language. The pack ships its own
+# translations (GregTech_<lang>.lang, config/txloader), so the language setting
+# is all it takes; GregTech reads the client's language when it loads.
+if [[ -n "${GTNH_LOCALE:-}" ]]; then
+  options_file="$instance_root/options.txt"
+  touch "$options_file"
+  sed -i '/^lang:/d' "$options_file"
+  echo "lang:$GTNH_LOCALE" >>"$options_file"
+  echo "Client language: $GTNH_LOCALE"
+fi
 mkdir -p "$rendered_icon_dir"
 mkdir -p "$nei_layout_dir"
 mkdir -p "$oracle_output_dir"

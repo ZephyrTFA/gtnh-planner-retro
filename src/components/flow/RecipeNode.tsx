@@ -69,67 +69,7 @@ import {
   applyMachineOutputMultipliers,
   getMachineParallelMultiplier,
 } from "@/lib/solver/machine-effects";
-import {
-  formatCompact,
-  formatPowerValue,
-  formatCompactStable,
-  formatRate,
-  applyMachineHandlerToRecipe,
-  GT_OVERCLOCK_TIERS,
-  getRecipeMachineHandlers,
-  getRecipeMachineConfigTierControls,
-  getRecipeCoilTierControl,
-  applyRecipeInputOverrides,
-  getRecipePowerTier,
-  getSelectedMachineHandler,
-  getCropsNhStats,
-  getVoltageTierIndex,
-  getRecipeMaximumVoltageTier,
-  getRecipeAvailableVoltageTiers,
-  getRunVoltageTier,
-  BEE_INDUSTRIAL_PRODUCTION_CONTROL_ID,
-  BEE_INDUSTRIAL_SPEED_CONTROL_ID,
-  CROP_GAIN_STAT_CONTROL_ID,
-  CROP_GROWTH_STAT_CONTROL_ID,
-  CROP_HARVESTER_INDUSTRIAL_FARM_ID,
-  CROP_IF_ENVIRONMENT_UNIT_CONTROL_ID,
-  CROP_IF_FERTILIZER_UNIT_CONTROL_ID,
-  CROP_IF_GROWTH_UNIT_CONTROL_ID,
-  CROP_IF_HARVEST_UNIT_CONTROL_ID,
-  CROP_IF_OVERCLOCK_CONTROL_ID,
-  CROP_MANAGER_TIER_CONTROL_ID,
-  CROP_SEED_BED_TIER_CONTROL_ID,
-  cropsNhCropsPerMachine,
-  cropsNhEnvironmentFromTiers,
-  cropsNhExpectedDrop,
-  cropsNhFarmEut,
-  cropsNhGrowthRate,
-  cropsNhGrowthSpeedMultiplier,
-  cropsNhHarvestRoundMultiplier,
-  cropsNhHarvestTicks,
-  cropsNhHarvesterMachineCount,
-  cropsNhNutrientScore,
-  type CropsNhStats,
-  cropsNhHarvesterEnvironment,
-  cropsNhHarvesterFromTiers,
-  cropsNhIsHandPicked,
-  cropsNhManagerEuPerHarvest,
-  cropsNhUnitSlotsUsed,
-  cropsNhUpgradeSlots,
-  isSteamMachineHandler,
-  isBeeFrameSlotControlId,
-  isBeeProductionConfigControl,
-  isBeeProductionRecipe,
-  isCropFarmRecipe,
-  isCropProductionConfigControl,
-  isCropProductionRecipe,
-  isControllerSlotInput,
-  isIndustrialApiaryMachineType,
-  makeResourceKey,
-  resourceMatchesInput,
-  resourceLabel,
-  type MachineConfigTierControl,
-} from "@/lib/model";
+import { displayNameFor, formatCompact, formatPowerValue, formatCompactStable, formatRate, applyMachineHandlerToRecipe, GT_OVERCLOCK_TIERS, getRecipeMachineHandlers, getRecipeMachineConfigTierControls, getRecipeCoilTierControl, applyRecipeInputOverrides, getRecipePowerTier, getSelectedMachineHandler, getCropsNhStats, getVoltageTierIndex, getRecipeMaximumVoltageTier, getRecipeAvailableVoltageTiers, getRunVoltageTier, BEE_INDUSTRIAL_PRODUCTION_CONTROL_ID, BEE_INDUSTRIAL_SPEED_CONTROL_ID, CROP_GAIN_STAT_CONTROL_ID, CROP_GROWTH_STAT_CONTROL_ID, CROP_HARVESTER_INDUSTRIAL_FARM_ID, CROP_IF_ENVIRONMENT_UNIT_CONTROL_ID, CROP_IF_FERTILIZER_UNIT_CONTROL_ID, CROP_IF_GROWTH_UNIT_CONTROL_ID, CROP_IF_HARVEST_UNIT_CONTROL_ID, CROP_IF_OVERCLOCK_CONTROL_ID, CROP_MANAGER_TIER_CONTROL_ID, CROP_SEED_BED_TIER_CONTROL_ID, cropsNhCropsPerMachine, cropsNhEnvironmentFromTiers, cropsNhExpectedDrop, cropsNhFarmEut, cropsNhGrowthRate, cropsNhGrowthSpeedMultiplier, cropsNhHarvestRoundMultiplier, cropsNhHarvestTicks, cropsNhHarvesterMachineCount, cropsNhNutrientScore, type CropsNhStats, cropsNhHarvesterEnvironment, cropsNhHarvesterFromTiers, cropsNhIsHandPicked, cropsNhManagerEuPerHarvest, cropsNhUnitSlotsUsed, cropsNhUpgradeSlots, isSteamMachineHandler, isBeeFrameSlotControlId, isBeeProductionConfigControl, isBeeProductionRecipe, isCropFarmRecipe, isCropProductionConfigControl, isCropProductionRecipe, isControllerSlotInput, isIndustrialApiaryMachineType, makeResourceKey, resourceMatchesInput, resourceLabel, type MachineConfigTierControl, resourceDisplayLabel } from "@/lib/model";
 import {
   getSharedMachineHandlers,
   isSharedMachineNode,
@@ -195,6 +135,7 @@ import { RecipeTooltip } from "./RecipeTooltip";
 import { buildConfigTooltip } from "./machine-tooltip-data";
 import { buildPortTooltip, buildDemandTooltip, buildStatusTooltip, buildCountTooltip, tooltipMode, type TooltipAction } from "./recipe-tooltip-data";
 import { MachineStatsContent } from "./MachineStatsContent";
+import { useItemNamesVersion } from "@/lib/item-names";
 import {
   fluidArtPixels,
   isSwatchFluid,
@@ -269,6 +210,12 @@ const CUSTOM_RATE_UNIVERSAL_HANDLE_IDS: readonly string[] = [
  * all take the tint, not only the ground. Keep the corners square: the
  * frame's flash and the selection ring cannot follow chamfer cuts.
  */
+
+
+/** A port's resource name in the chosen item language (display only; the port keeps English). */
+function portName(port: Pick<RailPort, "resourceId" | "displayName">): string {
+  return displayNameFor(port.resourceId, port.displayName);
+}
 
 export interface RecipeNodeData extends Record<string, unknown> {
   projectNode: FactoryNode;
@@ -1755,8 +1702,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                 ) : isCustomRateNode ? (
                   customRateSlot ? (
                     customRateSlot.mode === "supply"
-                      ? `Makes ${resourceLabel(customRateSlot.resource)} at the dialed rate for anything that asks.`
-                      : `Constantly drains ${resourceLabel(customRateSlot.resource)} at the dialed rate.`
+                      ? `Makes ${resourceDisplayLabel(customRateSlot.resource)} at the dialed rate for anything that asks.`
+                      : `Constantly drains ${resourceDisplayLabel(customRateSlot.resource)} at the dialed rate.`
                   ) : (
                     "Wire any port to this and it adopts that resource."
                   )
@@ -2510,6 +2457,7 @@ function EnergyReading({
 
 /** One chip of the hover reveal, in the card's own chip clothes. */
 function GlanceIoRow({ port }: { port: RailPort }) {
+  useItemNamesVersion();
   return (
     <span className="flex items-center gap-1.5 border-2 border-[var(--mc-47)] bg-[var(--mc-71)] px-1 py-0.5 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">
       {/* Same whole-item fit and shadow as the port rows. */}
@@ -2536,7 +2484,7 @@ function GlanceIoRow({ port }: { port: RailPort }) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[14px] font-bold leading-[17px] text-[var(--mc-ink)]">
-          {port.displayName}
+          {portName(port)}
         </span>
         <span
           className={[
@@ -2991,13 +2939,14 @@ function PortRail({
  * nothing to look up, only something to set down next to the machine.
  */
 function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
+  useItemNamesVersion();
   // A controller-slot item (the EEC's spawner) sits in the machine for good,
   // and swapping it is how the card changes mob.
   if (port.resource && isControllerSlotInput(port.resource)) {
     return <ControllerSlotRow nodeId={nodeId} port={port} />;
   }
   return (
-    <MinecraftTooltip content={() => <RecipeTooltip view={{ title: port.displayName, subtitle: "Free input", rows: [], reason: "No supply connection required." }} />}>
+    <MinecraftTooltip content={() => <RecipeTooltip view={{ title: portName(port), subtitle: "Free input", rows: [], reason: "No supply connection required." }} />}>
     <div
       className="flow-port relative flex h-[40px] w-full flex-none items-center gap-1 px-0.5 py-0 opacity-60"
       data-free-input="true"
@@ -3018,7 +2967,7 @@ function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col justify-center pr-0.5">
         <span className="flow-port-name text-[9px] font-bold leading-[9px] text-[var(--mc-ink-muted)]">
-          {port.displayName}
+          {portName(port)}
         </span>
         {/* Same dress as a port's rate line, so the word sits where the
             number would and reads as its stand-in. */}
@@ -3037,12 +2986,13 @@ function FreePortRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
  * it opens the mob picker, the way a player swaps the spawner.
  */
 function ControllerSlotRow({ nodeId, port }: { nodeId: string; port: RailPort }) {
+  useItemNamesVersion();
   const [open, setOpen] = useState(false);
   const locked = useFactoryStore((state) => state.isReadOnly || state.checklistMode);
   return (
     <div className="relative">
       <MinecraftTooltip content={() => <RecipeTooltip view={{
-        title: port.displayName,
+        title: portName(port),
         subtitle: "Controller slot",
         rows: [],
         reason: locked
@@ -3054,7 +3004,7 @@ function ControllerSlotRow({ nodeId, port }: { nodeId: string; port: RailPort })
           data-free-input="true"
           data-mob-picker-toggle
           disabled={locked}
-          aria-label={`Change mob: ${port.displayName}`}
+          aria-label={`Change mob: ${portName(port)}`}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={(event) => {
@@ -3079,7 +3029,7 @@ function ControllerSlotRow({ nodeId, port }: { nodeId: string; port: RailPort })
           </span>
           <span className="flex min-w-0 flex-1 flex-col justify-center pr-0.5">
             <span className="flow-port-name text-[9px] font-bold leading-[9px] text-[var(--mc-ink-muted)]">
-              {port.displayName}
+              {portName(port)}
             </span>
             <span className="block truncate text-[9px] leading-[9px] tabular-nums text-[var(--mc-ink-muted)] opacity-80">
               in controller
@@ -3539,7 +3489,7 @@ function PlugDragHandle({ nodeId, port }: { nodeId: string; port: RailPort }) {
       data-resource-handle="true"
       data-resource-node-id={nodeId}
       data-resource-handle-id={port.handleId}
-      title={`Drag to wire ${port.displayName}`}
+      title={`Drag to wire ${portName(port)}`}
       className={[
         "resource-slot-handle nodrag !absolute !left-0 !right-auto !top-0 !z-10 !h-full !w-full !min-w-0 !translate-x-0 !translate-y-0",
         "!rounded-none !border-0 !bg-transparent !opacity-0 cursor-crosshair",
@@ -3571,6 +3521,7 @@ const PLUG_GLOW_STYLE: CSSProperties = {
  * gets/asks rates, the ×N short multiplier, the fix — lives in the hover.
  */
 function PlugBlock({ nodeId, port }: { nodeId: string; port: RailPort }) {
+  useItemNamesVersion();
   const plug = port.plug!;
   const isFlowScopeLit = useFactoryStore((state) =>
     Boolean(state.hoveredFlowScope?.ports[`${nodeId}|${port.handleId}`]),
@@ -3578,7 +3529,7 @@ function PlugBlock({ nodeId, port }: { nodeId: string; port: RailPort }) {
   const coveredPct = Math.round(Math.min(Math.max(plug.coveredFraction, 0), 1) * 100);
   return (
     <MinecraftTooltip
-      label={`${port.displayName}: who takes it`}
+      label={`${portName(port)}: who takes it`}
       content={() => renderPlugHoverContent(port, nodeId)}
     >
       <span
@@ -3632,6 +3583,7 @@ export function PortChip({
   /** Inside an OutputSocketRow: the row owns the edge anchor and hover scope. */
   plugRow?: boolean;
 }) {
+  useItemNamesVersion();
   const isInput = port.side === "input";
   const { calmMode: calmView } = useBoardView();
   // SOLVE and POOL: every fed port is at nameplate by construction, so the
@@ -3840,7 +3792,7 @@ export function PortChip({
             !calmMode && port.unsupplied ? "text-[8px] leading-[8px]" : "text-[9px] leading-[9px]"
           }`}
         >
-          {port.displayName}
+          {portName(port)}
         </span>
         {calmMode && !port.supplyHatch ? (
           /* Presentation: no bar, no want marks — the room they used goes to
@@ -3912,7 +3864,7 @@ export function PortChip({
           data-resource-handle-id={port.handleId}
           // No native title: GlobalTitleTooltip would stamp the handle as a
           // tooltip STOP and the rich port panel would yield to it.
-          aria-label={`${isInput ? "Input" : "Output"}: ${port.displayName}${readOnly ? "" : ". Left click or R for recipes, right click or U for uses, drag to connect"}`}
+          aria-label={`${isInput ? "Input" : "Output"}: ${portName(port)}${readOnly ? "" : ". Left click or R for recipes, right click or U for uses, drag to connect"}`}
           className={[
             "resource-slot-handle nodrag !absolute !left-0 !right-auto !top-0 !z-30 !h-full !w-full !min-w-0 !translate-x-0 !translate-y-0",
             "!rounded-none !border-0 !bg-transparent !opacity-0",
@@ -3931,7 +3883,7 @@ function HatchSupplyButton({ nodeId, port }: { nodeId: string; port: RailPort })
     <button
       type="button"
       aria-pressed={port.hatchSupplied === true}
-      aria-label={`${port.supplyHatch} for ${port.displayName}`}
+      aria-label={`${port.supplyHatch} for ${portName(port)}`}
       disabled={locked}
       data-viewer-disabled="true"
       style={{ fontSize: 7, lineHeight: "10px", fontWeight: 700 }}
@@ -4142,7 +4094,7 @@ function recipeContainsSearchResource(recipe: Recipe, query: string) {
   }
 
   return [...recipe.inputs, ...recipe.outputs].some((resource) =>
-    normalizeSearch(`${resourceLabel(resource)} ${resource.id}`).includes(normalizedQuery),
+    normalizeSearch(`${resourceLabel(resource)} ${resourceDisplayLabel(resource)} ${resource.id}`).includes(normalizedQuery),
   );
 }
 

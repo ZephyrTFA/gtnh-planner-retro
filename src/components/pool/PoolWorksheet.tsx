@@ -1,4 +1,5 @@
 "use client";
+import { useItemNamesVersion } from "@/lib/item-names";
 import { targetStatus } from "./target-status";
 import { TargetRateHelp } from "./TargetRateHelp";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
@@ -22,7 +23,7 @@ import {
 } from "react";
 import { ChevronDown, Copy, Plus, RefreshCw, Search, Settings, Trash2, X } from "lucide-react";
 import { useFactoryStore, useRateDisplayUnits } from "@/store/factory-store";
-import { resourceLabel, isCropProductionRecipe } from "@/lib/model";
+import { isCropProductionRecipe, resourceDisplayLabel } from "@/lib/model";
 import { isCustomRateRecipe } from "@/lib/model/custom-rate";
 import { type MachineListEntry } from "@/lib/model/machine-list";
 import type { ResourceAmount, FactoryStorage, ProductionGroup } from "@/lib/model/types";
@@ -984,6 +985,7 @@ function ResourceLink({
   nameTooltip?: boolean;
   iconsOnly?: boolean;
 }) {
+  useItemNamesVersion();
   const category = useFactoryStore((state) =>
     getCategoryPresentation(state.project.recipes, resource.kind, resource.id),
   );
@@ -995,7 +997,7 @@ function ResourceLink({
     useFactoryStore.getState().browseResource({ ...resource, anchorNodeId: nodeId }, mode);
   };
   const { pressHandlers, menu, wasDragged, wasTouch, openFromTap } = useBrowseMenu({
-    name: resourceLabel(displayResource),
+    name: resourceDisplayLabel(displayResource),
     onPick: browse,
   });
   return (
@@ -1003,8 +1005,8 @@ function ResourceLink({
       <button
         type="button"
         className="pool-resource-link"
-        aria-label={iconsOnly ? resourceLabel(displayResource) : undefined}
-        title={iconsOnly && nameTooltip ? resourceLabel(displayResource) : undefined}
+        aria-label={iconsOnly ? resourceDisplayLabel(displayResource) : undefined}
+        title={iconsOnly && nameTooltip ? resourceDisplayLabel(displayResource) : undefined}
         draggable={false}
         onDragStart={(event) => event.preventDefault()}
         {...pressHandlers}
@@ -1033,7 +1035,7 @@ function ResourceLink({
       >
         {iconsOnly && !resource.iconPath && !resource.iconAtlas && !hasCategoryArt && resource.kind !== "power" ? (
           <span className="pool-resource-fallback" aria-hidden>
-            {resourceLabel(displayResource).slice(0, 2)}
+            {resourceDisplayLabel(displayResource).slice(0, 2)}
           </span>
         ) : (
           <ResourceIcon
@@ -1054,8 +1056,8 @@ function ResourceLink({
           />
         )}
         {iconsOnly ? null : (
-          <span title={nameTooltip ? resourceLabel(displayResource) : undefined}>
-            {resourceLabel(displayResource)}
+          <span title={nameTooltip ? resourceDisplayLabel(displayResource) : undefined}>
+            {resourceDisplayLabel(displayResource)}
           </span>
         )}
       </button>

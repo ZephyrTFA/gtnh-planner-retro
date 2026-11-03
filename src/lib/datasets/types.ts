@@ -85,6 +85,8 @@ export interface DatasetVersion {
   sourceInfo: DatasetSourceInfo;
   /** Present when the dataset is the pack plus addons. */
   addonSet?: DatasetAddonSet;
+  /** Languages with item names at `<dataset dir>/locales/<locale>.json.gz` (ru_RU, zh_CN). */
+  locales?: string[];
 }
 
 export interface DatasetManifest {

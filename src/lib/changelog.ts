@@ -40,6 +40,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.0",
+    date: "2026-11-03",
+    headline: "Item names in Russian and Chinese",
+    notes: [
+      "Settings, Item names: English, Русский or 中文. Items and fluids take the names the game itself shows in that language.",
+      "Search the item list in the chosen language too; English names still match.",
+      "Plans keep English names inside, so a shared plan reads right in every language. Machine names and the rest of the planner stay English.",
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-11-03",
     headline: "Twist Space Technology, as a second pack",

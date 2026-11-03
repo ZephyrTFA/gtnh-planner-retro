@@ -198,6 +198,7 @@ function parseResourceQuery(params: URLSearchParams): Parameters<typeof queryDat
         ? sortParam
         : undefined,
     source: sourceParam === "plants" || sourceParam === "bees" ? sourceParam : undefined,
+    language: /^[a-z]{2}_[A-Z]{2}$/.test(params.get("lang") ?? "") ? params.get("lang")! : undefined,
     // Popularity was community data from the database; with no backend the
     // "popular" sort is plain best match, as the server answered before its
     // first sweep.

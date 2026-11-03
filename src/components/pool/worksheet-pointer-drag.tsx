@@ -15,7 +15,7 @@ import { createPortal } from "react-dom";
 import { GripVertical } from "lucide-react";
 import type { ResourceAmount } from "@/lib/model/types";
 import { productionGroupDescendants } from "@/lib/model/production-groups";
-import { resourceLabel } from "@/lib/model";
+import { resourceDisplayLabel } from "@/lib/model";
 import { playBoardSound, suppressBoardSound } from "@/lib/board-sounds";
 import { useFactoryStore } from "@/store/factory-store";
 import { ResourceIcon } from "../nei/ResourceIcon";
@@ -253,7 +253,7 @@ export function WorksheetPointerDrag({ children }: { children: ReactNode }) {
               )}
               <span>
                 {"resource" in preview.payload
-                  ? resourceLabel(preview.payload.resource)
+                  ? resourceDisplayLabel(preview.payload.resource)
                   : preview.payload.label}
               </span>
             </div>,

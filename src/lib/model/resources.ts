@@ -43,6 +43,33 @@ function isWildcardChoiceResource(resource: Pick<ResourceAmount, "id" | "display
   );
 }
 
+/**
+ * Item names in the player's chosen language (src/lib/item-names.ts sets them),
+ * keyed by resource id. DISPLAY only: `resourceLabel` stays English, because its
+ * result is stored in plans (edge and drawer labels) that other players open.
+ */
+let displayNames: ReadonlyMap<string, string> | undefined;
+
+export function setResourceDisplayNames(names: ReadonlyMap<string, string> | undefined): void {
+  displayNames = names;
+}
+
+/** A resource's name in the chosen language, or `fallback` (the English name). */
+export function displayNameFor(id: string, fallback: string): string {
+  return displayNames?.get(id) ?? fallback;
+}
+
+/** `resourceLabel`, in the chosen language where the game translates it. For display only. */
+export function resourceDisplayLabel(
+  resource: Pick<ResourceAmount, "id" | "displayName"> & Partial<Pick<ResourceAmount, "alternatives">>,
+): string {
+  if (!isOreDictionaryResource(resource)) {
+    const translated = displayNames?.get(resource.id);
+    if (translated) return translated;
+  }
+  return resourceLabel(resource);
+}
+
 export function resourceLabel(resource: Pick<ResourceAmount, "id" | "displayName"> & Partial<Pick<ResourceAmount, "alternatives">>): string {
   if (isOreDictionaryResource(resource)) {
     const group = resource.id.slice("oredict:".length);

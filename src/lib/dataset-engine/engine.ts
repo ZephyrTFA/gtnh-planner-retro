@@ -625,6 +625,8 @@ export async function queryDatasetResources(
     source?: ResourceSourceFilter;
     /** Community popularity by `${kind}:${id}`, required only by sort "popular". */
     popularity?: Map<string, number>;
+    /** Also match names in this item language (locales/<language>.json.gz beside the dataset). */
+    language?: string;
   },
 ) {
   const catalog = await loadCatalog(versionId);
@@ -642,7 +644,16 @@ export async function queryDatasetResources(
     byKey.set(blankKey, { popularity: request.popularity, value: blank });
     blankResourceSearches.set(catalog, byKey);
   }
-  const { matches, modCounts, resolved } = blank;
+  const { resolved } = blank;
+  let { matches, modCounts } = blank;
+  if (request.language && request.query.trim()) {
+    // English search keeps Latin letters and digits only, so a Cyrillic or
+    // Chinese query has no terms and would "match" every resource there:
+    // then the translated names are the whole answer.
+    const englishTerms = parseSearchQuery(request.query).terms.length > 0;
+    modCounts = englishTerms ? new Map(modCounts) : new Map();
+    matches = await withLocalizedMatches(catalog, versionId, request, englishTerms ? matches : [], modCounts);
+  }
 
   return {
     resources: matches
@@ -658,6 +669,76 @@ export async function queryDatasetResources(
       .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id)),
     ...searchOutcome(resolved),
   };
+}
+
+/**
+ * Names in one item language as [resource index, lower-cased name], loaded once
+ * per dataset and language; empty when the dataset has no such file.
+ */
+const localizedNameLists = new Map<string, Promise<Array<[number, string]>>>();
+
+function localizedNameList(catalog: LoadedRecipeIndex, versionId: string, language: string) {
+  const key = `${versionId}:${language}`;
+  let list = localizedNameLists.get(key);
+  if (!list) {
+    list = readGzipJson<{ names: Record<string, string> }>(`/datasets/gtnh/${versionId}/locales/${language}.json.gz`)
+      .then((file) => {
+        const indexById = new Map(catalog.resourceIndex.map((entry, index) => [entry.id, index] as const));
+        const out: Array<[number, string]> = [];
+        for (const [id, name] of Object.entries(file.names)) {
+          const index = indexById.get(id);
+          if (index !== undefined) out.push([index, name.toLocaleLowerCase()]);
+        }
+        return out;
+      })
+      .catch(() => []);
+    localizedNameLists.set(key, list);
+  }
+  return list;
+}
+
+/**
+ * Adds the resources whose translated name contains the query (case-blind
+ * substring: Cyrillic and Chinese both read that way) to the English matches,
+ * under the same kind, mod and listing filters, ranked ahead of them.
+ */
+async function withLocalizedMatches(
+  catalog: LoadedRecipeIndex,
+  versionId: string,
+  request: Parameters<typeof queryDatasetResources>[1],
+  matches: Array<{ resourceIndex: number; score: number }>,
+  modCounts: Map<string, number>,
+) {
+  const needle = request.query.trim().toLocaleLowerCase();
+  const names = await localizedNameList(catalog, versionId, request.language!);
+  if (names.length === 0) return matches;
+  const sourceKeys = request.source ? await getPassiveSourceResourceKeys(catalog, request.source) : undefined;
+  const seen = new Set(matches.map((match) => match.resourceIndex));
+  const extra: Array<{ resourceIndex: number; score: number }> = [];
+  for (const [resourceIndex, name] of names) {
+    const at = name.indexOf(needle);
+    if (at < 0 || seen.has(resourceIndex)) continue;
+    const resource = catalog.resourceIndex[resourceIndex];
+    if (
+      !resource ||
+      isVirtualChoiceResource(resource) ||
+      isSettingsOnlyItem(resource) ||
+      (!resource.iconPath && !resource.iconAtlas) ||
+      (request.kind && resource.kind !== request.kind) ||
+      (sourceKeys && !sourceKeys.has(`${resource.kind}:${resource.id}`))
+    ) {
+      continue;
+    }
+    const modId = getResourceModId(resource);
+    modCounts.set(modId, (modCounts.get(modId) ?? 0) + 1);
+    if (request.mod && modId !== request.mod) continue;
+    // A name that starts with the query beats one that merely contains it;
+    // shorter names first among equals.
+    extra.push({ resourceIndex, score: (at === 0 ? 2000 : 1000) - name.length / 100 });
+  }
+  if (extra.length === 0) return matches;
+  const directionCounts = await getResourceDirectionCounts(catalog);
+  return sortResourceMatches(catalog, [...extra, ...matches], request.sort ?? "relevance", directionCounts, request.popularity);
 }
 
 type ResourceSearch = Awaited<ReturnType<typeof searchDatasetResources>>;

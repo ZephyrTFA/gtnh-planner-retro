@@ -1,5 +1,6 @@
 "use client";
 
+import { useItemNamesVersion } from "@/lib/item-names";
 import { useDropdownDismiss } from "@/lib/hooks/use-dropdown-dismiss";
 
 import {
@@ -30,21 +31,11 @@ import type {
 } from "react";
 import type { DatasetResourceIndexEntry, RecipeSummary } from "@/lib/datasets/types";
 import type { RecipeQueryRole, RecipeQuerySideOp } from "@/lib/datasets/recipe-query";
-import {
-  AUTO_WORKBENCH_HANDLER_ID,
-  GT_VOLTAGE_TIERS,
-  formatRate,
-  getRecipeMachineHandlers,
-  isControllerSlotInput,
-  isFreeRecipeInput,
-  isOreDictionaryResource,
-  isRecipeInputConsumed,
-  machineCycleTicks,
-} from "@/lib/model";
+import { AUTO_WORKBENCH_HANDLER_ID, GT_VOLTAGE_TIERS, formatRate, getRecipeMachineHandlers, isControllerSlotInput, isFreeRecipeInput, isOreDictionaryResource, isRecipeInputConsumed, machineCycleTicks, resourceDisplayLabel } from "@/lib/model";
 import type { MachineTier, ResourceAmount } from "@/lib/model/types";
 import { getVoltageTierIndex } from "@/lib/model/tiers";
 import { energyPerUnitSuffix, type TimeRateUnit } from "@/lib/model/rate-unit";
-import { formatCompact, resourceLabel } from "@/lib/model/resources";
+import { formatCompact } from "@/lib/model/resources";
 import { playBoardSound } from "@/lib/board-sounds";
 import { ENERGY_READING_TEXT } from "./flow/flow-explainers";
 import { GT_TIER_COLORS } from "./flow/tier-colors";
@@ -1473,7 +1464,7 @@ export function RecipeSearchOverlay({
               onPointerDown={(event) => event.stopPropagation()}
             >
               <div className="truncate px-2 py-1 text-[11px] font-bold text-[var(--mc-ink-muted)]">
-                {resourceLabel(chipMenu.resource)}
+                {resourceDisplayLabel(chipMenu.resource)}
               </div>
               {(
                 [
@@ -1897,6 +1888,7 @@ const CompactRecipeCard = memo(function CompactRecipeCard({
   /** Right click (or a held press on the header): the card's menu. */
   onCardMenu: (event: ReactMouseEvent, machineLabel: string, add: () => void) => void;
 }) {
+  useItemNamesVersion();
   const preview = useMemo(
     () => contextualizePreviewRecipe(summaryToPreviewRecipe(recipe), contextResource),
     [contextResource, recipe],
@@ -2446,6 +2438,7 @@ function ResourceChip({
   /** The mouse went down on the chip: the stencil may pick it up. */
   onDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
 }) {
+  useItemNamesVersion();
   // The wheel listener is attached by hand, non-passive: React's synthetic
   // wheel cannot preventDefault, and without it every cycle also scrolls the
   // results behind the chip.
@@ -2513,7 +2506,7 @@ function ResourceChip({
       {/* The icon is the big thing; the name is smaller and may take a
           second line rather than losing its second word to an ellipsis. */}
       <span className="min-w-0 flex-1 line-clamp-2 whitespace-normal text-[12px] font-bold leading-tight text-[var(--mc-ink)]">
-        {resourceLabel(resource)}
+        {resourceDisplayLabel(resource)}
       </span>
       <span
         className={[
