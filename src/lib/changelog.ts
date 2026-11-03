@@ -47,7 +47,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Build, Solve and Pool, the Raw/Net switch and the classic cards work as they did before version 4.",
       "Every recipe, machine and icon comes from the GTNH 2.9.0 release, and the planner runs entirely in your browser.",
       "Fixed: bee outputs and Industrial Apiary power, the Mega Distillation Tower's distillery mode, Distilled Water recipes, Boldarnator leaves, and adding HTGR fuel.",
-      "Shared plan links ask before opening a very large plan, and a plan that fails to open no longer reopens on your next visit.",
+      "Help, Send a request goes straight to the maintainer, with no account needed.",
     ],
   },
   {

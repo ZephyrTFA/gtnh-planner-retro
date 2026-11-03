@@ -339,7 +339,7 @@ describe("refusals, cheapest first, before Turnstile or GitHub", () => {
     expect(net.calls).toHaveLength(0);
   });
 
-  it("rate limits per address, then for the whole site, before Turnstile", async () => {
+  it("rate limits per address before Turnstile, and the whole site after it", async () => {
     const { env, perIp, global } = makeEnv();
     const net = network();
     const statuses = [];
@@ -358,7 +358,18 @@ describe("refusals, cheapest first, before Turnstile or GitHub", () => {
     const response = await handle(post(valid), site.env, siteNet.fetchImpl);
     expect(response.status).toBe(429);
     expect(await json(response)).toEqual({ ok: false, error: "rate-limited" });
-    expect(siteNet.calls).toHaveLength(0);
+    // The site-wide limit sits after the bot check: siteverify ran, GitHub did not.
+    expect(siteNet.siteverifyCalls).toHaveLength(1);
+    expect(siteNet.githubCalls).toHaveLength(0);
+  });
+
+  it("does not spend the site-wide allowance on requests that fail the bot check", async () => {
+    const { env, global } = makeEnv();
+    const net = network({ siteverify: { success: false } });
+    const response = await handle(post(valid), env, net.fetchImpl);
+    expect(response.status).toBe(403);
+    expect(global.calls).toHaveLength(0);
+    expect(net.githubCalls).toHaveLength(0);
   });
 
   it("refuses a failed bot check with 403 and never calls GitHub", async () => {

@@ -23,8 +23,9 @@ Tests: `worker/request.test.ts`, `src/components/RequestDialog.test.tsx`,
 
 Method, Origin (exactly `SITE_ORIGIN`; `http://localhost:*` only with `LOCAL_DEV=true`),
 `Content-Type: application/json`, the body read to at most 24 KB counting bytes (the largest honest request is about 19 KB), JSON,
-the schema, the per-address then site-wide rate limits, Turnstile siteverify (success,
-`hostname` = the origin's, `action` = `send-request`), and only then GitHub. Turnstile
+the schema, the per-address rate limit, Turnstile siteverify (success,
+`hostname` = the origin's, `action` = `send-request`), the site-wide rate limit (after the
+bot check, so junk with bad tokens cannot spend real players' allowance), and only then GitHub. Turnstile
 and GitHub are never called for a request that fails an earlier check.
 
 ## The issue

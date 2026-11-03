@@ -160,13 +160,9 @@ export async function handle(request: Request, env: Env, fetchImpl: typeof fetch
     return refuse("unavailable");
   }
 
-  // One sender first, so a flood from one address is turned away before it
-  // can spend the whole site's allowance.
+  // Per address before the bot check, so one sender cannot run up siteverify calls.
   const ip = request.headers.get("CF-Connecting-IP") ?? "";
   if (!(await env.REQUEST_LIMIT_PER_IP.limit({ key: ip || "no-address" })).success) {
-    return refuse("rate-limited");
-  }
-  if (!(await env.REQUEST_LIMIT_GLOBAL.limit({ key: "site" })).success) {
     return refuse("rate-limited");
   }
 
@@ -182,6 +178,12 @@ export async function handle(request: Request, env: Env, fetchImpl: typeof fetch
   );
   if (verdict !== "passed") {
     return refuse(verdict === "failed" ? "bot-check-failed" : "bot-check-unavailable");
+  }
+  // The site-wide limit counts only senders who passed the bot check: counted
+  // before it, junk with bad tokens would spend everyone's allowance and shut
+  // the form for real players.
+  if (!(await env.REQUEST_LIMIT_GLOBAL.limit({ key: "site" })).success) {
+    return refuse("rate-limited");
   }
 
   const apiBase = localDev && env.GITHUB_API_BASE ? env.GITHUB_API_BASE.replace(/\/+$/, "") : GITHUB_API;
