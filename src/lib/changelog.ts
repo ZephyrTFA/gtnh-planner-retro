@@ -40,6 +40,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-11-03",
+    headline: "GT Not Leisure packs",
+    notes: [
+      "Two new packs in the pack picker: 2.9.0 + GT Not Leisure, and 2.9.0 + Twist Space Technology + GT Not Leisure, with the recipe maps those mods add.",
+      "GT Not Leisure has no release for GTNH 2.9.0 yet, so these packs use its development build. Its recipes may change when a release ships.",
+      "GT Not Leisure machines take their speed and parallels from their in-game tooltips and show as Unchecked.",
+      "Item names on these two packs are in English only for now.",
+    ],
+  },
+  {
     version: "1.3.2",
     date: "2026-11-03",
     headline: "Twist Space recipes that were missing",
