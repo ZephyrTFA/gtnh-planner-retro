@@ -40,6 +40,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.0",
+    date: "2026-11-03",
+    headline: "GT Not Leisure steam machines, and multiblock voltage fixed",
+    notes: [
+      "21 GT Not Leisure steam multiblocks, including the Large Steam machines, now run on their real speed, parallels and steam use. Each card has a Pressure knob for the bronze or steel build and an Overclocks knob for the controller's overclocking count.",
+      "Steam multiblocks now refuse recipes above the voltage their build allows, as in game: LV for GT's own steam machines. The card reads OVER TIER and its hover says why.",
+      "Multiblocks without their own checked numbers, such as GT Not Leisure's Electric Industrial Blast Furnace, now show the energy hatch chip. Changing their voltage used to change the label only, not the colour or the recipe time.",
+    ],
+    warning:
+      "A steam multiblock on a saved plan that runs a recipe above its voltage now stops and reads OVER TIER. Pick a recipe the build can run, or a machine that can.",
+  },
+  {
     version: "1.5.0",
     date: "2026-11-03",
     headline: "Language links, and GT Not Leisure in Russian and Chinese",
