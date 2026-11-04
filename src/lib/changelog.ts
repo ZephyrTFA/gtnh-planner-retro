@@ -40,6 +40,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-11-03",
+    headline: "Language links, and GT Not Leisure in Russian and Chinese",
+    notes: [
+      "Add ?lang=zh_cn or ?lang=ru to the address to open the planner in that language. It does not change your saved language.",
+      "Item and fluid names on the two GT Not Leisure packs now show in Russian and Chinese, and item search finds them by those names.",
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-11-03",
     headline: "GT Not Leisure packs",
