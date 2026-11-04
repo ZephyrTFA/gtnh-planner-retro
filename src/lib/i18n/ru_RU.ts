@@ -2132,6 +2132,11 @@ const catalog: Catalog = {
   "The gear's effect is shared by every Large Steam Mixer in the world: the last one to check its controller sets it for all.": "Действие шестерни общее для всех Large Steam Mixer в мире: последний проверивший свой контроллер задаёт его для всех.",
   "This steam build runs recipes up to {tier}.": "Эта паровая сборка выполняет рецепты не выше {tier}.",
   "over tier": "выше уровня",
+  "Cold": "Холодная",
+  "Refuses the recipes that need the compact reactor; the recipe data does not mark them.": "Не берёт рецепты, которым нужен компактный реактор; данные рецептов их не помечают.",
+  "Six layers: fluid outputs past the sixth are voided.": "Шесть уровней: жидкости после шестой уничтожаются.",
+  "Speed-up": "Ускорение",
+  "Speeds up while it runs, 0.05x every 5 seconds, to 10x after 15 minutes, and keeps it.": "Ускоряется во время работы, на 0.05x каждые 5 секунд, до 10x через 15 минут, и сохраняет его.",
 };
 
 export default catalog;

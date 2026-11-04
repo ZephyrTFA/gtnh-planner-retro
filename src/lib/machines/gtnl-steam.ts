@@ -111,3 +111,22 @@ export function gtnlSteamOverclocks(voltage: number, recipeEuT: number, euDiscou
   const voltageTierRecipe = Math.max(Math.ceil(Math.log(recipeEuT / 8) / Math.log(4)), 1);
   return Math.max(0, Math.min(tiersAbove, voltageTierMachine - voltageTierRecipe));
 }
+
+/**
+ * GTNL maps the dataset exports without handlers (one machine runs each, so
+ * the pipeline leaves the map's name as the machine), keyed by GT's map id:
+ * the machine that really runs them. Two of them share a display name with
+ * another map ("Rock Breaker" with GT's, "Hydraulic Manufacturing" between
+ * the Steam Manufacturer and the Perfect Steam Progenitor), so the id decides.
+ */
+export const GTNL_MAP_MACHINES: Record<string, string> = {
+  "gtnl.recipe.steam_carpenter": "Steam Carpenter",
+  "gtnl.recipe.steam_cracker": "Steam Cracker",
+  "gtnl.recipe.lava_maker": "Steam Stone Superheater",
+  "gtnl.recipe.steam_extractinator": "Steam Extractinator",
+  "gtnl.recipe.rock_breaker": "Steam Rock Breaker",
+  "gtnl.recipe.steam_manufacturer": "Steam Manufacturer",
+  "gtnl.recipe.steam_gate_assembler": "Perfect Steam Progenitor",
+  "gtnl.recipe.primitive_brick_kiln": "Updraft Kiln",
+  "gtnl.recipe.infernal_coke_oven": "Infernal Coke Oven",
+};

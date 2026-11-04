@@ -62,9 +62,18 @@ computes in float: replicate it.
   EU/t. Steam bills min(parallels, runs): banked runs are free.
 - Their own logic: the Large Steam Furnace (fixed 64-tick smelt, `steamPerTick`), the
   Steam Supercompressor (overclocks at EV on top of the count), the Steam Manufacturer
-  (assembler recipes to MV, HV with an HV Assembler in the controller). Left out: the
-  Large Steam Alloy Smelter (TST has one of the same name), the Primitive Distillation
-  Tower and the Hyper Pressure Reactors (steam machines without "steam" in the name).
+  (assembler recipes to MV, HV with an HV Assembler in the controller), the Infernal Coke
+  Oven (speeds up to 10x as it runs), the Primitive Distillation Tower (`keepsOutput`:
+  six layers, later fluids voided). Left out: the Large Steam Alloy Smelter (TST has one
+  of the same name, and the TST + GTNL pack merges them).
+- Maps one GTNL machine runs come without handlers, so the card would be a singleblock
+  named after the map. `GTNL_MAP_MACHINES` (`gtnl-steam.ts`) names the real machine by
+  the recipe's `metadata.recipeMapId`; the id decides because two maps share display
+  names ("Rock Breaker" with GT's, "Hydraulic Manufacturing" between two machines).
+- Steam detection is by name ("Steam ...", "High Pressure ..."); a steam machine named
+  otherwise sets `burnsSteam` (Updraft Kiln, Infernal Coke Oven, the reactors, the tower).
+- GTNL's Electric Industrial Blast Furnace is a heat machine whose +100 K per tier reads
+  `getMaxInputEu()` (`heat.voltageBonusFromTotalPower`), not the summed voltage.
 
 ## Overclocks and ticks (src/lib/solver/overclock.ts)
 

@@ -210,6 +210,10 @@ export function getMachineOutputMultiplier(
     return (reference > 0 ? current / reference : 1) * rounds;
   }
 
+  if (getMachineBehaviour(recipe.machineType)?.keepsOutput?.(recipe as Partial<Recipe>, output) === false) {
+    return 0;
+  }
+
   const configMultiplier = getRecipeMachineConfigTierControls(recipe, node)
     .filter((control) => !isBeeFrameSlotControlId(control.id))
     .reduce((multiplier, control) => multiplier * (control.current.outputMultiplier ?? 1), 1);

@@ -1,6 +1,7 @@
 import { CROP_FARM_PLACEHOLDER_RECIPE_ID, createCropFarmPlaceholderRecipe } from "./passive-production";
 import { getFusionMachine, getFusionRecipeMark, isFusionRecipe, normalizeFusionHandler } from "@/lib/machines/fusion";
 import { TGS_MACHINE_TYPE, tgsEuPerTick } from "@/lib/machines/tree-growth-simulator";
+import { GTNL_MAP_MACHINES } from "@/lib/machines/gtnl-steam";
 import type {
   FactoryNode,
   MachineConfigControl,
@@ -67,6 +68,13 @@ export function getRecipeMachineHandlers(
     return recipe.machineHandlers.map((handler) => normalizeFusionHandler(handler, recipe));
   }
 
+  // A handler-less addon map whose one machine is known: that machine, a
+  // multiblock, rather than a singleblock named after the map.
+  const mapId = recipe.metadata?.recipeMapId;
+  const addonMachine = typeof mapId === "string" ? GTNL_MAP_MACHINES[mapId] : undefined;
+  if (addonMachine) {
+    return [{ id: slug(addonMachine), label: addonMachine, machineType: addonMachine, minimumTier: recipe.minimumTier, kind: "multiblock" }];
+  }
   const baseMachineType = machineHandlerFamilyLabel(recipe.machineType);
   const fallback: MachineHandler = {
     id: slug(baseMachineType),
@@ -118,10 +126,15 @@ function autoWorkbenchHandler(): MachineHandler {
  * exported catalysts: every machine named "Steam ..." or "High Pressure ..."
  * is a steam MTE without a Voltage IN tooltip line, and no EU machine
  * matches either pattern ("High Pressure Alloy Smelter" is the one steam
- * machine that omits the word steam).
+ * machine that omits the word steam). Addon steam machines named otherwise
+ * say so in the machine table (`burnsSteam`).
  */
-export function isSteamMachineHandler(handler: Pick<MachineHandler, "label">): boolean {
-  return /\bsteam\b/i.test(handler.label) || /\bhigh pressure\b/i.test(handler.label);
+export function isSteamMachineHandler(handler: Pick<MachineHandler, "label"> & Partial<Pick<MachineHandler, "machineType">>): boolean {
+  return (
+    /\bsteam\b/i.test(handler.label) ||
+    /\bhigh pressure\b/i.test(handler.label) ||
+    getMachineBehaviour(handler.machineType ?? handler.label)?.burnsSteam === true
+  );
 }
 
 /** The steel-cased half of the steam line: twice the speed, twice the steam. */

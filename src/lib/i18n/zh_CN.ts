@@ -2132,6 +2132,11 @@ const catalog: Catalog = {
   "The gear's effect is shared by every Large Steam Mixer in the world: the last one to check its controller sets it for all.": "齿轮的效果由世界上所有 Large Steam Mixer 共享：最后检查控制器的那台为所有机器设定。",
   "This steam build runs recipes up to {tier}.": "此蒸汽结构只能运行 {tier} 及以下的配方。",
   "over tier": "超出电压",
+  "Cold": "冷启动",
+  "Refuses the recipes that need the compact reactor; the recipe data does not mark them.": "不接受需要紧凑型反应堆的配方；配方数据未标记这些配方。",
+  "Six layers: fluid outputs past the sixth are voided.": "六层：第六种之后的流体产物会被销毁。",
+  "Speed-up": "加速",
+  "Speeds up while it runs, 0.05x every 5 seconds, to 10x after 15 minutes, and keeps it.": "运行时逐渐加速，每 5 秒 0.05x，15 分钟后达到 10x 并保持。",
 };
 
 export default catalog;

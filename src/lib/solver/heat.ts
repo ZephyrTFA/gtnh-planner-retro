@@ -3,6 +3,8 @@ import {
   getRecipeSpecialValue,
 } from "@/lib/model/recipe-rules";
 import { getMachineBehaviour } from "@/lib/machines/machine-table";
+import { gtTier } from "@/lib/machines/gtnl-steam";
+import { getSummedHatchInput } from "./power";
 import { getVoltageTierIndex } from "@/lib/model/tiers";
 import type { FactoryNode, MachineTier, Recipe } from "@/lib/model/types";
 
@@ -92,7 +94,10 @@ export function getHeatOverclockStats(
   const coilHeat = coilControl.current.heat * (heatConfig?.coilHeatMultiplier ?? 1);
   // Only the blast furnaces and the Exothermic Hearth add 100 K per voltage
   // tier above MV; Volcanus and the Utupu-Tanuri read their coils raw.
-  const effectiveOrdinal = voltageOrdinal ?? getVoltageTierIndex(tier);
+  const totalPower = heatConfig?.voltageBonusFromTotalPower
+    ? getSummedHatchInput(recipe as Recipe, node, tier, true)
+    : undefined;
+  const effectiveOrdinal = totalPower !== undefined ? gtTier(totalPower) : voltageOrdinal ?? getVoltageTierIndex(tier);
   const machineHeat = heatConfig?.voltageBonus
     ? coilHeat + 100 * Math.max(0, effectiveOrdinal - VOLTAGE_TIER_INDEX_MV)
     : coilHeat;

@@ -47,10 +47,10 @@ const node = (patch: Partial<FactoryNode> = {}): FactoryNode => ({
 
 describe("per-card hatch input", () => {
   it("gives a multiblock with no machine-table entry the hatch chip, since its hatch sets its tier", () => {
-    // An addon multiblock (GTNL's Electric Industrial Blast Furnace) runs on
-    // scraped numbers but still on its hatch: a tier chip writing
-    // overclockTier would change the label and nothing else.
-    const r = applyMachineHandlerToRecipe(recipe("Electric Industrial Blast Furnace", 120), node());
+    // An addon multiblock (GTNL's Large Rock Crusher) runs on scraped numbers
+    // but still on its hatch: a tier chip writing overclockTier would change
+    // the label and nothing else.
+    const r = applyMachineHandlerToRecipe(recipe("Large Rock Crusher", 120), node());
     expect(takesHatchInput(r)).toBe(true);
     const lv = node({ overclockTier: "EV", hatchVoltageTier: "MV", hatchAmps: 1 });
     const ev = node({ overclockTier: "MV", hatchVoltageTier: "EV", hatchAmps: 1 });

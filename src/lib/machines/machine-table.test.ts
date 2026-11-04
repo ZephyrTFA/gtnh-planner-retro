@@ -398,6 +398,19 @@ describe("curated machine table", () => {
         "Steam Supercompressor",
         "Steam Manufacturer",
         "Steam Woodcutter",
+        "Steam Carpenter",
+        "Perfect Steam Progenitor",
+        "Steam Stone Superheater",
+        "Steam Extractinator",
+        "Steam Cracker",
+        "Steam Rock Breaker",
+        "Updraft Kiln",
+        "Infernal Coke Oven",
+        "Hyper Pressure Reactor",
+        "Compact Hyper Pressure Reactor",
+        "Primitive Distillation Tower",
+        // GTNL's ElectricBlastFurnace (structuralReconstructionPlan).
+        "Electric Industrial Blast Furnace",
       ].map(normalizeMachineName),
     );
     // Every entry must trace back to a reference definition or a direct source

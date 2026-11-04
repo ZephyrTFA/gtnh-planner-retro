@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { FactoryNode, Recipe } from "@/lib/model/types";
 import { getOverclockedRecipeStats } from "@/lib/solver/overclock";
 import { getNodePowerReport, getNodeSteamReport } from "@/lib/solver/power-report";
-import { getMachineParallelMultiplier } from "@/lib/solver/machine-effects";
-import { applyMachineHandlerToRecipe } from "@/lib/model/recipe-rules";
+import { getMachineOutputMultiplier, getMachineParallelMultiplier, getMachineStructuralParallels } from "@/lib/solver/machine-effects";
+import { applyMachineHandlerToRecipe, getRecipeMachineHandlers } from "@/lib/model/recipe-rules";
 import { gtnlSteamOverclocks, gtnlSteamTicks, multiplierUnderOneTick } from "./gtnl-steam";
 
 // Each pin names the GTNL (dev-290) or GT5-Unofficial Java it reproduces.
@@ -115,5 +115,69 @@ describe("GT Not Leisure steam multiblocks", () => {
     expect(multiplierUnderOneTick(3, 0)).toBe(1);
     // The parallel helper caps the runs at V x parallels / recipe EU/t.
     expect(gtnlSteamTicks(0.3, { parallels: 16, voltage: 128, recipeEuT: 100 })).toBe(16 / 20);
+  });
+
+  it("names the machine that runs a handler-less GTNL map, by its map id", () => {
+    const mapRecipe = (map: string, mapId: string, eut: number, durationTicks: number): Recipe =>
+      ({
+        ...recipe("unused", eut, durationTicks, map),
+        machineHandlers: undefined,
+        metadata: { recipeMapId: mapId },
+      }) as unknown as Recipe;
+    const bare = (settings: Record<string, string> = {}): FactoryNode => ({ ...node(settings), machineHandlerId: undefined });
+    // Extractination ran as an EU singleblock named after its map.
+    const ore = mapRecipe("Extractination", "gtnl.recipe.steam_extractinator", 300, 100);
+    expect(getRecipeMachineHandlers(ore).map((h) => [h.label, h.kind])).toEqual([["Steam Extractinator", "multiblock"]]);
+    expect(applyMachineHandlerToRecipe(ore, bare()).eut).toBe(0);
+    expect(getNodeSteamReport(ore, bare())?.drawSteamPerTick).toBe(300 * 4); // 4 parallels
+    expect(getOverclockedRecipeStats(ore, bare({ gtnlSteamOverclocks: "2" })).durationTicks).toBe(25);
+    // GTNL's rock breaker map is also called "Rock Breaker"; only its id tells it from GT's.
+    const basalt = mapRecipe("Rock Breaker", "gtnl.recipe.rock_breaker", 30, 16);
+    expect(getRecipeMachineHandlers(basalt)[0].label).toBe("Steam Rock Breaker");
+    expect(getRecipeMachineHandlers(mapRecipe("Rock Breaker", "gt.recipe.rockbreaker", 30, 16))[0].kind).toBe("single");
+    // SteamRockBreaker: 16 x 1.6 = 25.6 ticks bronze, 12.8 steel; 30 x 1.25 x 8 parallels L a tick.
+    expect(getOverclockedRecipeStats(basalt, bare()).durationTicks).toBe(25);
+    expect(getOverclockedRecipeStats(basalt, bare(steel)).durationTicks).toBe(12);
+    expect(getNodeSteamReport(basalt, bare())?.drawSteamPerTick).toBe(300);
+  });
+
+  it("bills steam on the steam machines whose names do not say so", () => {
+    const kiln = recipe("Updraft Kiln", 16, 200, "Primitive Brick Kiln");
+    expect(getNodeSteamReport(kiln, node())?.drawSteamPerTick).toBe(16 * 8);
+    // getTierRecipes(): LV bronze, MV steel.
+    expect(getNodePowerReport(recipe("Updraft Kiln", 33, 200), node()).state).toBe("over-tier");
+    expect(getNodePowerReport(recipe("Updraft Kiln", 33, 200), node(steel)).state).toBe("ok");
+    const tower = {
+      ...recipe("Primitive Distillation Tower", 64, 100, "Distillation Tower"),
+      outputs: Array.from({ length: 8 }, (_, i) => ({ kind: "fluid", id: `f${i}`, amount: 10 })),
+    } as unknown as Recipe;
+    const effective = applyMachineHandlerToRecipe(tower, node());
+    expect(effective.eut).toBe(0);
+    // addFluidOutputs: one fluid a layer, six layers.
+    expect(effective.outputs.map((o) => getMachineOutputMultiplier(effective, node(), o, "LV"))).toEqual([1, 1, 1, 1, 1, 1, 0, 0]);
+  });
+
+  it("Electric Industrial Blast Furnace: coil discount, coil parallels, and heat from the hatches' whole power", () => {
+    const coil = (key: string, heat: number) => ({ key, label: key, heat, resource: { kind: "item", id: key, amount: 1 } });
+    const eibf = {
+      ...recipe("Electric Industrial Blast Furnace", 120, 1000, "Blast Furnace"),
+      minimumTier: "MV",
+      specialValue: 1000,
+      nei: { additionalInfo: ["Special value: 1000"] },
+      machineConfigControls: [{
+        id: "heatingCoil", label: "Heating Coil", minimumKey: "cupronickel", defaultKey: "cupronickel",
+        tiers: [coil("cupronickel", 1801), coil("kanthal", 2701), coil("nichrome", 3601), coil("tpv", 4501)],
+      }],
+    } as unknown as Recipe;
+    const mv = (amps: number, coilKey = "cupronickel") =>
+      ({ ...node({ heatingCoil: coilKey }), coilTier: coilKey, hatchVoltageTier: "MV", hatchAmps: amps }) as FactoryNode;
+    // 0.75 x 0.95^coil tier: 120 x 0.75 = 90 on cupronickel (tier 0).
+    expect(getNodePowerReport(eibf, mv(1)).singleDrawEuT).toBe(90);
+    // Structural parallels, before power pays for them: MV is tier 2, TPV coil tier 3.
+    const tpv = mv(1, "tpv");
+    expect(getMachineStructuralParallels(applyMachineHandlerToRecipe(eibf, tpv), tpv)).toBe(2 * 2 + 4 * 2);
+    // 2 A of MV is 256 EU: HV by getMaxInputEu, so 1801 + 100 K, 901 K over the recipe's 1000 K:
+    // one 5% heat discount. Summed voltage (one hatch, MV) would have added nothing.
+    expect(getNodePowerReport(eibf, mv(2)).singleDrawEuT).toBe(Math.ceil(120 * 0.75 * 0.95));
   });
 });

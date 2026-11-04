@@ -74,6 +74,7 @@ const CAPTIONS: Record<string, string> = {
   steamPressure: msg("Pressure"),
   gtnlSteamOverclocks: msg("Overclocks"),
   gtnlControllerItem: msg("Controller"),
+  infernalCokeOvenSpeedup: msg("Speed-up"),
 };
 
 export function settingCaption(control: Pick<MachineConfigTierControl, "id" | "label">): string {

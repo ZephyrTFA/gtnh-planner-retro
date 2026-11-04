@@ -29,7 +29,7 @@
  * regenerate it.
  */
 import { msg, t } from "@/lib/i18n";
-import type { MachineConfigControl, Recipe } from "@/lib/model/types";
+import type { MachineConfigControl, Recipe, RecipeOutput } from "@/lib/model/types";
 import { TGS_TICKS, getTgsControls } from "./tree-growth-simulator";
 import { getVatControls, getVatGateReason } from "./bacterial-vat";
 import { EEC_CONTROLS, EEC_MODE } from "./extreme-entity-crusher";
@@ -223,6 +223,11 @@ export interface MachineBehaviour {
   heat?: {
     /** +100 K per voltage tier above MV (the blast furnaces and the Hearth). */
     voltageBonus?: boolean;
+    /**
+     * The bonus reads the tier of every hatch's whole V x A
+     * (`BWUtil.getTier(getMaxInputEu())`, GT Not Leisure), not the summed voltage.
+     */
+    voltageBonusFromTotalPower?: boolean;
     /** Coil heat is counted this many times over (Zyngen: 2). */
     coilHeatMultiplier?: number;
     /** The 5% EU discount per 900 K of excess; default on, Zyngen opts out. */
@@ -246,6 +251,16 @@ export interface MachineBehaviour {
    * English (msg()-marked), or a key with values for td().
    */
   recipeGate?: (ctx: MachineContext) => string | RecipeGateMessage | undefined;
+  /**
+   * A steam machine whose name does not say so (the Updraft Kiln, the
+   * Primitive Distillation Tower): it burns steam like the "Steam ..." ones.
+   */
+  burnsSteam?: boolean;
+  /**
+   * Whether the machine delivers this output at all (the Primitive
+   * Distillation Tower voids fluids past its sixth layer).
+   */
+  keepsOutput?: (recipe: Partial<Recipe>, output: RecipeOutput) => boolean;
   /**
    * Litres of steam a tick for the whole machine, for a steam multiblock that
    * does not bill recipe EU x `power` per parallel (the Large Steam Furnace).
@@ -751,6 +766,8 @@ interface GtnlSteamSpec {
   tierRecipes: (tierMachine: number, c: MachineContext) => number;
   /** Whether checkMachineTier sets tierMachine, i.e. a bronze/steel knob exists. */
   tiered?: boolean;
+  /** clampRecipeOcCount's ceiling when a class lowers it from 4. */
+  maxOverclocks?: number;
   controls?: MachineConfigControl[];
   /** A gate checked before the voltage cap. */
   gate?: (c: MachineContext) => string | RecipeGateMessage | undefined;
@@ -761,7 +778,11 @@ interface GtnlSteamSpec {
 function gtnlSteam(spec: GtnlSteamSpec): MachineBehaviour {
   const tiered = spec.tiered !== false;
   const machineTier = (c: MachineContext) => (tiered ? c.tier(STEAM_PRESSURE) + 1 : -1);
-  const oc = (c: MachineContext) => gtnlSteamOcCount(c.value(GTNL_STEAM_OC));
+  const maxOverclocks = spec.maxOverclocks ?? 4;
+  const oc = (c: MachineContext) => Math.min(maxOverclocks, gtnlSteamOcCount(c.value(GTNL_STEAM_OC)));
+  const ocControl = maxOverclocks === 4
+    ? GTNL_STEAM_OC_CONTROL
+    : countControl(GTNL_STEAM_OC, msg("Overclocking count"), Array.from({ length: maxOverclocks + 1 }, (_, i) => i));
   return {
     overclock: OVERCLOCK.none(),
     parallels: (c) => spec.parallels(machineTier(c), c),
@@ -774,7 +795,7 @@ function gtnlSteam(spec: GtnlSteamSpec): MachineBehaviour {
         voltage: GT_V[spec.tierRecipes(machineTier(c), c)],
         recipeEuT: c.recipeEuT ?? 0,
       }),
-    controls: [...(tiered ? [GTNL_STEAM_BUILD_CONTROL] : []), GTNL_STEAM_OC_CONTROL, ...(spec.controls ?? [])],
+    controls: [...(tiered ? [GTNL_STEAM_BUILD_CONTROL] : []), ocControl, ...(spec.controls ?? [])],
     ...(spec.note ? { note: spec.note } : {}),
   };
 }
@@ -801,6 +822,17 @@ function largeSteam(
     ...extra,
   });
 }
+
+/**
+ * SteamInfernalCokeOven's speedup: +0.05 every 100 running ticks while under
+ * 10, never reset, so a warmed oven sits at the value the double lands on.
+ */
+const INFERNAL_SPEEDUP = "infernalCokeOvenSpeedup";
+const INFERNAL_FULL_SPEEDUP = (() => {
+  let speedup = 1;
+  while (speedup < 10) speedup += 0.05;
+  return speedup;
+})();
 
 /** checkMachine accepts any pipe height >= 4; it never imposes a top rung. */
 const NEUTRON_PIPE_CONTROL: MachineConfigControl = {
@@ -2060,6 +2092,79 @@ const MACHINES: Record<string, MachineBehaviour> = {
     duration: (base) => base,
     tierRecipes: () => 14,
   }),
+  // The GTNL maps one machine runs, named after their machine by
+  // GTNL_MAP_MACHINES (gtnl-steam.ts). Classes that override none of the four
+  // run the base: 1 parallel (MTEMultiBlockBase), 4^oc EU, 1 / 2^oc duration.
+  "Steam Carpenter": gtnlSteam({ tiered: false, parallels: () => 1, eu: (b) => b, duration: (b) => b, tierRecipes: () => 14 }),
+  "Perfect Steam Progenitor": gtnlSteam({ tiered: false, parallels: () => 1, eu: (b) => b, duration: (b) => b, tierRecipes: () => 14 }),
+  "Steam Stone Superheater": gtnlSteam({ tiered: false, parallels: () => 4, eu: (b) => b, duration: (b) => b, tierRecipes: () => 14 }),
+  "Steam Extractinator": gtnlSteam({ tiered: false, parallels: () => 4, eu: (b) => b, duration: (b) => b, tierRecipes: () => 14 }),
+  "Steam Cracker": largeSteam(8, 16, 1, 1, [14, 14]),
+  // SteamRockBreaker replaces the base: 1.25 x tierMachine x 4^oc EU and
+  // 1.6 / tierMachine / 2^oc duration, GT's steam multiblock numbers.
+  "Steam Rock Breaker": gtnlSteam({
+    parallels: () => 8,
+    eu: (base, m) => 1.25 * m * base,
+    duration: (base, m) => (1.6 / m) * base,
+    tierRecipes: () => 14,
+  }),
+  "Updraft Kiln": { ...largeSteam(8, 16, 1, 1, [1, 2]), burnsSteam: true },
+  "Infernal Coke Oven": {
+    ...gtnlSteam({
+      tiered: false,
+      maxOverclocks: 1,
+      parallels: () => 16,
+      eu: (b) => b,
+      duration: (b, _m, c) => b / (c.tier(INFERNAL_SPEEDUP) === 1 ? INFERNAL_FULL_SPEEDUP : 1),
+      tierRecipes: () => 4,
+      controls: [choiceControl(INFERNAL_SPEEDUP, msg("Speed-up"), [msg("Cold"), msg("Full")], 1)],
+      note: msg("Speeds up while it runs, 0.05x every 5 seconds, to 10x after 15 minutes, and keeps it."),
+    }),
+    burnsSteam: true,
+  },
+  "Hyper Pressure Reactor": {
+    ...gtnlSteam({
+      tiered: false,
+      parallels: () => 1,
+      eu: (b) => b,
+      duration: (b) => b,
+      tierRecipes: () => 14,
+      note: msg("Refuses the recipes that need the compact reactor; the recipe data does not mark them."),
+    }),
+    burnsSteam: true,
+  },
+  "Compact Hyper Pressure Reactor": {
+    ...gtnlSteam({ tiered: false, parallels: () => 256, eu: (b) => b, duration: (b) => b, tierRecipes: () => 14 }),
+    burnsSteam: true,
+  },
+  // Six layers, one fluid output each (addFluidOutputs): the rest are voided.
+  "Primitive Distillation Tower": {
+    ...gtnlSteam({
+      tiered: false,
+      parallels: () => 8,
+      eu: (b) => b * 0.75,
+      duration: (b) => b / 0.8,
+      tierRecipes: () => 3,
+      note: msg("Six layers: fluid outputs past the sixth are voided."),
+    }),
+    burnsSteam: true,
+    keepsOutput: (recipe, output) =>
+      output.kind !== "fluid" ||
+      (recipe.outputs ?? [])
+        .filter((entry) => entry.kind === "fluid")
+        .findIndex((entry) => entry === output || entry.id === output.id) < 6,
+  },
+  // GTNL's ElectricBlastFurnace (structuralReconstructionPlan): heat
+  // overclocks and discount, 0.75 x 0.95^coil tier EU, 1 / 1.25 duration,
+  // 2 parallels per summed-voltage tier plus 2 per coil tier (cupronickel 1),
+  // and +100 K per tier of getMaxInputEu() above MV.
+  "Electric Industrial Blast Furnace": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { voltageBonus: true, voltageBonusFromTotalPower: true },
+    durationModifier: 1.0 / 1.25,
+    power: (c) => 0.75 * Math.pow(0.95, c.tier(COIL)),
+    parallels: (c) => Math.max(1, c.voltageTier * 2 + (c.tier(COIL) + 1) * 2),
+  },
 };
 
 const BY_NAME = new Map<string, MachineBehaviour>();
