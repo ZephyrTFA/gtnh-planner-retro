@@ -21,6 +21,16 @@ import {
 /** Highest selectable amperage; raw EU/t remains an explicit power budget. */
 export const MAX_HATCH_AMPS = 16_777_216;
 
+/**
+ * Whether a card's voltage is its hatch pair. Every multiblock but fusion runs
+ * at its hatch tier (getNodeRunTier), with or without a machine-table entry,
+ * so its card takes the hatch chip; a plain tier chip would write
+ * overclockTier, which a multiblock never reads.
+ */
+export function takesHatchInput(recipe: Parameters<typeof isMultiblockRecipe>[0]): boolean {
+  return isMultiblockRecipe(recipe) && !getFusionMachine(recipe.machineType);
+}
+
 /** Seed new cards at recipe minimum; preserve legacy operating voltage on load. */
 export function normalizeHatchInput(
   recipe: Recipe,

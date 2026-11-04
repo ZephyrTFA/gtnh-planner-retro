@@ -60,11 +60,10 @@ import {
 
 } from "@/lib/machines/energy-hatches";
 import { HatchPowerControls, PowerReadout, PowerControlsGuide } from "./HatchPowerControls";
-import { carryMachineVoltage } from "@/lib/solver/hatch-input";
+import { carryMachineVoltage, takesHatchInput } from "@/lib/solver/hatch-input";
 import { CardActionsMenu } from "./CardActionsMenu";
 import { getVoltageTierMaxEuT, isVoltageTierName } from "@/lib/model/tiers";
 import { describePowerWorking } from "@/lib/solver/power-working";
-import { prefersCuratedMachineMath } from "@/lib/solver/runtime-calculation";
 import {
   applyMachineOutputMultipliers,
   getMachineParallelMultiplier,
@@ -362,11 +361,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     const steamReport = !machineDrawsEu
       ? getNodeSteamReport(nodeRecipe, projectNode)
       : undefined;
-    // The hatch chip rides only on multiblocks whose maths our own engine
-    // runs; runtime-ladder machines would show a knob that changes nothing.
-    const showHatchControl = Boolean(
-      powerReport?.isMultiblock && prefersCuratedMachineMath(effectiveRecipe) && !getFusionMachine(effectiveRecipe.machineType),
-    );
+    const showHatchControl = Boolean(powerReport && takesHatchInput(effectiveRecipe));
     // Which hatch family feeds the build: the plain 2 A pair, or one exotic
     // hatch (multi-amp, laser) carrying its whole rating. Picked in the
     // chip's own menu, top right, where the count and tier already live.

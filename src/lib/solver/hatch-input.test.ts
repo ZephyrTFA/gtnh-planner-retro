@@ -16,6 +16,7 @@ import {
   roundHatchBudget,
   stepWholeAmp,
   stepPowerOfFourAmps,
+  takesHatchInput,
 } from "./hatch-input";
 import { listPowerWinsCached } from "./power-wins";
 import { useFactoryStore } from "@/store/factory-store";
@@ -45,6 +46,21 @@ const node = (patch: Partial<FactoryNode> = {}): FactoryNode => ({
 });
 
 describe("per-card hatch input", () => {
+  it("gives a multiblock with no machine-table entry the hatch chip, since its hatch sets its tier", () => {
+    // An addon multiblock (GTNL's Electric Industrial Blast Furnace) runs on
+    // scraped numbers but still on its hatch: a tier chip writing
+    // overclockTier would change the label and nothing else.
+    const r = applyMachineHandlerToRecipe(recipe("Electric Industrial Blast Furnace", 120), node());
+    expect(takesHatchInput(r)).toBe(true);
+    const lv = node({ overclockTier: "EV", hatchVoltageTier: "MV", hatchAmps: 1 });
+    const ev = node({ overclockTier: "MV", hatchVoltageTier: "EV", hatchAmps: 1 });
+    expect(getNodePowerReport(r, lv).tier).toBe("MV");
+    expect(getNodePowerReport(r, ev).tier).toBe("EV");
+    expect(getOverclockedRecipeStats(r, ev).durationTicks).toBeLessThan(
+      getOverclockedRecipeStats(r, lv).durationTicks,
+    );
+    expect(takesHatchInput(applyMachineHandlerToRecipe(recipe("Fusion Control Computer Mark I", 120), node()))).toBe(false);
+  });
   it("distinguishes equal supplies by hatch voltage and applies zero tier skips", () => {
     const r = recipe("Precise Assembler", 524288);
     const low = getNodePowerReport(r, node({ hatchVoltageTier: "ZPM", hatchAmps: 4096 }));
