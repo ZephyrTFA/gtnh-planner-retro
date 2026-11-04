@@ -47,6 +47,7 @@ import type {
 import { getOverclockedRecipeStats } from "@/lib/solver/overclock";
 import {
   describePowerStall,
+  describeSteamGate,
   getNodePowerReport,
   getNodeSteamReport,
   hasPowerReport,
@@ -708,6 +709,8 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
         }
       : verdict;
   const powerStalled = powerReport !== undefined && powerReport.state !== "ok";
+  // A steam build refuses a recipe over its voltage cap; the solver stalls it.
+  const steamGate = steamReport ? describeSteamGate(steamReport) : undefined;
   // The picture window's art: the workbook render for a multiblock, the
   // machine item for a singleblock. A crop card on the Industrial Farm wears
   // the farm's render like a generator wears its own.
@@ -822,7 +825,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
     glanceMode === "status"
       ? heatmapColorFor(result?.utilization, projectNode.enabled !== false)
       : glanceMode === "usage"
-        ? glanceToneSurface(verdictWord(verdict, isCustomRateNode, powerStalled).tone)
+        ? glanceToneSurface(verdictWord(verdict, isCustomRateNode, powerStalled, steamGate !== undefined).tone)
         : glanceMode === "power"
           ? powerReport
             ? glanceSurfaceFor(GT_TIER_COLORS[powerReport.tier].background)
@@ -1564,7 +1567,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           }
           word={
             glanceMode === "usage"
-              ? verdictWord(verdict, isCustomRateNode, powerStalled).word
+              ? verdictWord(verdict, isCustomRateNode, powerStalled, steamGate !== undefined).word
               : undefined
           }
         />
@@ -2089,6 +2092,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
                           verdict={cardVerdict}
                           isCustomRate={isCustomRateNode}
                           powerStall={powerReport}
+                          steamGate={steamGate}
                           shares={
                             isSharedMachine
                               ? [
@@ -2536,11 +2540,15 @@ function verdictWord(
   verdict: NodeVerdict,
   isCustomRate: boolean,
   powerStalled = false,
+  steamGated = false,
 ): VerdictWord {
   // A build the game would refuse outranks every flow story: whatever the
   // wires say, the reason nothing moves is the power setup.
   if (powerStalled) {
     return { word: t("no power"), tone: "unwired" };
+  }
+  if (steamGated) {
+    return { word: t("over tier"), tone: "unwired" };
   }
   switch (verdict.kind) {
     case "starved":
@@ -2665,6 +2673,7 @@ function UsageStat({
   verdict,
   isCustomRate = false,
   powerStall,
+  steamGate,
   shares,
 }: {
   nodeId: string;
@@ -2672,6 +2681,8 @@ function UsageStat({
   isCustomRate?: boolean;
   /** Set when the power setup cannot start the build; owns the word AND the hover. */
   powerStall?: NodePowerReport;
+  /** Why a steam build refuses the recipe; owns the word and the hover like a power stall. */
+  steamGate?: string;
   /**
    * A SHARED MACHINE: the number is the recipes' shares of its time added
    * up, and the machine has no one reason, so the reason cell goes and the
@@ -2681,7 +2692,7 @@ function UsageStat({
 }) {
   const t = useT();
   const stalled = powerStall !== undefined && powerStall.state !== "ok";
-  const state = verdictWord(verdict, isCustomRate, stalled);
+  const state = verdictWord(verdict, isCustomRate, stalled, steamGate !== undefined);
   const showPct = verdict.kind !== "off" && verdict.kind !== "no-recipe";
 
   return (
@@ -2695,6 +2706,8 @@ function UsageStat({
               reason: t("{pct}% of the machine's time is spent. Each recipe's row says why it runs at its share.", { pct: formatPct(Math.min(100, shares.reduce((sum, share) => sum + share.pct, 0))) }),
             }}
           />
+        ) : steamGate ? (
+          <RecipeTooltip view={{ title: t("Tier too low for recipe"), rows: [], reason: steamGate }} />
         ) : stalled && powerStall ? (
           // The power restriction replaces the flow reading outright: whatever
           // the wires would say, nothing runs until the power fits.
@@ -5749,6 +5762,7 @@ function SteamStat({
           { label: average ? t("Card average") : t("Card peak"), value: formatCompact(drawLitresPerSecond) + " L/s" },
           ...(report.parallels > 1 ? [{ label: t("Parallel operations"), value: String(report.parallels) }] : []),
         ],
+        reason: describeSteamGate(report),
       }} />}
     >
       <div className="min-w-0 border border-[var(--mc-47)] bg-[var(--mc-71)] px-1 shadow-[inset_1px_1px_0_var(--mc-93),inset_-1px_-1px_0_var(--mc-47)]">

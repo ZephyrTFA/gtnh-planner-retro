@@ -72,6 +72,8 @@ const CAPTIONS: Record<string, string> = {
   laserSource: msg("Laser source"),
   "structure-tower-height": msg("Height"),
   steamPressure: msg("Pressure"),
+  gtnlSteamOverclocks: msg("Overclocks"),
+  gtnlControllerItem: msg("Controller"),
 };
 
 export function settingCaption(control: Pick<MachineConfigTierControl, "id" | "label">): string {

@@ -216,7 +216,13 @@ export function applyMachineHandlerToRecipe(
   // The Tree Growth Simulator's NEI page says 0 EU/t, but the machine draws VP[t] and needs LV at least
   // (tree-growth-simulator.ts): its card offers voltage and power like any electric machine.
   const tgs = handler.machineType === TGS_MACHINE_TYPE;
-  const eut = tgs ? tgsEuPerTick(1) : isSteamMachineHandler(handler) ? 0 : (handlerEut ?? recipe.eut);
+  const steam = !tgs && isSteamMachineHandler(handler);
+  const eut = tgs ? tgsEuPerTick(1) : steam ? 0 : (handlerEut ?? recipe.eut);
+  // What the steam machine's ProcessingLogic still sees as the recipe's EU/t:
+  // smelting runs GT's fixed furnace recipe.
+  const steamEut = steam
+    ? Math.abs(recipe.eut) > 0 ? Math.abs(recipe.eut) : isSmeltingRecipeMap(recipe) ? GT_FURNACE_RECIPE_EUT : 0
+    : undefined;
   return {
     ...recipe,
     runtimeCalculation,
@@ -235,6 +241,7 @@ export function applyMachineHandlerToRecipe(
       availableTiers: handler.availableTiers,
       durationTicks: handlerDurationTicks ?? recipe.machineProfile?.durationTicks,
       eut: handlerEut ?? recipe.machineProfile?.eut,
+      steamEut,
       maxParallel: handler.maxParallel ?? recipe.machineProfile?.maxParallel,
       eutLimit: handler.eutLimit ?? recipe.machineProfile?.eutLimit,
       perfectOverclock: handler.perfectOverclock ?? recipe.machineProfile?.perfectOverclock,

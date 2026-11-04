@@ -2126,6 +2126,12 @@ const catalog: Catalog = {
   "Uses {draw} EU/t ({each} × {parallels})": "消耗 {draw} EU/t（{each} × {parallels}）",
   "What one recipe costs in energy. Imperfect overclocks double it every step. Perfect overclocks and parallels keep it flat.": "一次配方的能量成本。有损超频每级使其翻倍。无损超频和并行保持不变。",
   "What the machine pulls from the hatches while it runs. Supply above this sits unused until the next boost.": "机器运行时从仓中抽取的功率。高于此值的供应在下一次提升前闲置。",
+  "Controller": "控制器",
+  "Overclocking count": "超频次数",
+  "Refuses superdense plates and other recipes for the heated or black hole compressor; the recipe data does not mark them.": "不接受超致密板等需要加热压缩机或黑洞压缩机的配方；配方数据未标记这些配方。",
+  "The gear's effect is shared by every Large Steam Mixer in the world: the last one to check its controller sets it for all.": "齿轮的效果由世界上所有 Large Steam Mixer 共享：最后检查控制器的那台为所有机器设定。",
+  "This steam build runs recipes up to {tier}.": "此蒸汽结构只能运行 {tier} 及以下的配方。",
+  "over tier": "超出电压",
 };
 
 export default catalog;

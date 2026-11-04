@@ -85,7 +85,7 @@ loader in `recipeHooks`; the oracle calls each one on the game thread before it
 exports, and a missing or throwing hook stops the run. Grep a new addon for
 `FMLServerStartedEvent`, `FMLServerStartingEvent` and join handlers that add recipes.
 The server pass exports on the first server tick, after every server-started handler.
-Addon multiblocks have no machine-table entries (`src/lib/machines/CLAUDE.md`).
+Addon multiblocks run on tooltip numbers until they get machine-table entries (`src/lib/machines/CLAUDE.md`).
 
 The Docker runner caches the oracle jar in `.pipeline/oracle-build-cache`, keyed by a
 hash of the oracle source, so a run needs GTNH's Maven only when the oracle changed.

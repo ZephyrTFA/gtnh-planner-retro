@@ -60,7 +60,7 @@ type MachineEffectRecipe = Pick<
   Recipe,
   "machineType" | "source" | "nei" | "machineConfigControls"
 > &
-  Partial<Pick<Recipe, "minimumTier" | "eut" | "metadata">>;
+  Partial<Pick<Recipe, "minimumTier" | "eut" | "metadata" | "machineProfile">>;
 
 /** What it needs off the node the user configured. */
 type MachineEffectNode = Pick<FactoryNode, "machineConfigTiers" | "coilTier"> &
@@ -91,6 +91,8 @@ export function buildMachineContext(
   ];
 
   const find = (controlId: string) => controls.find((entry) => entry.id === controlId);
+  // A steam card's eut is zeroed; its ProcessingLogic still reads the recipe's.
+  const recipeEuT = recipe.machineProfile?.steamEut ?? Math.abs(recipe.eut ?? 0);
 
   return {
     tier: (controlId) => {
@@ -138,7 +140,8 @@ export function buildMachineContext(
     // `getMaxInputEu()`: every hatch's full V x A, whatever pool the machine
     // draws from. Twist Space machines read their tier off it.
     totalPowerEuT: getSummedHatchInput(recipe, node, getNodeRunTier(recipe as Recipe, node), true),
-    recipeVoltageTier: getVoltageTierIndex(getVoltageTierForEuT(Math.abs(recipe.eut ?? 0))),
+    recipeVoltageTier: getVoltageTierIndex(getVoltageTierForEuT(recipeEuT)),
+    recipeEuT,
     recipeSpecialValue: getRecipeSpecialValue(recipe),
     recipeMap: recipe.source?.recipeMap ?? recipe.machineType,
     recipe: recipe as Partial<Recipe>,
@@ -540,6 +543,9 @@ export function getMachineDurationMultiplier(
   // The curated table states speed as a throughput multiplier, so a machine
   // that runs at 200% divides the duration by two.
   const behaviour = getMachineBehaviour(recipe.machineType);
+  if (behaviour?.durationModifier !== undefined) {
+    return resolveCoefficient(behaviour.durationModifier, buildMachineContext(recipe, node), 1);
+  }
   if (behaviour) {
     const speed = resolveCoefficient(behaviour.speed, buildMachineContext(recipe, node), 1);
     return speed > 0 ? 1 / speed : 1;

@@ -2126,6 +2126,12 @@ const catalog: Catalog = {
   "Uses {draw} EU/t ({each} × {parallels})": "Потребляет {draw} EU/t ({each} × {parallels})",
   "What one recipe costs in energy. Imperfect overclocks double it every step. Perfect overclocks and parallels keep it flat.": "Сколько энергии стоит один рецепт. Обычные разгоны удваивают её с каждым шагом. Идеальные разгоны и параллели оставляют её прежней.",
   "What the machine pulls from the hatches while it runs. Supply above this sits unused until the next boost.": "Сколько механизм берёт из люков во время работы. Подача сверх этого не используется до следующего шага.",
+  "Controller": "Контроллер",
+  "Overclocking count": "Число разгонов",
+  "Refuses superdense plates and other recipes for the heated or black hole compressor; the recipe data does not mark them.": "Не берёт сверхплотные пластины и другие рецепты для нагреваемого компрессора или компрессора чёрной дыры; данные рецептов их не помечают.",
+  "The gear's effect is shared by every Large Steam Mixer in the world: the last one to check its controller sets it for all.": "Действие шестерни общее для всех Large Steam Mixer в мире: последний проверивший свой контроллер задаёт его для всех.",
+  "This steam build runs recipes up to {tier}.": "Эта паровая сборка выполняет рецепты не выше {tier}.",
+  "over tier": "выше уровня",
 };
 
 export default catalog;

@@ -34,6 +34,17 @@ import { TGS_TICKS, getTgsControls } from "./tree-growth-simulator";
 import { getVatControls, getVatGateReason } from "./bacterial-vat";
 import { EEC_CONTROLS, EEC_MODE } from "./extreme-entity-crusher";
 import { neutronActivatorSpeed, quantiseNeutronActivatorDuration } from "./neutron-activator";
+import {
+  GT_TIER_NAMES,
+  GT_V,
+  GT_VP,
+  gtTier,
+  gtnlSteamBaseDurationModifier,
+  gtnlSteamBaseEuDiscount,
+  gtnlSteamOcCount,
+  gtnlSteamOverclocks,
+  gtnlSteamTicks,
+} from "./gtnl-steam";
 import { HILE_SOURCE_CONTROL, hileSourceAt, normalizeHileSettings } from "./hile";
 import { PRASS_NORMAL_CASING, PRASS_PRECISE_CASING, PRASS_MACHINE_CASING, prassInputVoltageLimit } from "./precise-assembler";
 
@@ -130,6 +141,11 @@ export interface MachineContext {
    */
   recipeVoltageTier?: number;
   /**
+   * The recipe's own EU/t, GT's `recipe.mEUt`, also on a steam card whose eut
+   * is zeroed. Optional because test harnesses omit it.
+   */
+  recipeEuT?: number;
+  /**
    * The recipe's special value, for the machines whose coefficients read it as
    * something other than heat (the Naquadah Fuel Refinery's minimum field
    * restriction coil tier). Optional because test harnesses omit it, so a
@@ -146,9 +162,18 @@ export interface MachineContext {
 
 type Coefficient = number | ((ctx: MachineContext) => number);
 
+/** A gate reason with values: `key` is msg()-marked English with {placeholders}. */
+export interface RecipeGateMessage {
+  key: string;
+  vars: Record<string, string | number>;
+}
+
 export interface MachineBehaviour {
-  /** A source-verified machine-specific whole/sub-tick rounding rule. */
-  quantiseDuration?: (durationTicks: number) => number;
+  /**
+   * A source-verified machine-specific whole/sub-tick rounding rule. Below one
+   * tick the result stands for the banked parallels: 1/2 is two runs a tick.
+   */
+  quantiseDuration?: (durationTicks: number, ctx: MachineContext) => number;
   /**
    * The machine's own fixed cycle in ticks. It never reads the recipe's
    * duration, so the recipe's amounts are per cycle and this replaces the
@@ -157,6 +182,12 @@ export interface MachineBehaviour {
   cycleTicks?: number;
   /** Throughput multiplier: 2 means the recipe finishes in half the time. */
   speed?: Coefficient;
+  /**
+   * Duration multiplier exactly as the mod computes it (0.5 means half the
+   * time), used instead of `speed` so a truncated tick count matches Java's
+   * floating point bit for bit.
+   */
+  durationModifier?: Coefficient;
   /** EU/t multiplier applied before parallels. */
   power?: Coefficient;
   /** Parallels the structure offers, before the voltage has to pay for them. */
@@ -210,8 +241,16 @@ export interface MachineBehaviour {
   controlsFor?: (recipe: Partial<Recipe>) => MachineConfigControl[];
   /** Resolve legacy choices before both the UI and the solver read controls. */
   normalizeConfig?: (settings: Record<string, string>) => Record<string, string>;
-  /** Structural recipe gate independent of how much power the hatches supply. */
-  recipeGate?: (ctx: MachineContext) => string | undefined;
+  /**
+   * Structural recipe gate independent of how much power the hatches supply:
+   * English (msg()-marked), or a key with values for td().
+   */
+  recipeGate?: (ctx: MachineContext) => string | RecipeGateMessage | undefined;
+  /**
+   * Litres of steam a tick for the whole machine, for a steam multiblock that
+   * does not bill recipe EU x `power` per parallel (the Large Steam Furnace).
+   */
+  steamPerTick?: (ctx: MachineContext) => number;
   /** Structural cap on working voltage, before multiplying by supplied amps. */
   inputVoltageTierLimit?: (settings: Record<string, string>) => number;
   /** The controller's unlock tier is not a minimum energy-hatch voltage. */
@@ -656,18 +695,112 @@ const STEAM_PRESSURE_CONTROL: MachineConfigControl = {
  * `OverclockCalculator.ofNoOverclock(recipe).setEUtDiscount(1.25 * tierMachine)
  * .setDurationModifier(1.6 / tierMachine)` where tierMachine is 1 for a bronze
  * build and 2 for high pressure. As throughput that is 0.625x basic and 1.25x
- * high pressure. EU stays zeroed on these cards (they burn steam); the litres
- * are billed by getNodeSteamReport, not by a power coefficient here.
+ * high pressure. EU stays zeroed on these cards (they burn steam); `power` is
+ * the EU discount getNodeSteamReport bills litres from. getTierRecipes() is 1:
+ * nothing above LV runs (GT++'s setProcessingLogicPower, no tier skips).
  */
 const STEAM_MULTIBLOCK: MachineBehaviour = {
   overclock: OVERCLOCK.none(),
   parallels: 8,
   speed: (c) => 0.625 * (c.tier(STEAM_PRESSURE) + 1),
+  power: (c) => 1.25 * (c.tier(STEAM_PRESSURE) + 1),
+  recipeGate: (c) => steamVoltageGate(c, 1),
   controls: [STEAM_PRESSURE_CONTROL],
   // The Steam Blender's handler inherited the mixer map's scraped pipe knob.
   // Its pipes are bronze or steel with the rest of the build: the pressure.
   hidesControls: [PIPE],
 };
+
+/**
+ * GT++'s setProcessingLogicPower for every steam multiblock: V[getTierRecipes()]
+ * with no tier skips, so a recipe drawing more than that voltage never starts.
+ */
+function steamVoltageGate(c: MachineContext, tierRecipes: number): RecipeGateMessage | undefined {
+  return (c.recipeEuT ?? 0) > GT_V[tierRecipes]
+    ? { key: msg("This steam build runs recipes up to {tier}."), vars: { tier: GT_TIER_NAMES[tierRecipes] } }
+    : undefined;
+}
+
+/** GTNL's recipeOcCount, the "Overclocking count" in the controller GUI. */
+const GTNL_STEAM_OC = "gtnlSteamOverclocks";
+const GTNL_STEAM_OC_CONTROL = countControl(GTNL_STEAM_OC, msg("Overclocking count"), [0, 1, 2, 3, 4]);
+/** A GTNL machine's own optional controller-slot item. */
+const GTNL_CONTROLLER_ITEM = "gtnlControllerItem";
+
+/**
+ * GTNL's tierMachine: checkMachineTier reads bronze (1) or steel (2) casings.
+ * Same id and keys as STEAM_PRESSURE_CONTROL, but GTNL machines have their
+ * own speed per build, so the tooltip names the build only.
+ */
+const GTNL_STEAM_BUILD_CONTROL: MachineConfigControl = {
+  ...STEAM_PRESSURE_CONTROL,
+  tiers: STEAM_PRESSURE_CONTROL.tiers.map((tier, index) => ({
+    ...tier,
+    resource: { ...tier.resource!, tooltip: [index === 0 ? msg("Bronze build") : msg("Steel build")] },
+  })),
+};
+
+interface GtnlSteamSpec {
+  /** getMaxParallelRecipes(), by tierMachine (1 bronze, 2 steel; -1 when the class never reads it). */
+  parallels: (tierMachine: number, c: MachineContext) => number;
+  /** getEUtDiscount(), given the base 4^oc. */
+  eu: (base: number, tierMachine: number, c: MachineContext) => number;
+  /** getDurationModifier(), given the base 1 / 2^oc. */
+  duration: (base: number, tierMachine: number, c: MachineContext) => number;
+  /** getTierRecipes(): the index into V the logic is powered at. */
+  tierRecipes: (tierMachine: number, c: MachineContext) => number;
+  /** Whether checkMachineTier sets tierMachine, i.e. a bronze/steel knob exists. */
+  tiered?: boolean;
+  controls?: MachineConfigControl[];
+  /** A gate checked before the voltage cap. */
+  gate?: (c: MachineContext) => string | RecipeGateMessage | undefined;
+  note?: string;
+}
+
+/** A GTNL steam multiblock on SteamMultiMachineBase's ProcessingLogic (`gtnl-steam.ts`). */
+function gtnlSteam(spec: GtnlSteamSpec): MachineBehaviour {
+  const tiered = spec.tiered !== false;
+  const machineTier = (c: MachineContext) => (tiered ? c.tier(STEAM_PRESSURE) + 1 : -1);
+  const oc = (c: MachineContext) => gtnlSteamOcCount(c.value(GTNL_STEAM_OC));
+  return {
+    overclock: OVERCLOCK.none(),
+    parallels: (c) => spec.parallels(machineTier(c), c),
+    durationModifier: (c) => spec.duration(gtnlSteamBaseDurationModifier(oc(c)), machineTier(c), c),
+    power: (c) => spec.eu(gtnlSteamBaseEuDiscount(oc(c)), machineTier(c), c),
+    recipeGate: (c) => spec.gate?.(c) ?? steamVoltageGate(c, spec.tierRecipes(machineTier(c), c)),
+    quantiseDuration: (duration, c) =>
+      gtnlSteamTicks(duration, {
+        parallels: spec.parallels(machineTier(c), c),
+        voltage: GT_V[spec.tierRecipes(machineTier(c), c)],
+        recipeEuT: c.recipeEuT ?? 0,
+      }),
+    controls: [...(tiered ? [GTNL_STEAM_BUILD_CONTROL] : []), GTNL_STEAM_OC_CONTROL, ...(spec.controls ?? [])],
+    ...(spec.note ? { note: spec.note } : {}),
+  };
+}
+
+/**
+ * The common Large Steam shape: `bronze`/`steel` parallels,
+ * `super.getEUtDiscount() * eu * tierMachine`,
+ * `super.getDurationModifier() / divisor / tierMachine`, and getTierRecipes()
+ * per build.
+ */
+function largeSteam(
+  bronze: number,
+  steel: number,
+  eu: number,
+  divisor: number,
+  tierRecipes: [number, number],
+  extra: Partial<GtnlSteamSpec> = {},
+): MachineBehaviour {
+  return gtnlSteam({
+    parallels: (m) => (m === 2 ? steel : bronze),
+    eu: (base, m) => base * eu * m,
+    duration: (base, m) => base / divisor / m,
+    tierRecipes: (m) => tierRecipes[m === 2 ? 1 : 0],
+    ...extra,
+  });
+}
 
 /** checkMachine accepts any pipe height >= 4; it never imposes a top rung. */
 const NEUTRON_PIPE_CONTROL: MachineConfigControl = {
@@ -1394,6 +1527,8 @@ const MACHINES: Record<string, MachineBehaviour> = {
     overclock: OVERCLOCK.none(),
     parallels: 8,
     speed: (c) => 0.9765625 * (c.tier(STEAM_PRESSURE) + 1),
+    power: (c) => 1.25 * (c.tier(STEAM_PRESSURE) + 1),
+    recipeGate: (c) => steamVoltageGate(c, 1),
     controls: [STEAM_PRESSURE_CONTROL],
   },
 
@@ -1830,6 +1965,101 @@ const MACHINES: Record<string, MachineBehaviour> = {
       countControl(GENESIS_PARALLEL, msg("Parallels"), [1, 9, 129, 2049, 32769, 524289, 8388609, 134217729]),
     ],
   },
+
+  // ---- GT Not Leisure steam multiblocks (see gtnl-steam.ts) ----
+  // largeSteam(bronze parallels, steel parallels, EU factor, duration divisor,
+  // [bronze, steel] getTierRecipes()), each from its class's four overrides.
+  // The Large Steam Alloy Smelter is left out: Twist Space Technology has a
+  // machine of the same name, and the TST + GTNL pack merges the two.
+  "Large Steam Bender": largeSteam(8, 16, 0.95, 1.05, [2, 2]),
+  "Large Steam Centrifuge": largeSteam(16, 32, 1, 1.43, [2, 2]),
+  "Large Steam Chemical Bath": largeSteam(16, 32, 0.8, 1.25, [6, 6]),
+  "Large Steam Circuit Assembler": largeSteam(16, 16, 1.25, 1.11, [1, 3]),
+  "Large Steam Compressor": largeSteam(16, 32, 0.8, 2.0, [2, 2], {
+    note: msg("Refuses superdense plates and other recipes for the heated or black hole compressor; the recipe data does not mark them."),
+  }),
+  "Large Steam Crusher": largeSteam(128, 256, 0.8, 10.0, [2, 3]),
+  "Large Steam Cutting": largeSteam(8, 16, 0.95, 1.11, [2, 2]),
+  "Large Steam Extractor": largeSteam(16, 32, 0.9, 1.33, [2, 2]),
+  "Large Steam Extruder": largeSteam(8, 16, 0.95, 1.11, [2, 2]),
+  "Large Steam Forming Press": largeSteam(16, 32, 0.9, 1.25, [1, 2]),
+  "Large Steam Forging Hammer": largeSteam(32, 48, 0.75, 1.33, [2, 2]),
+  "Large Steam Lathe": largeSteam(8, 16, 0.95, 1.11, [2, 2]),
+  // Ore washing and the simple washer pool run the same numbers.
+  "Large Steam Ore Washer": largeSteam(32, 64, 0.6, 20.0, [2, 2]),
+  "Large Steam Sifter": largeSteam(16, 32, 0.8, 1.33, [3, 3]),
+  "Large Steam Thermal Centrifuge": largeSteam(32, 64, 0.8, 4.0, [3, 3]),
+  "Large Steam Wiremill": largeSteam(4, 8, 0.85, 1.11, [2, 2]),
+  // A Stainless Steel Gear in the controller (enableHVRecipe) raises the
+  // recipe tier, EU and steel parallels and takes 0.25 off the duration.
+  "Large Steam Mixer": gtnlSteam({
+    parallels: (m, c) => (m === 2 ? (c.tier(GTNL_CONTROLLER_ITEM) === 1 ? 32 : 16) : 8),
+    eu: (base, m, c) => base * (m + c.tier(GTNL_CONTROLLER_ITEM)),
+    duration: (base, m, c) => (1 / 0.67 / m - (c.tier(GTNL_CONTROLLER_ITEM) === 1 ? 0.25 : 0)) * base,
+    tierRecipes: (m, c) => m + c.tier(GTNL_CONTROLLER_ITEM),
+    controls: [choiceControl(GTNL_CONTROLLER_ITEM, msg("Controller"), [msg("Empty"), "Stainless Steel Gear"])],
+    note: msg("The gear's effect is shared by every Large Steam Mixer in the world: the last one to check its controller sets it for all."),
+  }),
+  // LargeSteamFurnace replaces checkProcessing: every run is GT's 64-tick
+  // smelt over 2^oc, whatever the build, and it burns
+  // VP[getTier(4 x parallels)] x 4^oc for the whole machine.
+  "Large Steam Furnace": {
+    overclock: OVERCLOCK.none(),
+    parallels: (c) => (c.tier(STEAM_PRESSURE) === 1 ? 256 : 128),
+    quantiseDuration: (_duration, c) => Math.trunc(64 / 2 ** gtnlSteamOcCount(c.value(GTNL_STEAM_OC))),
+    steamPerTick: (c) =>
+      GT_VP[gtTier(Math.ceil(4 * (c.tier(STEAM_PRESSURE) === 1 ? 256 : 128)))] *
+      4 ** gtnlSteamOcCount(c.value(GTNL_STEAM_OC)),
+    controls: [GTNL_STEAM_BUILD_CONTROL, GTNL_STEAM_OC_CONTROL],
+  },
+  // MegaSteamCompressor never caps its overclocks, so on top of the player's
+  // count it overclocks normally at V[4] (EV), 256 parallels, no amperage
+  // overclocking. tierMachine is never set and nothing reads it.
+  "Steam Supercompressor": (() => {
+    const voltage = GT_V[4];
+    const oc = (c: MachineContext) => gtnlSteamOcCount(c.value(GTNL_STEAM_OC));
+    const steps = (c: MachineContext) =>
+      gtnlSteamOverclocks(voltage, c.recipeEuT ?? 0, gtnlSteamBaseEuDiscount(oc(c)), 256);
+    // calculateMultiplierUnderOneTick counts voltage tiers only, with GT's
+    // integer log4ceil(recipeEUt / 8).
+    const voltageTiersAbove = (c: MachineContext) =>
+      4 - Math.max(Math.ceil(Math.log2(Math.max(1, Math.floor((c.recipeEuT ?? 0) / 8))) / 2), 1);
+    return {
+      overclock: OVERCLOCK.none(),
+      parallels: 256,
+      durationModifier: (c: MachineContext) => gtnlSteamBaseDurationModifier(oc(c)) / 2 ** steps(c),
+      power: (c: MachineContext) => gtnlSteamBaseEuDiscount(oc(c)) * 4 ** steps(c),
+      recipeGate: (c: MachineContext) => steamVoltageGate(c, 4),
+      quantiseDuration: (duration: number, c: MachineContext) =>
+        gtnlSteamTicks(duration, {
+          subTickDuration: duration * 2 ** steps(c),
+          overclocks: Math.max(0, voltageTiersAbove(c)),
+          parallels: 256,
+          voltage,
+          recipeEuT: c.recipeEuT ?? 0,
+        }),
+      controls: [GTNL_STEAM_OC_CONTROL],
+    } satisfies MachineBehaviour;
+  })(),
+  // Its own map at V[9], plus assembler recipes up to MV, or HV with an HV
+  // Assembler in the controller (findRecipeMatches).
+  "Steam Manufacturer": gtnlSteam({
+    tiered: false,
+    parallels: () => 4,
+    eu: (base) => base,
+    duration: (base) => base / 2.0,
+    tierRecipes: () => 9,
+    gate: (c) =>
+      c.recipeMap === "Assembler" ? steamVoltageGate(c, c.tier(GTNL_CONTROLLER_ITEM) === 1 ? 3 : 2) : undefined,
+    controls: [choiceControl(GTNL_CONTROLLER_ITEM, msg("Controller"), [msg("Empty"), "HV Assembler"])],
+  }),
+  "Steam Woodcutter": gtnlSteam({
+    tiered: false,
+    parallels: () => 1,
+    eu: (base) => base,
+    duration: (base) => base,
+    tierRecipes: () => 14,
+  }),
 };
 
 const BY_NAME = new Map<string, MachineBehaviour>();
@@ -1866,7 +2096,8 @@ export function getMachineBehaviour(machineType: string | undefined): MachineBeh
 export function machineTableSeedsFromBase(machineType: string | undefined): boolean {
   const behaviour = getMachineBehaviour(machineType);
   return (
-    behaviour !== undefined && (behaviour.speed !== undefined || behaviour.power !== undefined)
+    behaviour !== undefined &&
+    (behaviour.speed !== undefined || behaviour.durationModifier !== undefined || behaviour.power !== undefined)
   );
 }
 

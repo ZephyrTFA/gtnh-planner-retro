@@ -10,7 +10,7 @@ import {
   isSteamMachineHandler,
 } from "@/lib/model/recipe-rules";
 import { getEnergyHatchType } from "@/lib/machines/energy-hatches";
-import { getMachineBehaviour, STEAM_PRESSURE } from "@/lib/machines/machine-table";
+import { getMachineBehaviour, resolveCoefficient, STEAM_PRESSURE, type RecipeGateMessage } from "@/lib/machines/machine-table";
 import {
   getRecipeMinimumVoltageTier,
   getVoltageTierForEuT,
@@ -111,6 +111,15 @@ export function hasPowerReport(recipe: Recipe): boolean {
   return true;
 }
 
+/** A gate's English text, values filled in; td() translates it from its message. */
+function gateText(gate: string | RecipeGateMessage | undefined): string | undefined {
+  if (gate === undefined || typeof gate === "string") return gate;
+  return Object.entries(gate.vars).reduce(
+    (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+    gate.key,
+  );
+}
+
 export function getNodePowerReport(recipe: Recipe, node: PowerReportNode): NodePowerReport {
   const effectiveRecipe = recipe.machineType ? applyMachineHandlerToRecipe(recipe, node) : recipe;
   const minimumTier = getRecipeMinimumVoltageTier(effectiveRecipe);
@@ -152,14 +161,15 @@ export function getNodePowerReport(recipe: Recipe, node: PowerReportNode): NodeP
     ? fusion.recipeMark === undefined ? msg("Fusion startup metadata is unavailable for this recipe.")
       : fusionMarkKey.replace("{mark}", String(fusion.recipeMark))
     : undefined;
-  const recipeGateReason = fusionGateReason ?? behaviour?.recipeGate?.(
-    buildMachineContext(effectiveRecipe, node),
-  ) ?? casingGateReason;
+  const machineGate = fusionGateReason ? undefined : behaviour?.recipeGate?.(buildMachineContext(effectiveRecipe, node));
+  const machineGateMessage = typeof machineGate === "object" ? machineGate : undefined;
+  const recipeGateReason = fusionGateReason ?? gateText(machineGate) ?? casingGateReason;
+  const recipeGateMessage = fusionGateMessage ?? machineGateMessage;
 
   return {
     state: recipeGateReason ? "over-tier" : getPowerState(effectiveRecipe, tier, minimumTier, isMultiblock, poolEuT, singleDrawEuT),
     recipeGateReason,
-    ...(fusionGateMessage ? { recipeGateMessage: fusionGateMessage } : {}),
+    ...(recipeGateMessage ? { recipeGateMessage } : {}),
     tier,
     minimumTier,
     hatches,
@@ -239,6 +249,8 @@ export interface NodeSteamReport {
   parallels: number;
   isMultiblock: boolean;
   highPressure: boolean;
+  /** Why this build refuses the recipe (its voltage cap); the solver stalls it. */
+  gate?: string | RecipeGateMessage;
 }
 
 /**
@@ -250,9 +262,11 @@ export interface NodeSteamReport {
  *   as written at twice the duration, a high pressure one at twice the EU and
  *   the recipe's own duration (SteamOverclockDescriber, (1,2) and (2,1)).
  * - A steam multiblock consumes 1 L per EU of its calculated draw
- *   (MTESteamMultiBlockBase.onRunningTick at full efficiency), and the draw is
- *   recipe EU x 1.25 x tierMachine per parallel, tierMachine 2 on a high
- *   pressure build.
+ *   (MTESteamMultiBlockBase.onRunningTick at full efficiency): recipe EU x the
+ *   table's `power` per parallel (GT's: 1.25 x tierMachine, tierMachine 2 on a
+ *   high pressure build), or the entry's own `steamPerTick`. Runs banked below
+ *   one tick are free: OverclockCalculator.setCurrentParallel bills
+ *   min(parallels, runs).
  *
  * Smelting bills GT's fixed 4 EU/t furnace recipe; the dataset's vanilla map
  * says 0 EU (see GT_FURNACE_RECIPE_EUT).
@@ -280,15 +294,22 @@ export function getNodeSteamReport(
 
   const effectiveRecipe = applyMachineHandlerToRecipe(recipe, node);
   if (effectiveRecipe.machineProfile?.kind === "multiblock") {
-    const pressureTier = buildMachineContext(effectiveRecipe, node).tier(STEAM_PRESSURE) + 1;
+    const ctx = buildMachineContext(effectiveRecipe, node);
+    const behaviour = getMachineBehaviour(effectiveRecipe.machineType);
+    const pressureTier = ctx.tier(STEAM_PRESSURE) + 1;
     const parallels = getMachineParallelMultiplier(effectiveRecipe, node);
-    const single = baseEut * 1.25 * pressureTier;
+    const fixed = behaviour?.steamPerTick?.(ctx);
+    const single = fixed !== undefined
+      ? fixed / parallels
+      : baseEut * resolveCoefficient(behaviour?.power, ctx, 1.25 * pressureTier);
+    const gate = behaviour?.recipeGate?.(ctx);
     return {
-      drawSteamPerTick: Math.ceil(single * parallels),
+      drawSteamPerTick: fixed ?? Math.ceil(single * parallels),
       singleDrawSteamPerTick: single,
       parallels,
       isMultiblock: true,
       highPressure: pressureTier === 2,
+      ...(gate === undefined ? {} : { gate }),
     };
   }
 
@@ -301,6 +322,13 @@ export function getNodeSteamReport(
     isMultiblock: false,
     highPressure,
   };
+}
+
+/** A steam build's refusal in the interface language, if it refuses the recipe. */
+export function describeSteamGate(report: NodeSteamReport): string | undefined {
+  const gate = report.gate;
+  if (gate === undefined) return undefined;
+  return typeof gate === "string" ? td(gate) : td(gate.key, gate.vars);
 }
 
 /** True when the report says the machine cannot start at all. */

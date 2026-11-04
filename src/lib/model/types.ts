@@ -173,6 +173,12 @@ export interface MachineProfile {
   availableTiers?: string[];
   durationTicks?: number;
   eut?: number;
+  /**
+   * A steam machine's recipe EU/t (GT's `recipe.mEUt`), kept here because its
+   * `eut` is zeroed: it burns steam, not EU. Its voltage gate and its parallel
+   * budget read this. Set by `applyMachineHandlerToRecipe`, never exported.
+   */
+  steamEut?: number;
   maxParallel?: number;
   eutLimit?: number;
   /** True when the machine performs 4x speed / 4x power overclocks. */

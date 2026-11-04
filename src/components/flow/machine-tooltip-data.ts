@@ -2,7 +2,7 @@ import type { FactoryNode, MachineHandler, NodeThroughputResult, Recipe } from "
 import { applyMachineHandlerToRecipe, getRecipeMachineConfigTierControls, type MachineConfigTierControl } from "@/lib/model/recipe-rules";
 import { formatCompact } from "@/lib/model";
 import { getOverclockedRecipeStats } from "@/lib/solver/overclock";
-import { getNodePowerReport, getNodeSteamReport, hasPowerReport, describePowerStall } from "@/lib/solver/power-report";
+import { getNodePowerReport, getNodeSteamReport, hasPowerReport, describePowerStall, describeSteamGate } from "@/lib/solver/power-report";
 import { getMachineParallelMultiplier } from "@/lib/solver/machine-effects";
 import { isMultiblockRecipe } from "@/lib/solver/power";
 import { getMachineBehaviour, getMachineTableControls } from "@/lib/machines/machine-table";
@@ -41,7 +41,7 @@ export function buildMachineTooltip(recipe: Recipe, handler: MachineHandler, nod
       bullets: [t("From {addon}.", { addon }), t("Speed, power and parallels are read from its tooltip, not checked against the mod.")],
     } : {}),
     requirement: curated?.note ? td(curated.note) : undefined,
-    reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
+    reason: power && power.state !== "ok" ? describePowerStall(power) : steam ? describeSteamGate(steam) : undefined,
   };
 }
 
@@ -69,7 +69,7 @@ export function buildConfigTooltip(recipe: Recipe, node: FactoryNode, control: M
         : power ? [{ label: t("Draw per machine"), value: `${formatCompact(power.drawEuT)} EU/t` }] : []),
       { label: t("Parallel operations"), value: number(power?.parallels ?? getMachineParallelMultiplier(effective, node)) },
     ],
-    reason: power && power.state !== "ok" ? describePowerStall(power) : undefined,
+    reason: power && power.state !== "ok" ? describePowerStall(power) : steam ? describeSteamGate(steam) : undefined,
     actions: control.numeric ? [{ gesture: "left", label: t("Type a value") }, { gesture: "wheel", label: t("Step") }]
       : control.tiers.length > 1 ? [{ gesture: "left", label: t("Change setting") }] : [],
   };

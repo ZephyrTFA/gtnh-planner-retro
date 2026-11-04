@@ -290,6 +290,9 @@ export function getOverclockedRecipeStats(
   const perfectSteps = Math.min(rule.maxPerfect, affordable);
   const normalSteps = Math.min(rule.maxNormal, affordable - perfectSteps);
   const steps = perfectSteps + normalSteps;
+  const rawDuration =
+    (effectiveRecipe.durationTicks / rule.multiplier ** perfectSteps / 2 ** normalSteps) * durationMultiplier;
+  const quantise = getMachineBehaviour(effectiveRecipe.machineType)?.quantiseDuration;
 
   return {
     tier,
@@ -298,11 +301,9 @@ export function getOverclockedRecipeStats(
     perfectOverclockSteps: perfectSteps,
     perfectSpeedFactor: rule.multiplier,
     perfectEuFactor: rule.euMultiplier ?? rule.multiplier,
-    durationTicks: (getMachineBehaviour(effectiveRecipe.machineType)?.quantiseDuration ?? quantiseDurationToTicks)(
-      (effectiveRecipe.durationTicks / rule.multiplier ** perfectSteps / 2 ** normalSteps) *
-        durationMultiplier,
-      subTickCapable,
-    ),
+    durationTicks: quantise
+      ? quantise(rawDuration, buildMachineContext(effectiveRecipe as Recipe, node))
+      : quantiseDurationToTicks(rawDuration, subTickCapable),
     eut:
       effectiveRecipe.eut *
       heatOverclock.heatDiscountMultiplier *

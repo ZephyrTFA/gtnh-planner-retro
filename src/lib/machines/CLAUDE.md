@@ -47,6 +47,25 @@ computes in float: replicate it.
   mode covers its hatch mode and says so in its note.
 - `machineTableNameCollisions()` must stay empty: an alias must never take over a name.
 
+## Addon machines (GT Not Leisure steam)
+
+- The GTNL steam multiblocks sit in their own section of `machine-table.ts`, transcribed
+  from SteamMultiMachineBase and its subclasses in the pinned dev-290 build (sources jar
+  on the `mirror-gtnl-dev-290-*` release); the shared math is `gtnl-steam.ts`.
+  `largeSteam(...)` is the common shape: per-build parallels, `super.getEUtDiscount() * f
+  * tierMachine`, `super.getDurationModifier() / d / tierMachine`, getTierRecipes().
+- Knobs: the build (STEAM_PRESSURE's id, so tierMachine = tier + 1) and the player's
+  "Overclocking count" (recipeOcCount 0-4: x4 EU, /2 duration per step).
+- `durationModifier` states Java's duration multiplier directly so truncation matches
+  bit for bit. Below one tick `multiplierUnderOneTick` with zero overclocks counts the
+  negative gaps as extra steps (0.3 ticks is 7 runs), capped at V x parallels / recipe
+  EU/t. Steam bills min(parallels, runs): banked runs are free.
+- Their own logic: the Large Steam Furnace (fixed 64-tick smelt, `steamPerTick`), the
+  Steam Supercompressor (overclocks at EV on top of the count), the Steam Manufacturer
+  (assembler recipes to MV, HV with an HV Assembler in the controller). Left out: the
+  Large Steam Alloy Smelter (TST has one of the same name), the Primitive Distillation
+  Tower and the Hyper Pressure Reactors (steam machines without "steam" in the name).
+
 ## Overclocks and ticks (src/lib/solver/overclock.ts)
 
 - Parallels are paid for with power BEFORE overclocks; only leftover voltage buys steps.
@@ -102,7 +121,10 @@ computes in float: replicate it.
   overclocks and one parallel.
 - Steam: the 8 steam multis are table entries (8 parallels, no OC, shared pressure
   control); steam singleblocks are synthesized in `src/lib/model/recipe-rules.ts`. EU stays
-  zero on steam cards; litres are billed instead, never both.
+  zero on steam cards; litres are billed instead, never both. A steam multiblock's `power`
+  is what the litres bill from; the recipe's own EU is `machineProfile.steamEut`
+  (`ctx.recipeEuT`), and a recipe over V[getTierRecipes()] is refused (`steamVoltageGate`:
+  LV on GT's steam multis).
 - Crafting maps run on GT++'s Auto Workbench (synthesized in `recipe-rules.ts`, flat 2048 EU
   per craft) with instant hand-craft as the second handler.
 - Tree Growth Simulator (`tree-growth-simulator.ts`, MTETreeFarm): a fixed 100-tick run at
