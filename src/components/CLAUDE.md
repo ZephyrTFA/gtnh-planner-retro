@@ -70,7 +70,9 @@ The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLA
   string, so add both translations in the same change. Components call `useT()`; text in
   useMemo lists the language. Never `t()` at module top level.
 - Hydration renders English (the page is prerendered); `applyLanguage` in a layout effect
-  switches before paint. Choosing a language reloads. Catalogs load from `./apply.ts`
+  switches before paint. `?lang=zh_cn` (any case, `-`, or just `zh`) wins over the
+  saved language for that page and is never saved. Choosing a language saves it and
+  reloads without `?lang=`. Catalogs load from `./apply.ts`
   only, so worker bundles that import `t()` carry none (workers render no text).
 - Stays English: plan data, ids, machine and recipe-map names, tier names, units, the
   changelog, developer tools (DevMenu, router dials).

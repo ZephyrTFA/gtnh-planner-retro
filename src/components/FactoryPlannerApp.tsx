@@ -21,7 +21,7 @@ import {
 } from "@/lib/datasets/browser-loader";
 import { loadResourceHistory, useFactoryStore } from "@/store/factory-store";
 import { loadItemNames } from "@/lib/item-names";
-import { getStoredLanguage, t, useLanguage, useT } from "@/lib/i18n";
+import { getActiveLanguage, t, useLanguage, useT } from "@/lib/i18n";
 import { applyLanguage } from "@/lib/i18n/apply";
 import { useCommunityAuthStore } from "@/store/community-auth-store";
 import { useDesignStore } from "@/store/design-store";
@@ -82,11 +82,12 @@ export function FactoryPlannerApp() {
   const datasetManifestUrl = useFactoryStore((state) => state.datasetManifestUrl);
   const projectAddonSetId = useFactoryStore((state) => state.project.addonSetId);
   const itemLanguage = useLanguage((state) => state.language);
-  // The page is prerendered in English, so hydration renders English; the saved
-  // language takes over here, before the first paint (src/lib/i18n).
+  // The page is prerendered in English, so hydration renders English; the
+  // address's `?lang=` or the saved language takes over here, before the first
+  // paint (src/lib/i18n).
   useLayoutEffect(() => {
-    const saved = getStoredLanguage();
-    if (saved !== "en_US") void applyLanguage(saved);
+    const language = getActiveLanguage();
+    if (language !== "en_US") void applyLanguage(language);
   }, []);
   // The dataset version last asked for. A load that finishes after a newer one
   // was asked for (boot loads the plain pack, then the hydrated plan wants its

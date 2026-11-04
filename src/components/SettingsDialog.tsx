@@ -2,7 +2,7 @@
 
 import { Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { LANGUAGES, getStoredLanguage, td, useT, type Language } from "@/lib/i18n";
+import { LANGUAGES, getActiveLanguage, td, useT, type Language } from "@/lib/i18n";
 import { chooseLanguage } from "@/lib/i18n/apply";
 import {
   APP_FONTS,
@@ -40,7 +40,7 @@ import {
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const t = useT();
   const [font, setFont] = useState<AppFontId>(() => getStoredAppFont());
-  const [language] = useState<Language>(() => getStoredLanguage());
+  const [language] = useState<Language>(() => getActiveLanguage());
   const [sounds, setSounds] = useState<boolean>(() => areBoardSoundsEnabled());
   const [volume, setVolume] = useState<number>(() => getBoardSoundVolume());
   const canPlayTimelapse = useFactoryStore(

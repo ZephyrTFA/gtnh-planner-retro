@@ -19,7 +19,8 @@ import { create } from "zustand";
  *
  * The page is prerendered in English, so the first render is English (it
  * must match the HTML); FactoryPlannerApp switches to the saved language in a
- * layout effect, before the first paint (`applyLanguage` in ./apply.ts).
+ * layout effect, before the first paint (`applyLanguage` in ./apply.ts). A
+ * `?lang=` in the address wins over the saved language for that page.
  * Choosing another language in Settings saves it and reloads the page.
  */
 
@@ -48,6 +49,40 @@ export function getStoredLanguage(): Language {
   } catch {
     return "en_US";
   }
+}
+
+/**
+ * `?lang=zh_cn` picks the language for this page without saving it, so a link
+ * can open the planner in a language and a reload keeps it. Choosing a
+ * language in Settings saves it and drops the parameter (./apply.ts).
+ */
+export const LANGUAGE_URL_PARAM = "lang";
+
+/**
+ * A language written the way people write it: any case, `_` or `-`, or just
+ * the language (`zh_cn`, `zh-CN`, `ru`, `en`). Undefined for anything else.
+ */
+export function parseLanguage(value: string | null | undefined): Language | undefined {
+  const wanted = value?.trim().toLowerCase().replace(/-/g, "_");
+  if (!wanted) return undefined;
+  return LANGUAGES.find(
+    (option) => option.id.toLowerCase() === wanted || option.id.slice(0, 2) === wanted,
+  )?.id;
+}
+
+/** The language the address asks for, if it names one the planner has. */
+export function getUrlLanguage(): Language | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return parseLanguage(new URLSearchParams(window.location.search).get(LANGUAGE_URL_PARAM));
+  } catch {
+    return undefined;
+  }
+}
+
+/** The language this page shows: the address's `?lang=`, else the saved choice. */
+export function getActiveLanguage(): Language {
+  return getUrlLanguage() ?? getStoredLanguage();
 }
 
 interface LanguageState {
