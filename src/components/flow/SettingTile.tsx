@@ -75,6 +75,10 @@ const CAPTIONS: Record<string, string> = {
   gtnlSteamOverclocks: msg("Overclocks"),
   gtnlControllerItem: msg("Controller"),
   infernalCokeOvenSpeedup: msg("Speed-up"),
+  gtnlParallelController: msg("Parallel controller"),
+  gtnlWirelessChip: msg("Wireless chip"),
+  gtnlGlassTier: msg("Glass"),
+  swelegfyrHeat: msg("Heat"),
 };
 
 export function settingCaption(control: Pick<MachineConfigTierControl, "id" | "label">): string {

@@ -2137,6 +2137,18 @@ const catalog: Catalog = {
   "Six layers: fluid outputs past the sixth are voided.": "六层：第六种之后的流体产物会被销毁。",
   "Speed-up": "加速",
   "Speeds up while it runs, 0.05x every 5 seconds, to 10x after 15 minutes, and keeps it.": "运行时逐渐加速，每 5 秒 0.05x，15 分钟后达到 10x 并保持。",
+  "Burns Pyrotheum, which the planner does not show. Its heat climbs toward the maximum in passive mode and falls back to the coils' heat otherwise.": "消耗烈焰之炽焱，此处未显示。被动模式下热量逐渐升至最大值，其他情况下回落到线圈热量。",
+  "Burns molten Blaze, which the planner does not show.": "消耗熔融烈焰，此处未显示。",
+  "Coils": "线圈",
+  "Heat": "热量",
+  "Its coils are only part of the structure.": "其线圈只是结构的一部分。",
+  "Maximum": "最大",
+  "On energy hatches. Wireless mode (the chip and no energy hatches) runs perfect overclocks on wireless EU and is not shown.": "使用能源仓时的数值。无线模式（安装芯片且没有能源仓）以无线 EU 进行无损超频，此处未显示。",
+  "Parallel controller": "并行控制仓",
+  "Passive": "被动",
+  "Refuses the recipes that need field restriction coils (the Atomic Energy Excitation Plant runs them); the recipe data does not mark them.": "不接受需要力场约束线圈的配方（由 Atomic Energy Excitation Plant 运行）；配方数据未标记这些配方。",
+  "Some recipes need field restriction coils of a given tier; the recipe data does not mark them.": "部分配方需要特定等级的力场约束线圈；配方数据未标记这些配方。",
+  "Wireless chip": "无线芯片",
 };
 
 export default catalog;

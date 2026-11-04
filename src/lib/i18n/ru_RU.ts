@@ -2137,6 +2137,18 @@ const catalog: Catalog = {
   "Six layers: fluid outputs past the sixth are voided.": "Шесть уровней: жидкости после шестой уничтожаются.",
   "Speed-up": "Ускорение",
   "Speeds up while it runs, 0.05x every 5 seconds, to 10x after 15 minutes, and keeps it.": "Ускоряется во время работы, на 0.05x каждые 5 секунд, до 10x через 15 минут, и сохраняет его.",
+  "Burns Pyrotheum, which the planner does not show. Its heat climbs toward the maximum in passive mode and falls back to the coils' heat otherwise.": "Сжигает пиротеум, это здесь не показано. В пассивном режиме нагрев растёт к максимуму, в остальное время падает до нагрева катушек.",
+  "Burns molten Blaze, which the planner does not show.": "Сжигает расплавленный ифрит, это здесь не показано.",
+  "Coils": "Катушки",
+  "Heat": "Нагрев",
+  "Its coils are only part of the structure.": "Катушки здесь только часть конструкции.",
+  "Maximum": "Максимум",
+  "On energy hatches. Wireless mode (the chip and no energy hatches) runs perfect overclocks on wireless EU and is not shown.": "На энергетических люках. Беспроводной режим (чип и ни одного энергетического люка) идёт с идеальными разгонами на беспроводной EU и здесь не показан.",
+  "Parallel controller": "Контроллер параллелей",
+  "Passive": "Пассивный",
+  "Refuses the recipes that need field restriction coils (the Atomic Energy Excitation Plant runs them); the recipe data does not mark them.": "Не берёт рецепты, которым нужны катушки ограничения поля (их выполняет Atomic Energy Excitation Plant); данные рецептов их не помечают.",
+  "Some recipes need field restriction coils of a given tier; the recipe data does not mark them.": "Некоторым рецептам нужны катушки ограничения поля определённого тира; данные рецептов их не помечают.",
+  "Wireless chip": "Беспроводной чип",
 };
 
 export default catalog;

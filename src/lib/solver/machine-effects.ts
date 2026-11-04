@@ -210,9 +210,8 @@ export function getMachineOutputMultiplier(
     return (reference > 0 ? current / reference : 1) * rounds;
   }
 
-  if (getMachineBehaviour(recipe.machineType)?.keepsOutput?.(recipe as Partial<Recipe>, output) === false) {
-    return 0;
-  }
+  const outputRule = getMachineBehaviour(recipe.machineType)?.outputMultiplier;
+  const machineOutput = outputRule ? outputRule(output, buildMachineContext(recipe, node)) : 1;
 
   const configMultiplier = getRecipeMachineConfigTierControls(recipe, node)
     .filter((control) => !isBeeFrameSlotControlId(control.id))
@@ -231,7 +230,7 @@ export function getMachineOutputMultiplier(
     );
   }
 
-  return configMultiplier;
+  return configMultiplier * machineOutput;
 }
 
 /**
@@ -501,7 +500,7 @@ function getPoweredParallelLimit(recipe: MachineEffectRecipe, node: MachineEffec
   // dividing the available EU, so a hot blast furnace runs more parallels.
   const recipeEuT =
     Math.abs(recipe.eut ?? 0) *
-    getMachineEutMultiplier(recipe, node) *
+    (getMachineBehaviour(recipe.machineType)?.parallelsPayFullEu ? 1 : getMachineEutMultiplier(recipe, node)) *
     getHeatDiscountMultiplier(
       recipe,
       node,

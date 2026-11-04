@@ -389,6 +389,8 @@ function resolveOverclockRule(
     : undefined;
 
   if (spec === HEAT_OVERCLOCK) {
+    // getPerfectOC makes every step perfect, heat or not.
+    if (behaviour?.heat?.perfect?.(buildMachineContext(recipe as Recipe, node))) return OVERCLOCK.perfect();
     // Coil heat above the recipe's requirement buys perfect steps, then normal.
     return OVERCLOCK.perfectThenNormal(heatOverclockSteps);
   }

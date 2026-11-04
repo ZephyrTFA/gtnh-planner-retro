@@ -43,7 +43,8 @@ computes in float: replicate it.
   where the map shares a GT machine's name (the fake cutting saw is "Cutting Machine").
 - Left out on purpose (they stay "Unchecked"): generators, wireless-only paths
   (`ofNoOverclock` ignores speed and EU), execution cores, output multipliers, essentia
-  and the steam pair (their GT++ steam billing is unverified). An entry with a wireless
+  and the steam pair (their GT++ steam billing is unverified). The Swelegfyr Blast
+  Furnace has an entry since (GTNL section below). An entry with a wireless
   mode covers its hatch mode and says so in its note.
 - `machineTableNameCollisions()` must stay empty: an alias must never take over a name.
 
@@ -74,6 +75,25 @@ computes in float: replicate it.
   otherwise sets `burnsSteam` (Updraft Kiln, Infernal Coke Oven, the reactors, the tower).
 - GTNL's Electric Industrial Blast Furnace is a heat machine whose +100 K per tier reads
   `getMaxInputEu()` (`heat.voltageBonusFromTotalPower`), not the summed voltage.
+
+## Addon machines (GT Not Leisure coil machines)
+
+- Most sit on `WirelessEnergyMultiMachineBase` (`gtnlWireless`: getMaxInputEu() at one amp,
+  unlimited tier skips, (chip ? 0.4 : 0.6) - tier / 50 EU, 1 / (chip ? 10 : 5) x 0.75^tier
+  duration, controller parallels x 16, a per-coil factor) or `GTMMultiMachineBase`
+  (controller parallels, 0.8 / (1/1.67) bases). Wireless mode is left out and said so.
+- Knobs: the Parallel Controller hatch (tier = mParallelTier, maxParallelAt), the Wireless
+  Upgrade Chip, glass (`gtnlGlassTier`), controller items. GTNL hands getEUtDiscount() to
+  the calculator only, so parallels pay the recipe's full EU (`parallelsPayFullEu`).
+- Quirks kept on purpose: the Blaze Blast Furnace's 0.70 discount is tooltip only; an LV
+  controller on the Mega Industrial Blast Furnace overflows to one parallel; the Mega
+  Vacuum Drying Furnace's heat never reaches its calculator; the Large Pyrolysis Oven's
+  and Industrial Alloy Blast Smelter's coils change nothing.
+- GTNL's Chemical Plant shares GT++'s name and runs the LCR map: one entry, split on
+  `recipeMap`. GTNL's Digester and Alloy Blast Smelter share GT's name AND map, so the
+  dataset merges them and they keep GT's numbers. The fuel refining recipes' field-coil
+  tier is not exported (notes on both machines).
+- TST's Swelegfyr Blast Furnace is in: its drifting heat is a knob (coils or maximum).
 
 ## Overclocks and ticks (src/lib/solver/overclock.ts)
 

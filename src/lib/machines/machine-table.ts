@@ -228,6 +228,10 @@ export interface MachineBehaviour {
      * (`BWUtil.getTier(getMaxInputEu())`, GT Not Leisure), not the summed voltage.
      */
     voltageBonusFromTotalPower?: boolean;
+    /** The machine heat from the coil's heat and the node's settings, replacing coil + voltage bonus. */
+    machineHeat?: (coilHeat: number, settings: Record<string, string>) => number;
+    /** Every step perfect (getPerfectOC), heat steps or not. */
+    perfect?: (ctx: MachineContext) => boolean;
     /** Coil heat is counted this many times over (Zyngen: 2). */
     coilHeatMultiplier?: number;
     /** The 5% EU discount per 900 K of excess; default on, Zyngen opts out. */
@@ -257,10 +261,17 @@ export interface MachineBehaviour {
    */
   burnsSteam?: boolean;
   /**
-   * Whether the machine delivers this output at all (the Primitive
-   * Distillation Tower voids fluids past its sixth layer).
+   * What the machine makes of one output, times the recipe's amount: 0 for an
+   * output it voids (the Primitive Distillation Tower past its sixth layer),
+   * more for a bonus (the Cracker Hub's coils). `ctx.recipe` is the recipe.
    */
-  keepsOutput?: (recipe: Partial<Recipe>, output: RecipeOutput) => boolean;
+  outputMultiplier?: (output: RecipeOutput, ctx: MachineContext) => number;
+  /**
+   * The EU discount lands on the overclock calculator only, so the parallel
+   * helper still prices each parallel at the recipe's full EU/t (GT Not
+   * Leisure sets getEUtDiscount() on the calculator, never on the logic).
+   */
+  parallelsPayFullEu?: boolean;
   /**
    * Litres of steam a tick for the whole machine, for a steam multiblock that
    * does not bill recipe EU x `power` per parallel (the Large Steam Furnace).
@@ -824,6 +835,82 @@ function largeSteam(
 }
 
 /**
+ * GTNL's Parallel Controller hatch (at most one): mParallelTier is its tier,
+ * LV 1 to MAX 14, 0 without one. Its parallels default to maxParallelAt(tier);
+ * the GUI can lower them, which the planner does not model.
+ */
+const GTNL_PARALLEL_CONTROLLER = "gtnlParallelController";
+const GTNL_PARALLEL_CONTROLLER_CONTROL = choiceControl(GTNL_PARALLEL_CONTROLLER, msg("Parallel controller"), [
+  msg("None"), "LV", "MV", "HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV", "UXV", "MAX",
+]);
+const gtnlParallelTier = (c: MachineContext) => c.tier(GTNL_PARALLEL_CONTROLLER);
+/** ParallelControllerHatch.maxParallelAt. */
+const gtnlHatchParallels = (tier: number) => (tier <= 1 ? 1 : 2 ** (2 * (tier - 2)));
+/** The Wireless Upgrade Chip (wirelessUpgrade), right-clicked into the controller. */
+const GTNL_WIRELESS_CHIP = "gtnlWirelessChip";
+const GTNL_WIRELESS_CHIP_CONTROL = choiceControl(GTNL_WIRELESS_CHIP, msg("Wireless chip"), [msg("None"), "Wireless Upgrade Chip"]);
+/** chainAllGlasses: the glass's voltage tier, borosilicate (HV, 3) up. */
+const GTNL_GLASS = "gtnlGlassTier";
+const GTNL_GLASS_CONTROL = choiceControl(
+  GTNL_GLASS,
+  msg("Glass"),
+  ["HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV", "UXV"].map((tier) => `${tier} Glass`),
+);
+const gtnlGlassTier = (c: MachineContext) => c.tier(GTNL_GLASS) + 3;
+
+/**
+ * WirelessEnergyMultiMachineBase with energy hatches: getMaxInputEu() at one
+ * amp with amperage overclocks, unlimited tier skips, normal overclocks,
+ * (chip ? 0.4 : 0.6) - tier / 50 EU, 1 / (chip ? 10 : 5) x 0.75^tier duration,
+ * and the controller's parallels x 16 (8 without one). `coilDuration` and
+ * `coilBoth` are a subclass's per-coil-tier factor on duration, or on both.
+ */
+function gtnlWireless(coil: { duration?: number; both?: number } = {}, extra: Partial<MachineBehaviour> = {}): MachineBehaviour {
+  const chip = (c: MachineContext) => c.tier(GTNL_WIRELESS_CHIP) === 1;
+  const durationFactor = coil.both ?? coil.duration;
+  return {
+    overclock: OVERCLOCK.normal(),
+    unlimitedTierSkip: true,
+    fullPowerPool: true,
+    parallelsPayFullEu: true,
+    parallels: (c) => (gtnlParallelTier(c) === 0 ? 8 : gtnlHatchParallels(gtnlParallelTier(c)) * 16),
+    power: (c) => {
+      const base = (chip(c) ? 0.4 : 0.6) - gtnlParallelTier(c) / 50.0;
+      return coil.both ? base * Math.pow(coil.both, c.tier(COIL)) : base;
+    },
+    durationModifier: (c) => {
+      const base = (1.0 / (chip(c) ? 10.0 : 5.0)) * Math.pow(0.75, gtnlParallelTier(c));
+      return durationFactor ? base * Math.pow(durationFactor, c.tier(COIL)) : base;
+    },
+    controls: [
+      GTNL_PARALLEL_CONTROLLER_CONTROL,
+      GTNL_WIRELESS_CHIP_CONTROL,
+      ...(durationFactor ? [HEATING_COIL_CONTROL] : []),
+    ],
+    hidesControls: ["machineParallel", "voltageParallel"],
+    note: msg("On energy hatches. Wireless mode (the chip and no energy hatches) runs perfect overclocks on wireless EU and is not shown."),
+    ...extra,
+  };
+}
+
+/** TST_SwelegfyrBlastFurnace's mode (isPassiveMode) and heat (mHeatingCapacity). */
+const SWELEGFYR_MODE = "swelegfyrMode";
+const SWELEGFYR_MODE_CONTROL = choiceControl(SWELEGFYR_MODE, msg("Mode"), [msg("Normal"), msg("Passive")]);
+const SWELEGFYR_HEAT = "swelegfyrHeat";
+const SWELEGFYR_HEAT_CONTROL = choiceControl(SWELEGFYR_HEAT, msg("Heat"), [msg("Coils"), msg("Maximum")]);
+/** The coils' heat, or maxHeatingCapacity: floor(coilHeat^1.08 / 100) x 100 + 1. */
+function swelegfyrHeat(coilHeat: number, settings: Record<string, string>): number {
+  return settings[SWELEGFYR_HEAT] === "maximum" ? Math.floor(Math.pow(coilHeat, 1.08) / 100) * 100 + 1 : coilHeat;
+}
+
+/** GT Not Leisure's Chemical Plant, which shares GT++'s name but runs the LCR map. */
+const isGtnlChemicalPlant = (c: MachineContext) => c.recipeMap === "Large Chemical Reactor";
+
+/** GTMMultiMachineBase's parallels: the controller's (none: 8). */
+const gtnlGtmParallels = (c: MachineContext) =>
+  gtnlParallelTier(c) === 0 ? 8 : gtnlHatchParallels(gtnlParallelTier(c));
+
+/**
  * SteamInfernalCokeOven's speedup: +0.05 every 100 running ticks while under
  * 10, never reset, so a warmed oven sits at the value the double lands on.
  */
@@ -1001,12 +1088,28 @@ const MACHINES: Record<string, MachineBehaviour> = {
   "Flotation Cell Regulator": { overclock: OVERCLOCK.perfect() },
 
   // -- Coil-driven, no heat mechanic ---------------------------------------
+  // GT++'s ExxonMobil Chemical Plant runs the "Chemical Plant" map. GT Not
+  // Leisure's own Chemical Plant shares the name and runs the Large Chemical
+  // Reactor map: perfect overclocks, 0.8 x 0.95^coil EU, 1/1.67 x 0.95^coil
+  // duration, its controller's parallels up to 1024 (8 without one). `speed`
+  // is GT++'s, the number the reference fixture checks.
   "Chemical Plant": {
-    overclock: OVERCLOCK.normal(),
+    overclock: (c) => (isGtnlChemicalPlant(c) ? OVERCLOCK.perfect() : OVERCLOCK.normal()),
     aliases: ["ExxonMobil Chemical Plant"],
     speed: (c) => c.tier(COIL) * 0.5 + 0.5,
-    parallels: (c) => (c.tier(PIPE) + 1) * 2,
+    durationModifier: (c) =>
+      isGtnlChemicalPlant(c) ? (1 / 1.67) * Math.pow(0.95, c.tier(COIL)) : 1 / (c.tier(COIL) * 0.5 + 0.5),
+    power: (c) => (isGtnlChemicalPlant(c) ? 0.8 * Math.pow(0.95, c.tier(COIL)) : 1),
+    parallelsPayFullEu: true,
+    parallels: (c) =>
+      isGtnlChemicalPlant(c)
+        ? Math.min(gtnlParallelTier(c) === 0 ? 8 : gtnlHatchParallels(gtnlParallelTier(c)), 1024)
+        : (c.tier(PIPE) + 1) * 2,
     controls: [FLUID_PIPE_CONTROL],
+    controlsFor: (recipe) =>
+      (recipe.source?.recipeMap ?? recipe.machineType) === "Large Chemical Reactor"
+        ? [GTNL_PARALLEL_CONTROLLER_CONTROL, HEATING_COIL_CONTROL]
+        : [FLUID_PIPE_CONTROL],
     normalizeConfig: normalizeFluidPipeSettings,
   },
   "Pyrolyse Oven": { overclock: OVERCLOCK.normal(), speed: (c) => (c.tier(COIL) + 1) * 0.5 },
@@ -2148,11 +2251,13 @@ const MACHINES: Record<string, MachineBehaviour> = {
       note: msg("Six layers: fluid outputs past the sixth are voided."),
     }),
     burnsSteam: true,
-    keepsOutput: (recipe, output) =>
+    outputMultiplier: (output, c) =>
       output.kind !== "fluid" ||
-      (recipe.outputs ?? [])
+      (c.recipe?.outputs ?? [])
         .filter((entry) => entry.kind === "fluid")
-        .findIndex((entry) => entry === output || entry.id === output.id) < 6,
+        .findIndex((entry) => entry === output || entry.id === output.id) < 6
+        ? 1
+        : 0,
   },
   // GTNL's ElectricBlastFurnace (structuralReconstructionPlan): heat
   // overclocks and discount, 0.75 x 0.95^coil tier EU, 1 / 1.25 duration,
@@ -2160,10 +2265,167 @@ const MACHINES: Record<string, MachineBehaviour> = {
   // and +100 K per tier of getMaxInputEu() above MV.
   "Electric Industrial Blast Furnace": {
     overclock: HEAT_OVERCLOCK,
+    parallelsPayFullEu: true,
     heat: { voltageBonus: true, voltageBonusFromTotalPower: true },
     durationModifier: 1.0 / 1.25,
     power: (c) => 0.75 * Math.pow(0.95, c.tier(COIL)),
     parallels: (c) => Math.max(1, c.voltageTier * 2 + (c.tier(COIL) + 1) * 2),
+  },
+
+  // ---- GT Not Leisure coil machines ----
+  // WirelessEnergyMultiMachineBase subclasses (gtnlWireless): a coil factor on
+  // duration, or on duration and EU.
+  "Chemical Complex": gtnlWireless({ duration: 0.85 }),
+  "Crystal Builder": gtnlWireless({ duration: 0.85 }),
+  "Dissolution Core": gtnlWireless({ duration: 0.85 }),
+  "Extreme Electric Furnace": gtnlWireless({ duration: 0.85 }),
+  "Gemini Containment System": gtnlWireless({ duration: 0.85 }),
+  "Giant Electrochemical Workstation": gtnlWireless({ duration: 0.85 }),
+  "Heavy Rolling": gtnlWireless({ duration: 0.85 }),
+  "Mega Brewer": gtnlWireless({ duration: 0.85 }),
+  "Mega Wiremill": gtnlWireless({ duration: 0.85 }),
+  "Molten Core": gtnlWireless({ duration: 0.85 }),
+  "Magnetic Energy Reaction Furnace": gtnlWireless({ both: 0.8 }),
+  "Phase Change Cube": gtnlWireless({ both: 0.8 }),
+  // Its getHeatOC and getMachineHeat never reach the wireless base's calculator.
+  "Mega Vacuum Drying Furnace": gtnlWireless(),
+  // Glass cuts EU and duration 5% a tier; coils add 10% fluid output per two
+  // tiers (items truncate back to their own amount).
+  "Cracker Hub": gtnlWireless(
+    {},
+    {
+      power: (c) => ((c.tier(GTNL_WIRELESS_CHIP) === 1 ? 0.4 : 0.6) - gtnlParallelTier(c) / 50.0) * Math.pow(0.95, gtnlGlassTier(c)),
+      durationModifier: (c) =>
+        (1.0 / (c.tier(GTNL_WIRELESS_CHIP) === 1 ? 10.0 : 5.0)) * Math.pow(0.75, gtnlParallelTier(c)) * Math.pow(0.95, gtnlGlassTier(c)),
+      outputMultiplier: (output, c) => (output.kind === "fluid" ? 1 + Math.floor((c.tier(COIL) + 1) / 2.0) * 0.1 : 1),
+      controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, GTNL_WIRELESS_CHIP_CONTROL, HEATING_COIL_CONTROL, GTNL_GLASS_CONTROL],
+    },
+  ),
+  // GTMMultiMachineBase subclasses: V[highest hatch] with GT's amps, one tier skip.
+  "Large Alloy Smelter": {
+    overclock: OVERCLOCK.normal(),
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => 0.8 - gtnlParallelTier(c) / 50.0 - c.tier(COIL) / 50.0,
+    durationModifier: (c) => 1 / 1.67 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0 - c.tier(COIL) / 50.0,
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, HEATING_COIL_CONTROL],
+    hidesControls: ["machineParallel", "voltageParallel"],
+  },
+  "Large Pyrolysis Oven": {
+    overclock: OVERCLOCK.normal(),
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => 0.8 - gtnlParallelTier(c) / 50.0,
+    durationModifier: (c) => 1 / 1.67 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0,
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL],
+    hidesControls: ["machineParallel", "voltageParallel", "heatingCoil", "cokeOvenCasing", "cokeOvenSlices"],
+    note: msg("Its coils are only part of the structure."),
+  },
+  "Fuel Refining Complex": {
+    overclock: OVERCLOCK.normal(),
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => 1 - gtnlParallelTier(c) / 50.0,
+    durationModifier: (c) => 1 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0,
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, { ...HEATING_COIL_CONTROL, minimumHeatFromSpecialValue: true }],
+    hidesControls: ["machineParallel", "voltageParallel"],
+    note: msg("Refuses the recipes that need field restriction coils (the Atomic Energy Excitation Plant runs them); the recipe data does not mark them."),
+  },
+  // Coil heat only, perfect overclocks with heat steps and the heat discount,
+  // getMaxInputEu() at one amp.
+  "Atomic Energy Excitation Plant": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { perfect: () => true },
+    fullPowerPool: true,
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => (0.8 - gtnlParallelTier(c) / 50.0) * Math.pow(0.95, c.tier(COIL)),
+    durationModifier: (c) => 1 / 1.67 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0,
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, { ...HEATING_COIL_CONTROL, minimumHeatFromSpecialValue: true }],
+    hidesControls: ["machineParallel", "voltageParallel"],
+    note: msg("Some recipes need field restriction coils of a given tier; the recipe data does not mark them."),
+  },
+  // Runs below the recipe's heat too, without heat bonuses. Its duration bonus
+  // from the controller is a tenth as strong in vacuum furnace and dehydrator modes.
+  "Vacuum Drying Furnace": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { voltageBonus: true, voltageBonusFromTotalPower: true },
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => 0.6 - gtnlParallelTier(c) / 50.0,
+    durationModifier: (c) =>
+      1 / 2.5 -
+      (Math.max(0, gtnlParallelTier(c) - 1) / 50.0) *
+        (c.recipeMap === "Cold Trap" || c.recipeMap === "Nuclear Salt Processing Plant" ? 1 : 0.1),
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, HEATING_COIL_CONTROL],
+    hidesControls: ["machineParallel", "voltageParallel"],
+  },
+  // Perfect from a UEV controller; an LV controller's 4 << -2 overflows to one parallel.
+  "Mega Industrial Blast Furnace": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { voltageBonus: true, voltageBonusFromTotalPower: true, perfect: (c) => gtnlParallelTier(c) >= 10 },
+    unlimitedTierSkip: true,
+    fullPowerPool: true,
+    parallelsPayFullEu: true,
+    parallels: (c) => {
+      const tier = gtnlParallelTier(c);
+      return tier === 0 ? 8 : tier === 1 ? 1 : 4 * 4 ** (tier - 2);
+    },
+    power: (c) => 0.8 - gtnlParallelTier(c) / 50.0,
+    durationModifier: (c) => Math.max(0.005, 1.0 / 5.0 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0),
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL],
+    hidesControls: ["machineParallel", "voltageParallel"],
+  },
+  // Heat from the summed hatch voltage; the 0.70 EU discount its tooltip shows
+  // is never handed to the calculator.
+  "Blaze Blast Furnace": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { voltageBonus: true },
+    parallels: (c) => 32 * (c.tier(GTNL_CONTROLLER_ITEM) === 1 ? 4 : 1),
+    durationModifier: 1.0 / 4.0,
+    controls: [choiceControl(GTNL_CONTROLLER_ITEM, msg("Controller"), [msg("Empty"), "Blaze Cube"])],
+    hidesControls: ["machineParallel", "voltageParallel"],
+    note: msg("Burns molten Blaze, which the planner does not show."),
+  },
+  // Perfect overclocks; coils only set heat its perfect steps already beat.
+  // Glass doubles each output stack with a 2 x glass tier in 101 chance.
+  "Industrial Alloy Blast Smelter": {
+    overclock: OVERCLOCK.perfect(),
+    unlimitedTierSkip: true,
+    fullPowerPool: true,
+    parallelsPayFullEu: true,
+    parallels: gtnlGtmParallels,
+    power: (c) => Math.max(0.005, 0.8 - gtnlParallelTier(c) / 50.0),
+    durationModifier: (c) => Math.max(0.005, 1.0 / 2.0 - Math.max(0, gtnlParallelTier(c) - 1) / 50.0),
+    outputMultiplier: (_output, c) => 1 + Math.min(101, Math.max(0, 2 * gtnlGlassTier(c))) / 101,
+    controls: [GTNL_PARALLEL_CONTROLLER_CONTROL, GTNL_GLASS_CONTROL],
+    hidesControls: ["machineParallel", "voltageParallel", "heatingCoil"],
+  },
+
+  // TST_SwelegfyrBlastFurnace (Twist Space Technology 0.8.0, Config.java
+  // defaults): 4096 parallels (256 passive), duration x 1 / 3.9f, heat steps on
+  // its own heat with 0.9^(excess / 900) EU instead of the 5% discount. Its heat
+  // drifts while it runs, so the knob picks the coils' heat or its maximum.
+  "Swelegfyr Blast Furnace": {
+    overclock: HEAT_OVERCLOCK,
+    heat: { machineHeat: swelegfyrHeat, discount: false },
+    parallels: (c) => (c.tier(SWELEGFYR_MODE) === 1 ? 256 : 4096),
+    durationModifier: Math.fround(1 / Math.fround(3.9)),
+    power: (c) =>
+      Math.fround(
+        Math.pow(
+          0.9,
+          Math.floor(Math.max(swelegfyrHeat(1801 + 900 * c.tier(COIL), c.settings ?? {}) - (c.recipeSpecialValue ?? 0), 0) / 900),
+        ),
+      ),
+    recipeGate: (c) => {
+      const voltageHeat = 100 * Math.max(c.voltageTier - 2, 0);
+      return (c.recipeSpecialValue ?? 0) > 1801 + 900 * c.tier(COIL) + voltageHeat
+        ? { key: msg("This recipe needs coils of at least {heat} K."), vars: { heat: (c.recipeSpecialValue ?? 0) - voltageHeat } }
+        : undefined;
+    },
+    controls: [HEATING_COIL_CONTROL, SWELEGFYR_MODE_CONTROL, SWELEGFYR_HEAT_CONTROL],
+    note: msg("Burns Pyrotheum, which the planner does not show. Its heat climbs toward the maximum in passive mode and falls back to the coils' heat otherwise."),
   },
 };
 

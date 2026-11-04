@@ -98,7 +98,9 @@ export function getHeatOverclockStats(
     ? getSummedHatchInput(recipe as Recipe, node, tier, true)
     : undefined;
   const effectiveOrdinal = totalPower !== undefined ? gtTier(totalPower) : voltageOrdinal ?? getVoltageTierIndex(tier);
-  const machineHeat = heatConfig?.voltageBonus
+  const machineHeat = heatConfig?.machineHeat
+    ? heatConfig.machineHeat(coilControl.current.heat, node.machineConfigTiers ?? {})
+    : heatConfig?.voltageBonus
     ? coilHeat + 100 * Math.max(0, effectiveOrdinal - VOLTAGE_TIER_INDEX_MV)
     : coilHeat;
   const heatExcess = Math.max(0, machineHeat - specialValue);

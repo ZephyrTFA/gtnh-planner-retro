@@ -105,8 +105,12 @@ const chemPlant = {
 
 describe("curated machine table", () => {
   it("is keyed by our names and by the reference's names", () => {
-    expect(getMachineBehaviour("Chemical Plant")?.overclock).toEqual(OVERCLOCK.normal());
-    expect(getMachineBehaviour("ExxonMobil Chemical Plant")?.overclock).toEqual(OVERCLOCK.normal());
+    // GT++'s chem plant on its own map; GT Not Leisure's same-named one runs the LCR map.
+    const chemPlant = (recipeMap: string) =>
+      resolveOverclockSpec(getMachineBehaviour("ExxonMobil Chemical Plant")!, { tier: () => 0, value: () => 0, voltageTier: 3, recipeMap });
+    expect(getMachineBehaviour("Chemical Plant")).toBe(getMachineBehaviour("ExxonMobil Chemical Plant"));
+    expect(chemPlant("Chemical Plant")).toEqual(OVERCLOCK.normal());
+    expect(chemPlant("Large Chemical Reactor")).toEqual(OVERCLOCK.perfect());
     expect(getMachineBehaviour("Blast Furnace")?.overclock).toBe(HEAT_OVERCLOCK);
     expect(getMachineBehaviour("Electric Blast Furnace")?.overclock).toBe(HEAT_OVERCLOCK);
     expect(getMachineBehaviour("Large Chemical Reactor")?.overclock).toEqual(OVERCLOCK.perfect());
@@ -411,6 +415,31 @@ describe("curated machine table", () => {
         "Primitive Distillation Tower",
         // GTNL's ElectricBlastFurnace (structuralReconstructionPlan).
         "Electric Industrial Blast Furnace",
+        // GTNL's coil machines, on WirelessEnergyMultiMachineBase or GTMMultiMachineBase.
+        "Chemical Complex",
+        "Crystal Builder",
+        "Dissolution Core",
+        "Extreme Electric Furnace",
+        "Gemini Containment System",
+        "Giant Electrochemical Workstation",
+        "Heavy Rolling",
+        "Mega Brewer",
+        "Mega Wiremill",
+        "Molten Core",
+        "Magnetic Energy Reaction Furnace",
+        "Phase Change Cube",
+        "Mega Vacuum Drying Furnace",
+        "Cracker Hub",
+        "Large Alloy Smelter",
+        "Large Pyrolysis Oven",
+        "Fuel Refining Complex",
+        "Atomic Energy Excitation Plant",
+        "Vacuum Drying Furnace",
+        "Mega Industrial Blast Furnace",
+        "Blaze Blast Furnace",
+        "Industrial Alloy Blast Smelter",
+        // TST_SwelegfyrBlastFurnace, with its Config.java defaults.
+        "Swelegfyr Blast Furnace",
       ].map(normalizeMachineName),
     );
     // Every entry must trace back to a reference definition or a direct source
