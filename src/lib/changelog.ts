@@ -40,6 +40,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.2",
+    date: "2026-11-03",
+    headline: "Coils on GT Not Leisure and Twist Space machines",
+    notes: [
+      "GT Not Leisure's coil machines now get their real coil, speed, EU and parallel numbers: the Mega Industrial and Blaze Blast Furnaces, the Industrial Alloy Blast Smelter, the Vacuum Drying Furnaces, the Cracker Hub, the Large Alloy Smelter and the rest of the family.",
+      "New knobs on those cards where the machine reads them: the Parallel Controller hatch, the Wireless Upgrade Chip, glass, and controller items such as the Blaze Cube.",
+      "Twist Space Technology's Swelegfyr Blast Furnace now runs on its own numbers, with a Heat knob for its coils' heat or its maximum.",
+      "GT Not Leisure's Chemical Plant no longer borrows GT++'s Chemical Plant numbers.",
+    ],
+  },
+  {
     version: "1.6.1",
     date: "2026-11-03",
     headline: "More GT Not Leisure steam machines, and the Industrial Blast Furnace's coils",
