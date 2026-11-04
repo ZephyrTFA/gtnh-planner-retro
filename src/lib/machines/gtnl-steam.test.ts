@@ -29,7 +29,8 @@ const node = (settings: Record<string, string> = {}): FactoryNode => ({
   enabled: true,
   position: { x: 0, y: 0 },
   machineHandlerId: "steam",
-  machineConfigTiers: settings,
+  // The pins below read most clearly from no overclocks; cards start at four.
+  machineConfigTiers: { gtnlSteamOverclocks: "0", ...settings },
 });
 const steel = { steamPressure: "high" };
 
@@ -43,6 +44,14 @@ describe("GT Not Leisure steam multiblocks", () => {
     expect(getNodeSteamReport(r, node())?.drawSteamPerTick).toBe(205);
     expect(getOverclockedRecipeStats(r, node(steel)).durationTicks).toBe(15);
     expect(getMachineParallelMultiplier(applyMachineHandlerToRecipe(r, node(steel)), node(steel))).toBe(256);
+  });
+
+  it("a card with no overclocking count set runs at the most, four", () => {
+    const r = recipe("Large Steam Crusher", 2, 300);
+    const fresh = { ...node(), machineConfigTiers: {} };
+    // 300 / 16 / 10 / 1 = 1.875 ticks, truncated to 1; ceil(2 x 128 x 4^4 x 0.8) L a tick.
+    expect(getOverclockedRecipeStats(r, fresh).durationTicks).toBe(1);
+    expect(getNodeSteamReport(r, fresh)?.drawSteamPerTick).toBe(52429);
   });
 
   it("the overclocking count halves the duration and quadruples the EU a step, banking sub-tick runs", () => {

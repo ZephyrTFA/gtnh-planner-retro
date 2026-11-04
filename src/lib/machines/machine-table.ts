@@ -721,9 +721,9 @@ function steamVoltageGate(c: MachineContext, tierRecipes: number): RecipeGateMes
     : undefined;
 }
 
-/** GTNL's recipeOcCount, the "Overclocking count" in the controller GUI. */
+/** GTNL's recipeOcCount, the "Overclocking count" in the controller GUI. Cards start at the most. */
 const GTNL_STEAM_OC = "gtnlSteamOverclocks";
-const GTNL_STEAM_OC_CONTROL = countControl(GTNL_STEAM_OC, msg("Overclocking count"), [0, 1, 2, 3, 4]);
+const GTNL_STEAM_OC_CONTROL = countControl(GTNL_STEAM_OC, msg("Overclocking count"), [0, 1, 2, 3, 4], 4);
 /** A GTNL machine's own optional controller-slot item. */
 const GTNL_CONTROLLER_ITEM = "gtnlControllerItem";
 

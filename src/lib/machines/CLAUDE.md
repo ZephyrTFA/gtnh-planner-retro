@@ -55,7 +55,7 @@ computes in float: replicate it.
   `largeSteam(...)` is the common shape: per-build parallels, `super.getEUtDiscount() * f
   * tierMachine`, `super.getDurationModifier() / d / tierMachine`, getTierRecipes().
 - Knobs: the build (STEAM_PRESSURE's id, so tierMachine = tier + 1) and the player's
-  "Overclocking count" (recipeOcCount 0-4: x4 EU, /2 duration per step).
+  "Overclocking count" (recipeOcCount 0-4: x4 EU, /2 duration per step; cards start at 4).
 - `durationModifier` states Java's duration multiplier directly so truncation matches
   bit for bit. Below one tick `multiplierUnderOneTick` with zero overclocks counts the
   negative gaps as extra steps (0.3 ticks is 7 runs), capped at V x parallels / recipe
