@@ -40,6 +40,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.1",
+    date: "2026-11-03",
+    headline: "More GT Not Leisure steam machines, and the Industrial Blast Furnace's coils",
+    notes: [
+      "The Steam Extractinator, Steam Rock Breaker, Steam Carpenter, Steam Cracker, Steam Stone Superheater, Perfect Steam Progenitor, Updraft Kiln and Infernal Coke Oven now run as themselves, burning steam with their own speed, parallels and Overclocks knob. Before, their cards used EU and were named after their recipe lists.",
+      "The Updraft Kiln, Infernal Coke Oven, Hyper Pressure Reactors and Primitive Distillation Tower now use steam instead of EU. The tower drops any fluid past its sixth layer, as in game.",
+      "GT Not Leisure's Electric Industrial Blast Furnace now gets its coil discounts, heat overclocks and coil parallels.",
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-11-03",
     headline: "GT Not Leisure steam machines, and multiblock voltage fixed",
