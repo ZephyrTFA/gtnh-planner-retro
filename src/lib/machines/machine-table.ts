@@ -1105,11 +1105,13 @@ const MACHINES: Record<string, MachineBehaviour> = {
       isGtnlChemicalPlant(c)
         ? Math.min(gtnlParallelTier(c) === 0 ? 8 : gtnlHatchParallels(gtnlParallelTier(c)), 1024)
         : (c.tier(PIPE) + 1) * 2,
-    controls: [FLUID_PIPE_CONTROL],
+    // The 2.9 tooltip ("0% Speed +50% per Heating Coil Tier") gives the
+    // pipeline no coil control, so the table carries it.
+    controls: [FLUID_PIPE_CONTROL, HEATING_COIL_CONTROL],
     controlsFor: (recipe) =>
       (recipe.source?.recipeMap ?? recipe.machineType) === "Large Chemical Reactor"
         ? [GTNL_PARALLEL_CONTROLLER_CONTROL, HEATING_COIL_CONTROL]
-        : [FLUID_PIPE_CONTROL],
+        : [FLUID_PIPE_CONTROL, HEATING_COIL_CONTROL],
     normalizeConfig: normalizeFluidPipeSettings,
   },
   "Pyrolyse Oven": { overclock: OVERCLOCK.normal(), speed: (c) => (c.tier(COIL) + 1) * 0.5 },

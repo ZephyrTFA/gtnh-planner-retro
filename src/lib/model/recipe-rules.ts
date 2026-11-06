@@ -275,7 +275,7 @@ export function getRecipeCoilTierControl(
     return undefined;
   }
   const control =
-    getMachineTableControls(recipe.machineType).find((entry) => entry.id === "heatingCoil") ??
+    getMachineTableControls(recipe.machineType, recipe as Partial<Recipe>).find((entry) => entry.id === "heatingCoil") ??
     findMachineConfigControl(recipe, "heatingCoil");
   return control ? resolveMachineConfigTierControl(applyControlRecipeMinimum(control, recipe), node.coilTier) : undefined;
 }

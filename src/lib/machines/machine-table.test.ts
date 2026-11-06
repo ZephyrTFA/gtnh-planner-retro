@@ -143,6 +143,26 @@ describe("curated machine table", () => {
     expect(getMachineParallelMultiplier(chemPlant, bronzeCupronickel)).toBe(2);
   });
 
+  it("offers the Chemical Plant's coil when the dataset scraped none", () => {
+    // The 2.9 dataset carries only the pipe casing knob for GT++'s plant.
+    const gtpp = {
+      ...chemPlant,
+      source: { recipeMap: "Chemical Plant" },
+      machineConfigControls: [pipeControl()],
+    } as unknown as Recipe;
+    expect(getRecipeCoilTierControl(gtpp, {})?.current.key).toBe("cupronickel");
+    expect(getMachineDurationMultiplier(gtpp, { coilTier: "kanthal" })).toBeCloseTo(1, 10);
+    expect(getMachineDurationMultiplier(gtpp, { coilTier: "tpv" })).toBeCloseTo(0.5, 10);
+
+    // GT Not Leisure's plant gets its coil from the same entry on the LCR map.
+    const gtnl = {
+      machineType: "Chemical Plant",
+      source: { recipeMap: "Large Chemical Reactor" },
+      machineConfigControls: [],
+    } as unknown as Recipe;
+    expect(getMachineEutMultiplier(gtnl, { coilTier: "kanthal" })).toBeCloseTo(0.8 * 0.95, 10);
+  });
+
   it("scales voltage-driven parallels off our ULV-based tier ordinal", () => {
     // The reference counts LV as 0, we count it as 1. Zhuhai is
     // ((theirTier + 1) + 1) * 2, which is (ourTier + 1) * 2.

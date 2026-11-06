@@ -400,7 +400,7 @@ describe("multiblock machine config controls", () => {
 
   it("does not synthesize coil controls without imported machine config controls", () => {
     expect(
-      getRecipeCoilTierControl(testRecipe("Chemical Plant"), { coilTier: "kanthal" }),
+      getRecipeCoilTierControl(testRecipe("Unknown Multiblock"), { coilTier: "kanthal" }),
     ).toBeUndefined();
   });
 
