@@ -40,6 +40,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.3",
+    date: "2026-11-05",
+    headline: "The ExxonMobil Chemical Plant's coil",
+    notes: [
+      "The ExxonMobil Chemical Plant has a Coil knob again. Each coil tier adds 50% speed: Cupronickel runs recipes at half speed, Kanthal at full speed.",
+    ],
+  },
+  {
     version: "1.6.2",
     date: "2026-11-03",
     headline: "Coils on GT Not Leisure and Twist Space machines",
