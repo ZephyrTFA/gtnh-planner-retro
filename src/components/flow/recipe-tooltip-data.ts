@@ -133,6 +133,16 @@ export function buildPortTooltip(
   project: FactoryProject, result: ThroughputResult | undefined,
   nodeId: string, port: RailPort, verdict: NodeVerdict,
 ): RecipeTooltipView {
+  const view = buildPortTooltipView(project, result, nodeId, port, verdict);
+  // The machine's own reason for the slot (a Chemical Plant's catalyst wear), after the rates.
+  const notes = (port.resource as { machineNotes?: string[] } | undefined)?.machineNotes;
+  return notes?.length ? { ...view, bullets: [...(view.bullets ?? []), ...notes] } : view;
+}
+
+function buildPortTooltipView(
+  project: FactoryProject, result: ThroughputResult | undefined,
+  nodeId: string, port: RailPort, verdict: NodeVerdict,
+): RecipeTooltipView {
   const mode = tooltipMode(project);
   const isInput = port.side === "input";
   const view: RecipeTooltipView = {

@@ -142,6 +142,11 @@ computes in float: replicate it.
 - Utupu-Tanuri is both `Multiblock Dehydrator` and `Vacuum Furnace`; keep both aliases on
   one entry (`minimumHeatFromSpecialValue`).
 - Naquadah Fuel Refinery: special value = minimum coil tier (`minimumFromSpecialValue`).
+- GT++ Chemical Plant catalysts (`chemical-plant.ts`, MTEChemicalPlant#damageCatalyst): each
+  parallel wears 1 of 50 uses with chance 1.2f - 0.2 x pipe tier (Bronze 1); the break returns
+  a Catalyst Carrier and skips the run's remaining parallels, so the rate is a renewal average
+  over whole runs, not chance / 50. Awakened Draconium coils + Tungstensteel pipes stop it.
+  Applied per card in `applyRecipeInputOverrides`; GTNL's Rockefeller (same map) never wears.
 - Pipe casings are two families: `pipeCasing` (FLUID, Bronze-Tungstensteel: Chemical
   Plant, Multi Autoclave) and `itemPipeCasing` (ITEM, Tin-Black Plutonium: lathe, mixer,
   wire factory, dissection, Amazon depot, which hide the fluid knob via `hidesControls`).

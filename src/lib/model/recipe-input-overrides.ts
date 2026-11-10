@@ -2,7 +2,14 @@ import type { FactoryNode, Recipe, ResourceAmount, ResourceKind } from "./types"
 import { isOreDictionaryResource } from "./resources";
 import { applyInputConsumeChances } from "./input-chance";
 import { applyVatInputs, isVatRecipe } from "@/lib/machines/bacterial-vat";
+import {
+  applyCatalystWear,
+  hasChemicalPlantCatalyst,
+  wearsChemicalPlantCatalysts,
+} from "@/lib/machines/chemical-plant";
 import { getOverclockedRecipeStats } from "@/lib/solver/overclock";
+import { buildMachineContext, getMachineParallelMultiplier } from "@/lib/solver/machine-effects";
+import { applyMachineHandlerToRecipe } from "./recipe-rules";
 
 /**
  * The recipe's input amount, restated in the units of the substitute actually
@@ -49,7 +56,7 @@ export function switchesSlotToOwnProduct(
 /**
  * The recipe's inputs as this node takes them: chanced inputs at their average (a plan saved before the dataset
  * carried the chance), the wired substitutes, then the machine's own scaling (the Bacterial Vat's fill multiplier
- * on its fluid, its radio hatch's burn).
+ * on its fluid, its radio hatch's burn, the Chemical Plant's catalyst wear and the carriers it leaves).
  */
 export function applyRecipeInputOverrides(
   recipe: Recipe,
@@ -61,7 +68,24 @@ export function applyRecipeInputOverrides(
     const stats = getOverclockedRecipeStats(recipe, node as FactoryNode);
     return applyVatInputs(overridden, node.machineConfigTiers, stats.durationTicks / 20);
   }
+  if (hasChemicalPlantCatalyst(overridden)) {
+    return applyChemicalPlantCatalystWear(overridden, node as FactoryNode);
+  }
   return overridden;
+}
+
+/** GT++'s Chemical Plant wears its catalyst by its pipe casing, coil and the parallels a run takes. */
+function applyChemicalPlantCatalystWear(recipe: Recipe, node: FactoryNode): Recipe {
+  const effective = applyMachineHandlerToRecipe(recipe, node);
+  if (!wearsChemicalPlantCatalysts(effective.machineType)) {
+    return recipe;
+  }
+  const ctx = buildMachineContext(effective, node);
+  return applyCatalystWear(recipe, {
+    pipeTier: ctx.tier("pipeCasing") + 1,
+    coilTier: ctx.tier("heatingCoil"),
+    parallels: getMachineParallelMultiplier(effective, node),
+  });
 }
 
 function applyWiredOverrides(recipe: Recipe, node: Pick<FactoryNode, "recipeInputOverrides">): Recipe {

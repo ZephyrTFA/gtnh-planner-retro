@@ -111,9 +111,13 @@ export interface RecipeInput extends ResourceAmount {
   consumed?: boolean;
   /** The chance a run uses this input up; `amount` is then already the average a run (input-chance.ts). */
   consumeChance?: number;
+  /** Why the machine changes this slot (catalyst wear), one short line each; worked out per card, never stored. */
+  machineNotes?: string[];
 }
 
 export interface RecipeOutput extends ResourceAmount {
+  /** Why the machine adds this slot (a worn catalyst's carrier), one short line each; worked out per card, never stored. */
+  machineNotes?: string[];
   chance?: number;
   byproduct?: boolean;
 }

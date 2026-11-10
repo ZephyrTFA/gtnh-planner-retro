@@ -85,6 +85,8 @@ const browserLoaderMock = vi.hoisted(() => {
 vi.mock("@/lib/datasets/browser-loader", () => ({
   getRecipeDatasetRecipe: browserLoaderMock.getRecipeDatasetRecipe,
   queryRecipeDatasetRecipes: browserLoaderMock.queryRecipeDatasetRecipes,
+  // Icons ask the dataset for art an item does not carry.
+  getRecipeDatasetResourceArt: vi.fn(async () => ({})),
   queryRecipeDatasetResources: vi.fn(async () => ({
     resources: [],
     total: 0,

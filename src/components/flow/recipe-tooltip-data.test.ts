@@ -61,6 +61,13 @@ describe("mode-aware resource tooltips", () => {
     expect(resourceTooltipActions(withDrawer, port(output, "output"))).toHaveLength(2);
     expect(resourceTooltipActions(p, port())).toHaveLength(2);
   });
+  it("lists the machine's notes on the slot after its rates", () => {
+    const p = project({ solveMode: true, nodes: [{ ...node, solvePin: 2 }] });
+    const { result, verdict } = calculated(p);
+    const worn = { ...input, machineNotes: ["Each parallel has a 80% chance to use 1 of its 50 uses."] } as ResourceAmount;
+    expect(buildPortTooltip(p, result, "n", port(worn), verdict).bullets).toEqual(["Each parallel has a 80% chance to use 1 of its 50 uses."]);
+    expect(buildPortTooltip(p, result, "n", port(), verdict).bullets).toBeUndefined();
+  });
   it("does not invent rates without a target or result", () => {
     const p = project({ solveMode: true, poolMode: true });
     const { result, verdict } = calculated(p);

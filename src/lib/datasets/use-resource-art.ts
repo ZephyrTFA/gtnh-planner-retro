@@ -69,19 +69,23 @@ type ArtHolder = Pick<ResourceAmount, "kind" | "id" | "iconPath" | "iconAtlas" |
 
 /**
  * The resource as this dataset draws it, when its stored art names another
- * dataset's textures; otherwise the resource itself.
+ * dataset's textures or it is an item with no art at all (one the app adds to
+ * a recipe, like the Chemical Plant's Catalyst Carrier); otherwise the resource itself.
  */
 export function useCurrentResourceArt<T extends ArtHolder>(resource: T | undefined): T | undefined {
   const version = useCurrentDatasetVersion();
   const foreign = Boolean(resource && version && isForeignDatasetArt(resource, version.id));
+  const bare = Boolean(resource && resource.kind === "item" && !resource.iconPath && !resource.iconAtlas);
+  const lookup = foreign || bare;
   const key = resource ? `${resource.kind}:${resource.id}` : "";
   useEffect(() => {
-    if (foreign && version) ask(version, key);
-  }, [foreign, version, key]);
-  useSyncExternalStore(subscribe, () => (foreign ? generation : 0), () => 0);
-  if (!foreign || !resource || !version) return resource;
+    if (lookup && version) ask(version, key);
+  }, [lookup, version, key]);
+  useSyncExternalStore(subscribe, () => (lookup ? generation : 0), () => 0);
+  if (!lookup || !resource || !version) return resource;
   // Until the lookup answers, no art: the stored path names files this site does not serve.
   const art = known.get(cacheKey(version.id, key)) ?? null;
+  if (bare && !art) return resource;
   const { iconPath: _path, iconAtlas: _atlas, ...rest } = resource;
   void _path;
   void _atlas;
