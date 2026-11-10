@@ -40,6 +40,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.4",
+    date: "2026-11-10",
+    headline: "Chemical Plant catalysts wear out",
+    notes: [
+      "The ExxonMobil Chemical Plant now uses up its catalysts, as in game. Each parallel has a chance to use 1 of a catalyst's 50 uses: 100% with Bronze pipe casings, 80% Steel, 60% Titanium, 40% Tungstensteel.",
+      "A worn-out catalyst leaves a Catalyst Carrier, which the card now outputs.",
+      "With Awakened Draconium coils or better and Tungstensteel pipe casings, catalysts never wear out and the card works as before.",
+      "Hover a catalyst on the card to see its chance and how many runs one lasts.",
+    ],
+    warning:
+      "Saved plans with an ExxonMobil Chemical Plant now show its catalyst as an input and a Catalyst Carrier as an output. Wire them up or leave them; the rest of the plan is unchanged.",
+  },
+  {
     version: "1.6.3",
     date: "2026-11-05",
     headline: "The ExxonMobil Chemical Plant's coil",
