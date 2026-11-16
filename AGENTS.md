@@ -24,6 +24,8 @@ before changing that area; it names the tests that pin its behaviour.
 | Request Worker: `/api/request`, Turnstile, GitHub issues, its secrets and labels | `worker/CLAUDE.md` |
 | Dataset pipeline: export, normalize, rebuild, publish | `tools/dataset-pipeline/CLAUDE.md` |
 
+Start at `docs/OVERVIEW.md` for how the whole thing fits together, end to end.
+
 Longer references, read on demand: `docs/solver-equations.md` (solver doctrine),
 `docs/power-planner-math.md` (the decoded power workbook), `docs/COMMUNITY.md`.
 
@@ -53,6 +55,9 @@ Scratch harnesses are `*.local.test.ts` (excluded from the suite); run one with
 - Check UI changes in the real app with Playwright; unit tests cannot see routing,
   layering or hover. Board performance changes need a before/after profile.
 - Comments state the rule and why. No dates, names or "used to" stories; git has those.
+- `docs/OVERVIEW.md` is the map of the whole workflow. Update it in the same commit when a
+  change moves something it describes: a new worker, a new mode, a new store, a new pipeline
+  stage, a new deploy step. Area rules still belong in that area's `CLAUDE.md`.
 - Nothing may depend on gtnhplanner.com at runtime. The site's name, address and links
   live in `src/lib/site.ts` and the environment.
 - Only /api/* may run code. The site is static assets plus one Worker
