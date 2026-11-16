@@ -1771,6 +1771,7 @@ const catalog: Catalog = {
   "This recipe needs coils of at least {heat} K.": "此配方需要至少 {heat} K 的线圈。",
   "This recipe needs field tier {tier} or higher.": "此配方需要力场等级 {tier} 或更高。",
   "This recipe needs glass of at least its own voltage tier.": "此配方需要不低于其电压等级的玻璃。",
+  "The energy hatches need glass of at least their own voltage tier.": "能源仓需要不低于其电压等级的玻璃。",
   "Tower Height": "塔高",
   "Twice the speed and twice the steam of bronze": "速度和蒸汽消耗均为青铜版的两倍",
   "Upgrade Casings": "升级机械方块",

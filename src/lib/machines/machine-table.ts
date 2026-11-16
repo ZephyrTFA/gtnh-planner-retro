@@ -135,6 +135,14 @@ export interface MachineContext {
    */
   totalPowerEuT?: number;
   /**
+   * The voltage tier of the installed energy hatches themselves, not of their
+   * sum: `MTEHatchEnergy.getTierForStructure()`, which is what a structure
+   * check compares against (the Large Fluid Extractor's glass). Stacked hatches
+   * raise `voltageTier` without raising this. Optional because test harnesses
+   * omit it, and a singleblock has no hatches.
+   */
+  hatchTier?: number;
+  /**
    * Voltage tier ordinal of the recipe's own EU/t draw, for the machines whose
    * discounts compare against the recipe rather than the hatch (the Mega Alloy
    * Blast Smelter). Optional because test harnesses omit it.
@@ -613,6 +621,24 @@ const HEATING_COIL_CONTROL: MachineConfigControl = {
     },
   })),
 };
+
+/**
+ * GT's own tiered glass (`GTStructureUtility.chainAllGlasses`), for the GT and
+ * GT++ multiblocks whose structure gates the energy hatches on it. `GlassTier`
+ * registers HV (3) through UXV (13), so the knob's index plus 3 is the voltage
+ * tier the glass is rated for. GT Not Leisure and Twist Space machines keep
+ * their own glass ids: shipped plans store those keys.
+ */
+const GT_GLASS = "glassTier";
+const GT_GLASS_CONTROL = choiceControl(
+  GT_GLASS,
+  msg("Glass"),
+  ["HV", "EV", "IV", "LuV", "ZPM", "UV", "UHV", "UEV", "UIV", "UMV", "UXV"].map((tier) => `${tier} Glass`),
+  // Assume the glass matches the hatches, as the entry's note states: a plan
+  // saved before this knob existed must not wake up refusing its own recipe.
+  10,
+);
+const gtGlassTier = (c: MachineContext) => c.tier(GT_GLASS) + 3;
 
 /**
  * The Naquadah Fuel Refinery's four field restriction coils
@@ -1159,10 +1185,20 @@ const MACHINES: Record<string, MachineBehaviour> = {
     note: msg("Assumes a matching glass tier."),
   },
   "Large Fluid Extractor": {
+    // MTELargeFluidExtractor: getSpeedBonus() is 1/(1.5 + 0.1 x coil tier),
+    // getEUMultiplier() 0.8 x 0.9^coil tier, getMaxParallelRecipes() 8 per
+    // solenoid voltage tier. The 2.9 tooltip scraped the solenoid and neither
+    // the coil nor the glass, so the table carries both (issue #7).
     overclock: OVERCLOCK.normal(),
     speed: (c) => 1.5 + c.tier(COIL) * 0.1,
     power: (c) => 0.8 * Math.pow(0.9, c.tier(COIL)),
     parallels: (c) => (c.tier(SOLENOID) + 2) * 8,
+    controls: [HEATING_COIL_CONTROL, GT_GLASS_CONTROL],
+    // checkMachine: an energy hatch above the glass leaves the structure unformed.
+    recipeGate: (c) =>
+      (c.hatchTier ?? c.voltageTier) > gtGlassTier(c)
+        ? t("The energy hatches need glass of at least their own voltage tier.")
+        : undefined,
   },
   "Large Thermal Refinery": {
     overclock: OVERCLOCK.normal(),

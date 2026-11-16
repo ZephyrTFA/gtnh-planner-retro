@@ -140,6 +140,10 @@ export function buildMachineContext(
     // `getMaxInputEu()`: every hatch's full V x A, whatever pool the machine
     // draws from. Twist Space machines read their tier off it.
     totalPowerEuT: getSummedHatchInput(recipe, node, getNodeRunTier(recipe as Recipe, node), true),
+    // The installed hatches' own tier, which is what a structure check reads
+    // (`MTEHatchEnergy.getTierForStructure()`) rather than their sum.
+    hatchTier:
+      node.hatchVoltageTier === undefined ? undefined : getVoltageTierIndex(node.hatchVoltageTier),
     recipeVoltageTier: getVoltageTierIndex(getVoltageTierForEuT(recipeEuT)),
     recipeEuT,
     recipeSpecialValue: getRecipeSpecialValue(recipe),

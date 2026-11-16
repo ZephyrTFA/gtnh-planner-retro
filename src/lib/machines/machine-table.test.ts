@@ -804,3 +804,67 @@ describe("Twist Space Technology machines", () => {
     expect(getMachineBehaviour("Cutting Machine")).not.toBe(getMachineBehaviour("Holy Separator"));
   });
 });
+
+/**
+ * GT and GT++ machines whose 2.9 tooltips gave the pipeline no knob, so the
+ * table carries it (issues #7 and #9). Every number here is read off the
+ * pinned client jar, gregtech-5.09.54.265.jar, not off a tooltip or the wiki.
+ */
+describe("coils the dataset never scraped", () => {
+  const at = (overrides: Partial<Parameters<typeof resolveCoefficient>[1]> & { values?: Record<string, number> }) => ({
+    tier: (id: string) => overrides.values?.[id] ?? 0,
+    value: (id: string) => overrides.values?.[id] ?? 0,
+    voltageTier: 5,
+    ...overrides,
+  });
+
+  /** The one knob the 2.9 tooltip did scrape for the Large Fluid Extractor. */
+  function solenoidControl(): MachineConfigControl {
+    return {
+      id: "solenoidCoil",
+      label: "Solenoid",
+      minimumKey: "mv",
+      tiers: [
+        { key: "mv", label: "MV", parallelMultiplier: 16, resource: resource() },
+        { key: "hv", label: "HV", parallelMultiplier: 24, resource: resource() },
+      ],
+    };
+  }
+
+  const fluidExtractor = {
+    machineType: "Large Fluid Extractor",
+    minimumTier: "EV",
+    eut: 120,
+    machineConfigControls: [solenoidControl()],
+  } as unknown as Recipe;
+
+  it("gives the Large Fluid Extractor its heating coil knob (issue #7)", () => {
+    expect(getRecipeCoilTierControl(fluidExtractor, {})?.current.key).toBe("cupronickel");
+
+    // MTELargeFluidExtractor: getSpeedBonus() is 1 / (1.5 + 0.1 x coil tier)
+    // and getEUMultiplier() is 0.8 x 0.9^coil tier, where the coil tier is
+    // HeatingCoilLevel.getTier() - which is our control's index, since
+    // getTier() is ordinal - 2 and Cupronickel sits at ordinal 2.
+    expect(getMachineDurationMultiplier(fluidExtractor, { coilTier: "cupronickel" })).toBeCloseTo(1 / 1.5, 10);
+    expect(getMachineDurationMultiplier(fluidExtractor, { coilTier: "kanthal" })).toBeCloseTo(1 / 1.6, 10);
+    expect(getMachineEutMultiplier(fluidExtractor, { coilTier: "kanthal" })).toBeCloseTo(0.8 * 0.9, 10);
+
+    // The solenoid knob the dataset did scrape stays: getMaxParallelRecipes()
+    // is 8 x the solenoid's voltage tier, which the scraped control carries.
+    expect(getRecipeMachineConfigTierControls(fluidExtractor, {}).map((control) => control.id))
+      .toContain("solenoidCoil");
+  });
+
+  it("gates the Large Fluid Extractor's energy hatches on its glass", () => {
+    // MTELargeFluidExtractor.checkMachine refuses an energy hatch above the
+    // glass, and chainAllGlasses runs HV (GlassTier 3) up to UXV (13).
+    expect(getRecipeMachineConfigTierControls(fluidExtractor, {}).map((control) => control.id))
+      .toContain("glassTier");
+
+    const gate = getMachineBehaviour("Large Fluid Extractor")!.recipeGate!;
+    // An EV hatch (4) inside IV glass (index 1 = tier 4) builds; an IV hatch
+    // (5) in the same glass does not.
+    expect(gate(at({ hatchTier: 4, values: { glassTier: 1 } }))).toBeUndefined();
+    expect(gate(at({ hatchTier: 5, values: { glassTier: 1 } }))).toMatch(/glass/i);
+  });
+});

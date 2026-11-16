@@ -78,6 +78,7 @@ const CAPTIONS: Record<string, string> = {
   gtnlParallelController: msg("Parallel controller"),
   gtnlWirelessChip: msg("Wireless chip"),
   gtnlGlassTier: msg("Glass"),
+  glassTier: msg("Glass"),
   swelegfyrHeat: msg("Heat"),
 };
 

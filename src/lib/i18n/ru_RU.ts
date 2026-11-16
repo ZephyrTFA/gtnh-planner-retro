@@ -1771,6 +1771,7 @@ const catalog: Catalog = {
   "This recipe needs coils of at least {heat} K.": "Этому рецепту нужны катушки не ниже {heat} K.",
   "This recipe needs field tier {tier} or higher.": "Этому рецепту нужен тир поля {tier} или выше.",
   "This recipe needs glass of at least its own voltage tier.": "Этому рецепту нужно стекло не ниже его тира напряжения.",
+  "The energy hatches need glass of at least their own voltage tier.": "Энерговводам нужно стекло не ниже их тира напряжения.",
   "Tower Height": "Высота колонны",
   "Twice the speed and twice the steam of bronze": "Вдвое быстрее бронзовой и вдвое больше пара",
   "Upgrade Casings": "Корпуса улучшения",
