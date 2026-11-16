@@ -53,6 +53,19 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Saved plans with an ExxonMobil Chemical Plant now show its catalyst as an input and a Catalyst Carrier as an output. Wire them up or leave them; the rest of the plan is unchanged.",
   },
   {
+    version: "1.6.5",
+    date: "2026-11-16",
+    headline: "Coils for the Multi Smelter and the Large Fluid Extractor",
+    notes: [
+      "The Multi Smelter has a Coil knob. Each coil tier doubles its parallels: 8 at Cupronickel, 16 at Kanthal, 32 at Nichrome, and so on.",
+      "The Large Fluid Extractor has a Coil knob too. Each coil tier makes it 10% faster and saves 10% of its power.",
+      "The Large Fluid Extractor also has a Glass knob. An energy hatch above the glass tier leaves the machine unformed, and the card says so.",
+      "Both coils start at Cupronickel, the cheapest build, as the machines did before.",
+    ],
+    warning:
+      "Saved plans with a Multi Smelter change: it runs its own smelt of 128 ticks at 4 EU/t rather than the vanilla 200 ticks at no power, so its recipes finish sooner and it now draws power and overclocks from its energy hatches.",
+  },
+  {
     version: "1.6.3",
     date: "2026-11-05",
     headline: "The ExxonMobil Chemical Plant's coil",
