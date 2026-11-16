@@ -218,9 +218,17 @@ export function applyMachineHandlerToRecipe(
   const seedsFromBase = machineTableSeedsFromBase(handler.machineType);
   const minimumTier = getMachineBehaviour(handler.machineType)?.recipeTierFromBase
     ? recipe.minimumTier : handler.minimumTier;
-  const handlerDurationTicks = machineCycleTicks(handler.machineType) ?? (seedsFromBase
-    ? steamSingleblockDurationTicks(recipe, handler)
-    : (handler.durationTicks ?? steamSingleblockDurationTicks(recipe, handler)));
+  // A machine that states its own furnace recipe (the Multi Smelter) ignores
+  // the vanilla smelt the dataset exports, exactly as the steam line below
+  // does: MTEMultiFurnace keeps RECIPE_DURATION and RECIPE_EUT private and
+  // never reads the recipe's.
+  const gtFurnace =
+    getMachineBehaviour(handler.machineType)?.runsGtFurnaceRecipe === true && isSmeltingRecipeMap(recipe);
+  const handlerDurationTicks = machineCycleTicks(handler.machineType) ?? (gtFurnace
+    ? GT_FURNACE_RECIPE_TICKS
+    : seedsFromBase
+      ? steamSingleblockDurationTicks(recipe, handler)
+      : (handler.durationTicks ?? steamSingleblockDurationTicks(recipe, handler)));
   const handlerEut = seedsFromBase ? undefined : handler.eut;
   // Steam machines burn steam, not EU. Their handlers carry no EU override,
   // so without this they would inherit the electric recipe's EU draw and the
@@ -230,7 +238,13 @@ export function applyMachineHandlerToRecipe(
   // (tree-growth-simulator.ts): its card offers voltage and power like any electric machine.
   const tgs = handler.machineType === TGS_MACHINE_TYPE;
   const steam = !tgs && isSteamMachineHandler(handler);
-  const eut = tgs ? tgsEuPerTick(1) : steam ? 0 : (handlerEut ?? recipe.eut);
+  const eut = tgs
+    ? tgsEuPerTick(1)
+    : steam
+      ? 0
+      : gtFurnace
+        ? GT_FURNACE_RECIPE_EUT
+        : (handlerEut ?? recipe.eut);
   // What the steam machine's ProcessingLogic still sees as the recipe's EU/t:
   // smelting runs GT's fixed furnace recipe.
   const steamEut = steam

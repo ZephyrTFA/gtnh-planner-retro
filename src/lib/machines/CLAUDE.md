@@ -2,7 +2,10 @@
 
 Game source for checking mechanics: GT5-Unofficial and friends at `C:\Users\jack\gtnh-sources`;
 the reference calculator (ShadowTheAge/gtnh, MIT) at `C:\Users\jack\gtnh-reference`.
-Source beats the wiki, the workbook and the reference. Engine truth is
+Source beats the wiki, the workbook and the reference. Datasets pin a game version, so read
+that version's own jars before public source: the client the dataset was built with sits in
+`.pipeline/client-instance/<dataset>/pack/*/.minecraft/mods/` (GT++ ships inside the
+`gregtech-*.jar`), and public master has moved on from what the dataset ships. Engine truth is
 `OverclockCalculator`, `ParallelHelper`, `ProcessingLogic` and each MTE's
 `createProcessingLogic`; GT++ `*Legacy` classes are fossils. Java `int *= float`
 computes in float: replicate it.
@@ -21,6 +24,9 @@ computes in float: replicate it.
 - A table machine that declares `speed` or `power` seeds from the recipe's base stats
   (`machineTableSeedsFromBase`): the pipeline bakes scraped multipliers into handler
   stats. Entries without them keep handler stats (the Electric Furnace family's are absolute).
+  A machine whose handler carries no stats at all because the map exports none says so:
+  `runsGtFurnaceRecipe` runs GT's fixed 128t / 4 EU smelt (the Multi Smelter), which is also
+  what gives a 0 EU card its power report, hatch chip and voltage dial.
 - For table machines, scraped tooltips supply only control DEFINITIONS (which knobs,
   icons, tier lists). Table-less machines still run on scraped effect values
   (`machine-effects.ts`); don't trust those when adding an entry. Where the reference
@@ -139,6 +145,12 @@ computes in float: replicate it.
 - Extreme Heat Exchanger: a fixed 20-tick cycle (`cycleTicks`) replaces the recipe's
   duration everywhere, search card included; its recipe amounts are per second. The
   dataset's 1 tick is Java's 0 clamped.
+- Multi Smelter (`MTEMultiFurnace`) and Large Fluid Extractor (`MTELargeFluidExtractor`):
+  both need a coil the 2.9 tooltips never mention, so the table carries the knob. The
+  smelter runs GT's fixed furnace recipe (`runsGtFurnaceRecipe`) and doubles parallels per
+  coil tier; the extractor's coil is speed and EU, its glass must reach the hatches' own
+  tier (`glassTier`, `ctx.hatchTier`), and its glass defaults to the top rung so a plan
+  saved before the knob exists keeps running.
 - Utupu-Tanuri is both `Multiblock Dehydrator` and `Vacuum Furnace`; keep both aliases on
   one entry (`minimumHeatFromSpecialValue`).
 - Naquadah Fuel Refinery: special value = minimum coil tier (`minimumFromSpecialValue`).

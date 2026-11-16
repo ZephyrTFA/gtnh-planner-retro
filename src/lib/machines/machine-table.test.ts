@@ -163,6 +163,17 @@ describe("curated machine table", () => {
     expect(getMachineEutMultiplier(gtnl, { coilTier: "kanthal" })).toBeCloseTo(0.8 * 0.95, 10);
   });
 
+  it("doubles the Multi Smelter's parallels per coil tier (issue #9)", () => {
+    // MTEMultiFurnace: mLevel = 4 << (coil ordinal - 1), and the structure
+    // needs a coil to form at all, so Cupronickel is the floor at 8. The 2.9
+    // tooltip scraped no coil, so the table carries the knob.
+    const smelter = { machineType: "Multi Smelter", minimumTier: "LV", eut: 4 } as unknown as Recipe;
+    expect(getRecipeCoilTierControl(smelter, {})?.current.key).toBe("cupronickel");
+    expect(getMachineStructuralParallels(smelter, { coilTier: "cupronickel" })).toBe(8);
+    expect(getMachineStructuralParallels(smelter, { coilTier: "kanthal" })).toBe(16);
+    expect(getMachineStructuralParallels(smelter, { coilTier: "eternal" })).toBe(8 * 2 ** 13);
+  });
+
   it("scales voltage-driven parallels off our ULV-based tier ordinal", () => {
     // The reference counts LV as 0, we count it as 1. Zhuhai is
     // ((theirTier + 1) + 1) * 2, which is (ourTier + 1) * 2.

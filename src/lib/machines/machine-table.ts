@@ -225,6 +225,14 @@ export interface MachineBehaviour {
   /** `setUnlimitedTierSkips`: a recipe above the hatch tier still starts. */
   unlimitedTierSkip?: boolean;
   /**
+   * The machine ignores the vanilla smelt the dataset exports and runs GT's
+   * fixed furnace recipe instead (`GT_FURNACE_RECIPE_TICKS` /
+   * `GT_FURNACE_RECIPE_EUT`): `MTEMultiFurnace` states its own duration and
+   * EU/t and never reads the recipe's. Without this the card draws no power,
+   * so it has no energy-hatch chip and no voltage to overclock with.
+   */
+  runsGtFurnaceRecipe?: boolean;
+  /**
    * How a HEAT_OVERCLOCK machine computes its machine heat, transcribed from
    * each machine's `setMachineHeat` call. See `heat.ts`.
    */
@@ -1166,10 +1174,16 @@ const MACHINES: Record<string, MachineBehaviour> = {
     parallels: (c) => c.voltageTier * (c.tier(COIL) + 1),
   },
   "Multi Smelter": {
-    // MTEMultiFurnace: parallels double per coil tier from 8, and every
-    // operation is a fixed 4 EU/t, 128 tick smelt.
+    // MTEMultiFurnace: mLevel = 4 << (coil ordinal - 1), so parallels double
+    // per coil tier from 8 on Cupronickel, and the structure needs a coil to
+    // form at all. Every operation is its own fixed 4 EU/t, 128 tick smelt
+    // (RECIPE_EUT / RECIPE_DURATION), never the vanilla smelt the dataset
+    // exports; the coil knob rides the table because the 2.9 tooltip scraped
+    // none (issue #9).
     overclock: OVERCLOCK.normal(),
     parallels: (c) => 8 * Math.pow(2, c.tier(COIL)),
+    runsGtFurnaceRecipe: true,
+    controls: [HEATING_COIL_CONTROL],
   },
   "Mega Alloy Blast Smelter": {
     overclock: OVERCLOCK.normal(),
@@ -2495,8 +2509,8 @@ export function getMachineBehaviour(machineType: string | undefined): MachineBeh
  * by x0.8 duration and x0.9 EU), so for machines the table covers those baked
  * stats must be ignored or the bonus applies twice: the table's coefficients
  * are stated against the recipe map's base numbers. Entries without speed or
- * power (the Multi Smelter, whose handler carries GT's ABSOLUTE 128t/4EU
- * furnace recipe) keep their handler stats.
+ * power keep their handler stats; where a handler carries none at all the
+ * table says so outright (`runsGtFurnaceRecipe`, the Multi Smelter).
  */
 export function machineTableSeedsFromBase(machineType: string | undefined): boolean {
   const behaviour = getMachineBehaviour(machineType);

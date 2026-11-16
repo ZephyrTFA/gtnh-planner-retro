@@ -41,7 +41,9 @@ knobs.
 
 1. `model/recipe-rules.ts` picks the handler and which knobs the machine exposes.
 2. `machines/machine-table.ts` overrides the scraped numbers with behaviour transcribed from the
-   mod's Java: speed, EU discount, parallels, overclock style. It wins over scraped data;
+   mod's Java: speed, EU discount, parallels, overclock style, and where a machine states its own
+   recipe (`runsGtFurnaceRecipe`) or refuses a build outright (`recipeGate`, on the hatches' own
+   tier or the glass over them). It wins over scraped data;
    machines absent from it fall back to the dataset. `machine-table.test.ts` checks every entry
    against a fixture generated from ShadowTheAge's reference calculator and lists the deliberate
    divergences.
@@ -53,7 +55,9 @@ knobs.
 
 Coil and voltage questions land in this layer. A coil is a `machineConfigControls` entry, and
 the coil's effect is a formula in that machine's table entry: no entry means no knob and no
-bonus.
+bonus. The 2.9 tooltips scrape a knob only when the machine's own tooltip names it, so a machine
+whose tooltip is silent (the Multi Smelter's coil, the Large Fluid Extractor's coil and glass)
+gets its control from the table instead.
 
 ## Workflow 3: the solve
 

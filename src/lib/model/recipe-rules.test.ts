@@ -5,7 +5,10 @@ import {
   getRecipeMachineConfigTierControls,
   getRecipeMachineHandlers,
   getSelectedMachineHandler,
+  GT_FURNACE_RECIPE_EUT,
+  GT_FURNACE_RECIPE_TICKS,
 } from "./recipe-rules";
+import { hasPowerReport } from "@/lib/solver/power-report";
 import type { Recipe } from "./types";
 
 describe("recipe machine handlers", () => {
@@ -479,6 +482,55 @@ describe("machine handlers and runtime calculations", () => {
     expect(applied.durationTicks).toBe(recipe.durationTicks);
     expect(applied.eut).toBe(recipe.eut);
     expect(applied.machineType).toBe("Dangote Distillus");
+  });
+});
+
+/**
+ * The Multi Smelter (issue #9). The dataset exports smelting off the vanilla
+ * map, and the `multi-smelter` handler carries no stats of its own, so the
+ * card used to run the vanilla 200 ticks at 0 EU: no power report, therefore
+ * no energy-hatch chip, therefore no way to give the machine a voltage.
+ * MTEMultiFurnace ignores the vanilla numbers and runs its own fixed recipe.
+ */
+describe("the Multi Smelter's fixed furnace recipe", () => {
+  const smelting: Recipe = {
+    ...testRecipe("Furnace", "NONE"),
+    durationTicks: 200,
+    eut: 0,
+    source: { recipeMap: "Furnace" },
+    machineHandlers: [
+      { id: "furnace", label: "Furnace", machineType: "Furnace", minimumTier: "NONE", kind: "single" },
+      {
+        id: "electric-furnace",
+        label: "Electric Furnace",
+        machineType: "Electric Furnace",
+        minimumTier: "LV",
+        kind: "single",
+        durationTicks: 128,
+        eut: 4,
+      },
+      { id: "multi-smelter", label: "Multi Smelter", machineType: "Multi Smelter", minimumTier: "NONE", kind: "multiblock" },
+    ],
+  };
+
+  it("runs GT's 128 tick, 4 EU/t smelt, not the vanilla 200 tick, 0 EU one", () => {
+    const applied = applyMachineHandlerToRecipe(smelting, { machineHandlerId: "multi-smelter" });
+    expect(applied.durationTicks).toBe(GT_FURNACE_RECIPE_TICKS);
+    expect(applied.eut).toBe(GT_FURNACE_RECIPE_EUT);
+    // The draw is what brings the hatch chip with it: with 0 EU the card has
+    // no power report and no voltage dial at all.
+    expect(hasPowerReport(applied)).toBe(true);
+  });
+
+  it("leaves the singleblocks on the numbers their own handlers carry", () => {
+    expect(applyMachineHandlerToRecipe(smelting, { machineHandlerId: "electric-furnace" })).toMatchObject({
+      durationTicks: 128,
+      eut: 4,
+    });
+    expect(applyMachineHandlerToRecipe(smelting, { machineHandlerId: "furnace" })).toMatchObject({
+      durationTicks: 200,
+      eut: 0,
+    });
   });
 });
 
