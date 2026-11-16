@@ -40,6 +40,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.6",
+    date: "2026-11-16",
+    headline: "The Multi Smelter shows the hatches it runs on",
+    notes: [
+      "A Multi Smelter card now shows its energy hatch tier and amperage, and what it draws. It used to show a voltage dial that the machine ignored.",
+      "Raise the hatch and the coil starts paying: one ULV hatch is 8 EU/t, which buys 2 of the coil's parallels, while an HV hatch buys 128.",
+      "Electric Furnace cards now show their power draw as well. A plain Furnace still shows none, because it burns no EU.",
+    ],
+    warning:
+      "A saved Multi Smelter card that read HV may now read ULV or LV. That is the hatch it was already running on, and the reason its coil did nothing: raise the hatch to the voltage you meant.",
+  },
+  {
     version: "1.6.5",
     date: "2026-11-16",
     headline: "Coils for the Multi Smelter and the Large Fluid Extractor",
