@@ -59,6 +59,12 @@ The board must stay smooth with 100+ cards on weak PCs.
   remove keys on the right, no name. The picture spans them all.
   The machine menu lists the intersection of the sections' handlers
   (`getSharedMachineHandlers`; model rules in `src/lib/model/CLAUDE.md`).
+- A card's power section is judged with `hasCardPowerReport`, on the recipe its selected
+  handler leaves behind, never the raw dataset recipe: a handler can supply the EU
+  (the Multi Smelter's fixed 4 EU/t furnace recipe over a 0 EU smelt). Without a power
+  section a multiblock card has no hatch chip and falls back to the tier dial, which
+  writes `overclockTier` while the solver runs the hatches, so the voltage the player
+  picks changes only the label.
 
 ## Drawers (StorageNode)
 

@@ -111,6 +111,21 @@ export function hasPowerReport(recipe: Recipe): boolean {
   return true;
 }
 
+/**
+ * Whether the CARD has a power section, judged on the machine the card
+ * actually runs. A handler may supply EU the recipe never states (the Multi
+ * Smelter's fixed 4 EU/t furnace recipe), and a multiblock card with no power
+ * section keeps the plain tier dial: that writes `overclockTier` while the
+ * solver runs the hatches, so the voltage the player picks changes only the
+ * label.
+ */
+export function hasCardPowerReport(
+  recipe: Recipe,
+  node: Parameters<typeof applyMachineHandlerToRecipe>[1],
+): boolean {
+  return hasPowerReport(recipe.machineType ? applyMachineHandlerToRecipe(recipe, node) : recipe);
+}
+
 /** A gate's English text, values filled in; td() translates it from its message. */
 function gateText(gate: string | RecipeGateMessage | undefined): string | undefined {
   if (gate === undefined || typeof gate === "string") return gate;

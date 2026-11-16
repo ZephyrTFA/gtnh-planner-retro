@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PROJECT_SCHEMA_VERSION, type FactoryProject, type Recipe } from "@/lib/model/types";
-import { getNodePowerReport, getNodeSteamReport } from "./power-report";
+import { getNodePowerReport, getNodeSteamReport, hasCardPowerReport, hasPowerReport } from "./power-report";
 import { getOverclockedRecipeStats } from "./overclock";
 import { calculateThroughput } from "./throughput";
 
@@ -393,5 +393,54 @@ describe("curated table vs baked handler stats", () => {
     expect(stats.durationTicks).toBe(1363);
     // 120 x 0.9, once.
     expect(Math.round(stats.eut)).toBe(108);
+  });
+});
+
+/**
+ * A card's power section is what gives a multiblock its energy hatch chip.
+ * The Multi Smelter draws EU only once its handler is applied (the dataset's
+ * smelting recipe says 0), so a gate that reads the raw recipe leaves the
+ * card with the tier dial instead - and the dial writes `overclockTier`
+ * while the solver runs the hatches, so the voltage the player picks is the
+ * one number the machine ignores.
+ */
+describe("the power section of a card whose handler supplies the EU", () => {
+  const smelting = {
+    id: "smelt-iron",
+    name: "Furnace: Iron Ingot",
+    machineType: "Furnace",
+    minimumTier: "NONE",
+    durationTicks: 200,
+    eut: 0,
+    inputs: [],
+    outputs: [],
+    source: { recipeMap: "Furnace" },
+    machineHandlers: [
+      { id: "furnace", label: "Furnace", kind: "single", machineType: "Furnace", minimumTier: "NONE" },
+      { id: "multi-smelter", label: "Multi Smelter", kind: "multiblock", machineType: "Multi Smelter", minimumTier: "NONE" },
+    ],
+  } as unknown as Recipe;
+
+  it("exists for the Multi Smelter, and only for it", () => {
+    const smelter = { machineHandlerId: "multi-smelter", overclockTier: "ULV", coilTier: "cupronickel", machineConfigTiers: {}, hatchVoltageTier: "ULV", hatchAmps: 1 };
+    expect(hasPowerReport(smelting)).toBe(false);
+    expect(hasCardPowerReport(smelting, smelter)).toBe(true);
+
+    // The plain furnace still burns no EU, so its card still has no power section.
+    expect(hasCardPowerReport(smelting, { ...smelter, machineHandlerId: "furnace" })).toBe(false);
+  });
+
+  it("gives the Multi Smelter the hatch chip, so the card shows the tier it runs on", () => {
+    const report = getNodePowerReport(smelting, {
+      machineHandlerId: "multi-smelter",
+      overclockTier: "ULV",
+      coilTier: "cupronickel",
+      machineConfigTiers: {},
+      hatchVoltageTier: "ULV",
+      hatchAmps: 1,
+    });
+    // ULV is 8 EU/t and each operation is 4 EU/t: two parallels, whatever the coil.
+    expect(report.isMultiblock).toBe(true);
+    expect(report.parallels).toBe(2);
   });
 });

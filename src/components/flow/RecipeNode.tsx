@@ -50,7 +50,7 @@ import {
   describeSteamGate,
   getNodePowerReport,
   getNodeSteamReport,
-  hasPowerReport,
+  hasCardPowerReport,
   type NodePowerReport,
   type NodeSteamReport,
 } from "@/lib/solver/power-report";
@@ -352,9 +352,12 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
       : undefined;
     // The card's power facts: pool, draw, and whether the build can start at
     // all. Only where power means something - crops, bees, steam and zero-EU
-    // recipes have no power section.
+    // recipes have no power section. Judged on the machine the handler selects:
+    // a Multi Smelter draws EU the raw smelting recipe never states, and a
+    // multiblock card with no power section has no hatch chip, leaving the
+    // tier dial to write a voltage the solver ignores.
     const powerReport =
-      machineDrawsEu && tierControl && hasPowerReport(nodeRecipe)
+      machineDrawsEu && tierControl && hasCardPowerReport(nodeRecipe, projectNode)
         ? getNodePowerReport(nodeRecipe, projectNode)
         : undefined;
     // Steam machines get a steam cell where electric ones get the power cell:
@@ -597,7 +600,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
             node,
             recipe: sectionRecipe,
             display: { ...sectionEffective, ...adjusted, ...stats },
-            powerReport: drawsEu && hasPowerReport(sectionNodeRecipe) ? getNodePowerReport(sectionNodeRecipe, node) : undefined,
+            powerReport: drawsEu && hasCardPowerReport(sectionNodeRecipe, node) ? getNodePowerReport(sectionNodeRecipe, node) : undefined,
             steamReport: !drawsEu ? getNodeSteamReport(sectionNodeRecipe, node) : undefined,
           };
         })
