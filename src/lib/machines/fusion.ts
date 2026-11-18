@@ -7,21 +7,26 @@ import startupSnapshot from "./data/fusion-startups.json";
  * GoodGenerator MTELargeFusionComputer1..5. Fusion mark is NOT hatch voltage.
  * Startup charging is omitted from steady-state power, but its exact threshold
  * still gates recipes and controls compact extraPara (strict < boundaries).
+ *
+ * Names are the controller names the game exports (GT5U `fusioncomputer.tier`,
+ * GT++ `MTEAdvFusionMk4/5`, GoodGenerator `largefusioncomputer1..5`), because
+ * the reactor is looked up by the handler name a recipe carries. A name that
+ * is merely close silently drops that reactor to ordinary voltage overclocks.
  */
 export const FUSION_MACHINES = [
   ...[
-    "Fusion Control Computer Mark I",
-    "Fusion Control Computer Mark II",
-    "Fusion Control Computer Mark III",
-    "FusionTech MK IV",
-    "FusionTech MK V",
+    "Fusion Control Computer Mk-I",
+    "Fusion Control Computer Mk-II",
+    "Fusion Control Computer Mk-III",
+    "FusionTech Mk-IV",
+    "FusionTech Mk-V",
   ].map((name, i) => ({ name, mark: i + 1, compact: false })),
   ...[
-    "Compact Fusion Computer MK-I Prototype",
-    "Compact Fusion Computer MK-II",
-    "Compact Fusion Computer MK-III",
-    "Compact Fusion Computer MK-IV Prototype",
-    "Compact Fusion Computer MK-V",
+    "Compact Fusion Computer Mk-I",
+    "Compact Fusion Computer Mk-II",
+    "Compact Fusion Computer Mk-III",
+    "Compact Fusion Computer Mk-IV",
+    "Compact Fusion Computer Mk-V",
   ].map((name, i) => ({ name, mark: i + 1, compact: true })),
 ];
 const TIERS = ["LuV", "ZPM", "UV", "UHV", "UEV"] as const;

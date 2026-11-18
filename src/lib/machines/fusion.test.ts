@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   FUSION_MACHINES,
   fusionParallels,
+  getFusionMachine,
   getFusionRecipeMark,
   getFusionStartupEu,
+  getFusionStats,
 } from "./fusion";
 import type { FactoryNode, FactoryProject, Recipe } from "@/lib/model/types";
 import { applyMachineHandlerToRecipe, getRecipeMachineHandlers } from "@/lib/model/recipe-rules";
@@ -17,6 +19,25 @@ import { getSharedMachineHandlers } from "@/lib/model/shared-machine";
 import { normalizeLoadedProject } from "@/lib/model/project-normalize";
 
 const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+/**
+ * The names the game gives its ten reactors (GT5U `fusioncomputer.tier.06..08`,
+ * GT++ `MTEAdvFusionMk4/5`, GoodGenerator `largefusioncomputer1..5`), which are
+ * what the exported recipe handlers carry. A reactor whose name the table does
+ * not have keeps its hatches and silently runs ordinary voltage overclocks, so
+ * these strings are pinned here rather than read back from FUSION_MACHINES.
+ */
+const EXPORTED_CONTROLLERS: ReadonlyArray<readonly [name: string, mark: number, compact: boolean]> = [
+  ["Fusion Control Computer Mk-I", 1, false],
+  ["Fusion Control Computer Mk-II", 2, false],
+  ["Fusion Control Computer Mk-III", 3, false],
+  ["FusionTech Mk-IV", 4, false],
+  ["FusionTech Mk-V", 5, false],
+  ["Compact Fusion Computer Mk-I", 1, true],
+  ["Compact Fusion Computer Mk-II", 2, true],
+  ["Compact Fusion Computer Mk-III", 3, true],
+  ["Compact Fusion Computer Mk-IV", 4, true],
+  ["Compact Fusion Computer Mk-V", 5, true],
+];
 const helium: Recipe = {
   id: "helium",
   name: "Fusion Reactor: Helium Plasma",
@@ -105,13 +126,63 @@ describe("fusion reactor rules from GT5U and the 2.9 workbook", () => {
     ).toBe(draw);
   });
 
+  it("is keyed by the controller names the dataset's handlers carry", () => {
+    expect(FUSION_MACHINES.map((m) => m.name)).toEqual(EXPORTED_CONTROLLERS.map(([name]) => name));
+    for (const [name, mark, compact] of EXPORTED_CONTROLLERS) {
+      expect(getFusionMachine(name)).toMatchObject({ name, mark, compact });
+    }
+  });
+
+  it("runs an exported recipe card by reactor mark, not by hatch voltage", () => {
+    // Handlers exactly as the oracle exports them, so the reactor lookup is
+    // tested against the game's names instead of this file's own table.
+    const exported: Recipe = {
+      ...helium,
+      machineHandlers: EXPORTED_CONTROLLERS.map(([name]) => ({
+        id: slug(name),
+        label: name,
+        machineType: name,
+        kind: "multiblock",
+        minimumTier: "EV",
+      })),
+    };
+    // OverclockTier and hatches that would buy steps on a voltage ladder.
+    const hot = (i: number) => ({
+      ...node(i),
+      overclockTier: "MAX" as const,
+      hatchVoltageTier: "UEV" as const,
+      hatchAmps: 32,
+    });
+    // Helium is a Mk-I recipe: its own reactor buys nothing, a Mk-III two
+    // steps and a Mk-V four, all from the mark.
+    expect(getOverclockedRecipeStats(exported, hot(0))).toMatchObject({
+      tier: "LuV",
+      overclockSteps: 0,
+      eut: 1920,
+      durationTicks: 16,
+    });
+    expect(getOverclockedRecipeStats(exported, hot(2))).toMatchObject({
+      tier: "UV",
+      overclockSteps: 2,
+      eut: 7680,
+      durationTicks: 4,
+    });
+    expect(getOverclockedRecipeStats(exported, hot(4))).toMatchObject({
+      tier: "UEV",
+      overclockSteps: 4,
+      eut: 491520,
+    });
+    expect(getFusionStats(applyMachineHandlerToRecipe(exported, hot(0)))?.parallels).toBe(1);
+    expect(getFusionStats(applyMachineHandlerToRecipe(exported, hot(9)))?.parallels).toBe(320);
+  });
+
   it("offers only reactor marks that can run the recipe, including voltage gates", () => {
     const recipe = { ...helium, metadata: { fusionStartupEu: 750_000_000 } };
     const handlers = getRecipeMachineHandlers(recipe);
     expect(handlers.map((h) => h.label)).toEqual(
       FUSION_MACHINES.filter((m) => m.mark >= 4).map((m) => m.name),
     );
-    expect(applyMachineHandlerToRecipe(recipe, node(0)).machineType).toBe("FusionTech MK IV");
+    expect(applyMachineHandlerToRecipe(recipe, node(0)).machineType).toBe("FusionTech Mk-IV");
     expect(getFusionRecipeMark({ ...recipe, eut: 7_864_320 })).toBe(5);
   });
 
@@ -198,6 +269,6 @@ describe("fusion reactor rules from GT5U and the 2.9 workbook", () => {
           [high.id, high],
         ]),
       ).map((h) => h.label),
-    ).toEqual(["FusionTech MK V", "Compact Fusion Computer MK-V"]);
+    ).toEqual(["FusionTech Mk-V", "Compact Fusion Computer Mk-V"]);
   });
 });

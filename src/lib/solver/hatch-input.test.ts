@@ -59,7 +59,7 @@ describe("per-card hatch input", () => {
     expect(getOverclockedRecipeStats(r, ev).durationTicks).toBeLessThan(
       getOverclockedRecipeStats(r, lv).durationTicks,
     );
-    expect(takesHatchInput(applyMachineHandlerToRecipe(recipe("Fusion Control Computer Mark I", 120), node()))).toBe(false);
+    expect(takesHatchInput(applyMachineHandlerToRecipe(recipe("Fusion Control Computer Mk-I", 120), node()))).toBe(false);
   });
   it("distinguishes equal supplies by hatch voltage and applies zero tier skips", () => {
     const r = recipe("Precise Assembler", 524288);

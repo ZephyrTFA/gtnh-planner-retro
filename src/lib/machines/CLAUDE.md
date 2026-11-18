@@ -130,7 +130,12 @@ computes in float: replicate it.
   band (strict `<` for bonuses, `<=` for tiers). Startup EU is the recipe's
   `metadata.fusionStartupEu` (from FUSION_THRESHOLD); `data/fusion-startups.json`
   fingerprints repair old exports (regenerate with `tools/audits/extract-fusion-startups.mjs`).
-  Never strip Roman numerals from fusion controller names.
+  The reactor is looked up by the name its recipe handler carries, so the table holds the
+  names the game exports (`Fusion Control Computer Mk-I`, `FusionTech Mk-IV`, `Compact
+  Fusion Computer Mk-I`); a spelling that is merely close leaves that reactor on ordinary
+  voltage overclocks with no error. `fusion.test.ts` pins the ten names as the export
+  gives them, never read back from the table. Never strip Roman numerals from fusion
+  controller names.
 - Extreme Entity Crusher (`extreme-entity-crusher.ts`): one recipe per mob, replayed from
   kubatech (kill ticks, its own perfect OC with 20-tick floor, infernals as expected value
   in float math, Well of Suffering, Looting, void). `fullPowerPool`. Mob swaps go through
