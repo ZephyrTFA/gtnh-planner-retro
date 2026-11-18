@@ -40,6 +40,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.7",
+    date: "2026-11-18",
+    headline: "Fusion reactors overclock by their Mk number",
+    notes: [
+      "A fusion card now overclocks by the reactor's Mk number rather than its hatch voltage: each Mk above the recipe's own tier buys one overclock, ×2 speed and ×2 power on Mk-I to Mk-III, ×4 and ×4 on Mk-IV and Mk-V.",
+      "Each reactor fixes its own voltage too: Mk-I LuV, Mk-II ZPM, Mk-III UV, Mk-IV UHV, Mk-V UEV, so these cards no longer ask for an energy hatch.",
+      "Helium Plasma reads 156.25 L/s on a Mk-I, 40,000 L/s on a Mk-V, and 12.8M L/s on a Compact Mk-V.",
+      "Recipes that need more than 640M EU to start now offer only Mk-IV and Mk-V reactors.",
+    ],
+    warning:
+      "Saved fusion cards change: the Mk number now decides rate and voltage, so reactors that all read the same read their own. Compact Mk-II, Mk-III and Mk-V already read correctly.",
+  },
+  {
     version: "1.6.6",
     date: "2026-11-16",
     headline: "The Multi Smelter shows the hatches it runs on",
