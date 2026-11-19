@@ -117,6 +117,13 @@ undo; nearly every edit calls `solveBooks(project)` inline. `store/design-store.
 design library and the tabs, and IndexedDB is the plan of record (localStorage `project.v2` is
 only a one-shot seed).
 
+Beside the plan sits the player's own task list (`src/lib/tasks/`): one localStorage blob, read
+through `useSyncExternalStore` like the workspace view, shown in the right column's Tasks tab. It
+is not plan data, so it is the same on every design, stays editable on a read-only shared plan,
+and never travels through export, import or a shared link. "Add from board" makes one task per
+machine card and matches a card to the task already made from it, so a second press adds only
+what changed and never resets progress.
+
 The part with real concurrency in it is two tabs sharing one library. Each tab remembers the
 stored version its canvas came from, saves go through a compare-and-write in one IndexedDB
 transaction, a background tab never echoes a recipe refresh back, and a stale tab holding its own

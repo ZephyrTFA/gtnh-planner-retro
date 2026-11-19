@@ -40,6 +40,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.0",
+    date: "2026-11-19",
+    headline: "A Tasks tab beside the board",
+    notes: [
+      "The right column has two tabs now: Resources, as before, and Tasks, your own list of what is left to build.",
+      "A task has a title and an optional detail. Click its state chip to move it from Need to be done to Being done to Done.",
+      "Add from board turns the open plan's machines into tasks, one per card. Press it again after you change the board and only the new cards are added, so nothing you already ticked off moves back.",
+      "The list belongs to this browser, not to a plan: it is the same on every design, it survives a reload, and it does not travel with a shared setup.",
+    ],
+  },
+  {
     version: "1.6.7",
     date: "2026-11-18",
     headline: "Fusion reactors overclock by their Mk number",
