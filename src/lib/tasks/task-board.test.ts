@@ -162,6 +162,7 @@ describe("the task board", () => {
         { id: "b", title: "Dropped state", detail: "", state: "archived", createdAt: 6 },
         { id: "c", title: 42, detail: "", state: "todo", createdAt: 7 },
         { id: "d", title: "No stamp", detail: "", state: "todo" },
+        { id: "e", title: "   ", detail: "", state: "todo", createdAt: 8 },
         { title: "No id", detail: "", state: "todo", createdAt: 9 },
         "not a task",
         null,

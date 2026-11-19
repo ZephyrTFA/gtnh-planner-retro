@@ -62,7 +62,10 @@ function parseTask(value: unknown): BoardTask | undefined {
   }
   const entry = value as Partial<Record<keyof BoardTask, unknown>>;
   if (typeof entry.id !== "string" || entry.id.length === 0) return undefined;
-  if (typeof entry.title !== "string") return undefined;
+  // A title is the whole task: a row with none cannot be read, and a blob
+  // that carries one (hand-edited, or written by a version that allowed it)
+  // loses the row rather than showing a blank line forever.
+  if (typeof entry.title !== "string" || entry.title.trim().length === 0) return undefined;
   if (!isTaskState(entry.state)) return undefined;
   if (typeof entry.createdAt !== "number" || !Number.isFinite(entry.createdAt)) return undefined;
 

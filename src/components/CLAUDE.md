@@ -61,6 +61,11 @@ The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLA
   `src/lib/model/machine-list.ts`).
 - Power display (EU/t or amps at a tier) and rate units are view dials read through
   `useRateDisplayUnits`; memoized rows subscribe to both themselves.
+- The column has two tabs, Resources and Tasks (`tasks/TaskBoardPanel.tsx`). The task list is
+  personal state in localStorage (`src/lib/tasks/task-board.ts`), never plan data: it is the
+  same on every design, stays editable on a read-only shared plan, and never re-solves. The
+  chosen tab is a workspace preference. Pinned by `tasks/TaskBoardPanel.test.tsx`,
+  `src/lib/tasks/task-board.test.ts` and the tab block of `InspectorPanel.test.tsx`.
 
 ## Interface languages (src/lib/i18n)
 
