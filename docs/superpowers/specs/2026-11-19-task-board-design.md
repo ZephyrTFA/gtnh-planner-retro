@@ -67,7 +67,8 @@ advanceTask(id: string): void          // todo -> doing -> done -> todo
 editTask(id: string, patch: { title?: string; detail?: string }): void
 deleteTask(id: string): void
 clearDoneTasks(): void
-addTasksFromBoard(tasks: BoardTask[]): string[]   // returns the ids it added
+/** Appends the tasks whose source card is not in the list yet; returns the ids added. */
+addTasksFromBoard(tasks: BoardTask[]): string[]
 ```
 
 Reads are validated field by field: a task with a usable `id`, a non-empty string `title`, a
@@ -109,8 +110,11 @@ commit: `i18n-catalogs.test.ts` fails until both catalogs cover the new keys.
 
 ## Add from board
 
-One task per machine card, from `buildMachineList` (`src/lib/model/machine-list.ts:57`), which
-already gives one entry per card with its handler label, machine count and tier.
+One task per machine card on the open board, built by
+`boardTasksToAdd(project, result): BoardTask[]` in `src/lib/tasks/from-board.ts` from
+`buildMachineList` (`src/lib/model/machine-list.ts:57`), which already gives one entry per card
+with its handler label, machine count and tier. The builder knows nothing about the list;
+`addTasksFromBoard` in the storage module does the matching.
 
 - Title: `<label> ×<count>`, with the tier in brackets when the entry has one, e.g.
   `Macerator ×2 (LV)`.
