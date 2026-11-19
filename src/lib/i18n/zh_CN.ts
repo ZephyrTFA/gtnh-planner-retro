@@ -5,7 +5,19 @@ import type { Catalog } from "./index";
  * Item and fluid names are not here: they come from the game (src/lib/item-names.ts).
  */
 const catalog: Catalog = {
+  "Add from board": "从当前板面添加",
+  "Being done": "进行中",
+  "Clear done": "清除已完成",
+  "Detail": "详情",
+  "Detail (optional)": "详情（可选）",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow：Retro 所基于的规划器",
+  "Move to the next state": "移到下一个状态",
+  "Need to be done": "待办",
+  "New task": "新任务",
+  "No tasks yet. Add one above, or turn the board into a list.": "暂无任务。在上方添加，或把当前板面变成清单。",
+  "Nothing new to add from this board.": "此板面没有需要新增的内容。",
+  "Task title": "任务标题",
+  "{count} task added|{count} tasks added": { other: "已添加 {count} 项任务" },
   "{site} ran into a problem.": "{site} 遇到了问题。",
   "Reload in safe mode": "以安全模式重新加载",
   "Your plans are saved in this browser. Reload in safe mode to start without opening any plan, then open the one you want from the library.": "你的方案保存在此浏览器中。以安全模式重新加载可以不打开任何方案直接启动，然后从方案库打开你想要的那个。",

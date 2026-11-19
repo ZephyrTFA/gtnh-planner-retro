@@ -5,7 +5,19 @@ import type { Catalog } from "./index";
  * Item and fluid names are not here: they come from the game (src/lib/item-names.ts).
  */
 const catalog: Catalog = {
+  "Add from board": "Добавить со сборки",
+  "Being done": "В работе",
+  "Clear done": "Убрать выполненные",
+  "Detail": "Подробности",
+  "Detail (optional)": "Подробности (необязательно)",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow, планировщик, на котором основан Retro",
+  "Move to the next state": "Перевести в следующее состояние",
+  "Need to be done": "Нужно сделать",
+  "New task": "Новая задача",
+  "No tasks yet. Add one above, or turn the board into a list.": "Задач пока нет. Добавьте выше или превратите сборку в список.",
+  "Nothing new to add from this board.": "На этой сборке нового ничего нет.",
+  "Task title": "Название задачи",
+  "{count} task added|{count} tasks added": { one: "Добавлена {count} задача", few: "Добавлено {count} задачи", many: "Добавлено {count} задач", other: "Добавлено {count} задачи" },
   "{site} ran into a problem.": "В {site} произошла ошибка.",
   "Reload in safe mode": "Перезагрузить в безопасном режиме",
   "Your plans are saved in this browser. Reload in safe mode to start without opening any plan, then open the one you want from the library.": "Ваши планы сохранены в этом браузере. Перезагрузите страницу в безопасном режиме, чтобы начать без открытого плана, затем откройте нужный план из библиотеки.",
