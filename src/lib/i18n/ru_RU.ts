@@ -17,6 +17,7 @@ const catalog: Catalog = {
   "No tasks yet. Add one above, or turn the board into a list.": "Задач пока нет. Добавьте выше или превратите сборку в список.",
   "Nothing new to add from this board.": "На этой сборке нового ничего нет.",
   "Task title": "Название задачи",
+  "Tasks": "Задачи",
   "{count} task added|{count} tasks added": { one: "Добавлена {count} задача", few: "Добавлено {count} задачи", many: "Добавлено {count} задач", other: "Добавлено {count} задачи" },
   "{site} ran into a problem.": "В {site} произошла ошибка.",
   "Reload in safe mode": "Перезагрузить в безопасном режиме",

@@ -62,6 +62,8 @@ import {
   type ResourceMarks,
 } from "./inspector/flow-sections";
 import { TrendSparkline } from "./inspector/TrendSparkline";
+import { TaskBoardPanel } from "./tasks/TaskBoardPanel";
+import { openTaskCount, useTaskBoard } from "@/lib/tasks/task-board";
 import { MotionNumberText, runMotionTween, useBoardMotion } from "./flow/board-motion";
 import { ResourceIcon } from "./nei/ResourceIcon";
 import { tPlural, useLanguage, useT } from "@/lib/i18n";
@@ -285,16 +287,51 @@ function useRowPresence(targetRows: FlowRow[], enabled: boolean): RowPresence {
 }
 
 export function InspectorPanel() {
+  const t = useT();
+  const { rightPanelTab } = useWorkspaceView();
+  const openTasks = openTaskCount(useTaskBoard());
   return (
     <aside
       data-help-anchor="inspector"
       className="inspector-panel flex h-full min-h-[360px] compact:min-h-0 flex-col bg-[#25272c]"
     >
-      <FlowIOPanel />
-      {/* The build list rides the panel's floor: what to build, at which
-          tier, what one of each draws - and, when generators stand on the
-          board, what they make and the plan's net power. */}
-      <MachineShoppingList />
+      {/* Two contents, one column: the plan's flows, or the player's own list
+          of what is left to build. The strip is a fixed row above them, so the
+          virtual list under it measures the height it always did. */}
+      <div className="flex shrink-0 gap-0.5 border-b border-[var(--mc-33)] px-1 pt-1">
+        {(["resources", "tasks"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            data-panel-tab={tab}
+            aria-pressed={rightPanelTab === tab}
+            onClick={() => writeWorkspaceView({ rightPanelTab: tab })}
+            className={`flex items-center gap-1 rounded-t border border-b-0 px-2 py-1 text-[11px] ${
+              rightPanelTab === tab
+                ? "border-[var(--mc-55)] bg-[var(--mc-55)] text-[var(--mc-ink)]"
+                : "border-transparent text-[var(--mc-ink-muted)] hover:bg-[var(--mc-25)] hover:text-[var(--mc-ink)]"
+            }`}
+          >
+            {tab === "tasks" ? t("Tasks") : t("Resources")}
+            {tab === "tasks" && openTasks > 0 ? (
+              <span className="rounded bg-[var(--mc-33)] px-1 text-[10px] tabular-nums">
+                {openTasks}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+      {rightPanelTab === "tasks" ? (
+        <TaskBoardPanel />
+      ) : (
+        <>
+          <FlowIOPanel />
+          {/* The build list rides the panel's floor: what to build, at which
+              tier, what one of each draws - and, when generators stand on the
+              board, what they make and the plan's net power. */}
+          <MachineShoppingList />
+        </>
+      )}
     </aside>
   );
 }

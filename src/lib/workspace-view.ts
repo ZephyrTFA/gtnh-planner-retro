@@ -25,6 +25,12 @@ export interface WorkspaceView {
   leftPanelOpen: boolean;
   /** The resource flow panel on the right. */
   rightPanelOpen: boolean;
+  /**
+   * Which of the right column's two contents it shows: the resource panel
+   * with the build list, or the player's own task list. The task list is not
+   * plan data, so the choice is taste and lives here rather than in a plan.
+   */
+  rightPanelTab: RightPanelTab;
   /** Hidden resources stay listed, greyed out, instead of dropping away. */
   showHiddenResources: boolean;
   /** Only favourites are listed. */
@@ -48,6 +54,8 @@ export interface WorkspaceView {
   favouriteResourceKeys: string[];
 }
 
+export type RightPanelTab = "resources" | "tasks";
+
 const WORKSPACE_VIEW_STORAGE_KEY = "gtnh-factory-flow-workspace-view";
 
 export const DEFAULT_WORKSPACE_VIEW: WorkspaceView = {
@@ -56,6 +64,7 @@ export const DEFAULT_WORKSPACE_VIEW: WorkspaceView = {
   poolCollapsedProductionGroups: {},
   leftPanelOpen: true,
   rightPanelOpen: true,
+  rightPanelTab: "resources",
   showHiddenResources: false,
   favouritesOnly: false,
   netFlowRates: false,
@@ -121,6 +130,12 @@ function readWorkspaceView(): WorkspaceView {
       hiddenResourceKeys: keys(parsed.hiddenResourceKeys).filter((key) => !starred.has(key)),
       leftPanelOpen: flag(parsed.leftPanelOpen, defaultPanelsOpen()),
       rightPanelOpen: flag(parsed.rightPanelOpen, defaultPanelsOpen()),
+      // A tab the column does not have (a typo, a version that named it
+      // differently) is no tab: the resource panel is the way back.
+      rightPanelTab:
+        parsed.rightPanelTab === "tasks" || parsed.rightPanelTab === "resources"
+          ? parsed.rightPanelTab
+          : DEFAULT_WORKSPACE_VIEW.rightPanelTab,
       showHiddenResources: flag(
         parsed.showHiddenResources,
         DEFAULT_WORKSPACE_VIEW.showHiddenResources,

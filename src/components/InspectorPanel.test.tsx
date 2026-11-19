@@ -525,3 +525,56 @@ describe("InspectorPanel", () => {
     });
   });
 });
+
+describe("the right column's tabs", () => {
+  const WORKSPACE_KEY = "gtnh-factory-flow-workspace-view";
+
+  beforeEach(() => {
+    window.localStorage.setItem(WORKSPACE_KEY, JSON.stringify({ rightPanelTab: "resources" }));
+    window.localStorage.removeItem("gtnh-factory-flow-tasks.v1");
+    window.dispatchEvent(new StorageEvent("storage", { key: "gtnh-factory-flow-tasks.v1" }));
+    seedResult({ externalInputs: [makeBalance(1, { deficitPerSecond: 10 })] });
+  });
+
+  afterEach(cleanup);
+
+  /** The Tasks tab's badge: how many tasks are not Done. */
+  function badge(container: HTMLElement) {
+    return container.querySelector("[data-panel-tab='tasks']")?.textContent ?? "";
+  }
+
+  it("opens on Resources and switches to Tasks", () => {
+    const { container } = render(<InspectorPanel />);
+    expect(container.querySelector("[data-panel-tab='resources']")).not.toBeNull();
+    expect(container.querySelector("[data-task-panel]")).toBeNull();
+
+    fireEvent.click(container.querySelector("[data-panel-tab='tasks']")!);
+    expect(container.querySelector("[data-task-panel]")).not.toBeNull();
+    // The resource panel is not hidden behind the list, it is not there.
+    expect(screen.queryByText("Inputs")).toBeNull();
+  });
+
+  it("remembers the tab the column was left on", () => {
+    const { container } = render(<InspectorPanel />);
+    fireEvent.click(container.querySelector("[data-panel-tab='tasks']")!);
+    expect(
+      JSON.parse(window.localStorage.getItem(WORKSPACE_KEY) ?? "{}").rightPanelTab,
+    ).toBe("tasks");
+  });
+
+  it("counts the tasks that are not done on the tab", () => {
+    window.localStorage.setItem(
+      "gtnh-factory-flow-tasks.v1",
+      JSON.stringify([
+        { id: "a", title: "Pump", detail: "", state: "todo", createdAt: 2 },
+        { id: "b", title: "Tank", detail: "", state: "done", createdAt: 1 },
+      ]),
+    );
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: "gtnh-factory-flow-tasks.v1" }),
+    );
+    const { container } = render(<InspectorPanel />);
+    expect(badge(container)).toContain("Tasks");
+    expect(badge(container)).toContain("1");
+  });
+});

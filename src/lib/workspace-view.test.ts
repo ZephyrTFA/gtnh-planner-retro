@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   toggleResourceFavourite,
   toggleResourceHidden,
@@ -71,5 +71,38 @@ describe("workspace view resource marks", () => {
     expect(overlap).toEqual([]);
     expect(state.hiddenResourceKeys).toEqual(["item:a"]);
     expect(state.favouriteResourceKeys).toEqual(["item:b", "item:c"]);
+  });
+});
+
+describe("the right column's tab", () => {
+  /** The reader validates the stored blob, so it gets a fresh module. */
+  async function readStored() {
+    vi.resetModules();
+    const fresh = await import("./workspace-view");
+    return fresh.readWorkspaceViewSnapshot().rightPanelTab;
+  }
+
+  it("keeps the tab the player left the column on", async () => {
+    window.localStorage.setItem(
+      "gtnh-factory-flow-workspace-view",
+      JSON.stringify({ rightPanelTab: "tasks" }),
+    );
+    expect(await readStored()).toBe("tasks");
+  });
+
+  it("falls back to resources for a tab the column does not have", async () => {
+    window.localStorage.setItem(
+      "gtnh-factory-flow-workspace-view",
+      JSON.stringify({ rightPanelTab: "settings" }),
+    );
+    expect(await readStored()).toBe("resources");
+  });
+
+  it("defaults to resources when the blob predates the tab", async () => {
+    window.localStorage.setItem(
+      "gtnh-factory-flow-workspace-view",
+      JSON.stringify({ rightPanelOpen: true }),
+    );
+    expect(await readStored()).toBe("resources");
   });
 });

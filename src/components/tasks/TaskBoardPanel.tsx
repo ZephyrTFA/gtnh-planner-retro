@@ -67,7 +67,7 @@ export function TaskBoardPanel() {
   const total = tasks.length;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col text-[12px] text-[var(--mc-ink)]">
+    <div className="flex min-h-0 flex-1 flex-col text-[12px] text-[var(--mc-ink)]" data-task-panel>
       <div className="flex shrink-0 items-center gap-1 border-b border-[var(--mc-33)] px-2 py-1.5">
         <button
           type="button"

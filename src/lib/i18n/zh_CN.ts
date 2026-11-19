@@ -17,6 +17,7 @@ const catalog: Catalog = {
   "No tasks yet. Add one above, or turn the board into a list.": "暂无任务。在上方添加，或把当前板面变成清单。",
   "Nothing new to add from this board.": "此板面没有需要新增的内容。",
   "Task title": "任务标题",
+  "Tasks": "任务",
   "{count} task added|{count} tasks added": { other: "已添加 {count} 项任务" },
   "{site} ran into a problem.": "{site} 遇到了问题。",
   "Reload in safe mode": "以安全模式重新加载",
