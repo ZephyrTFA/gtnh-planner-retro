@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+  type RefObject,
+} from "react";
 import { useT } from "@/lib/i18n";
 import { getUiScale } from "@/lib/ui-scale";
 import {
@@ -12,6 +19,21 @@ import {
 
 /** One arrow-key press, in shell px. */
 const KEY_STEP = 16;
+
+interface Drag {
+  startX: number;
+  startWidth: number;
+  last: number;
+}
+
+/** Ends a drag, if one is under way, and stores the width it reached. */
+function settleDrag(drag: RefObject<Drag | null>) {
+  const current = drag.current;
+  drag.current = null;
+  if (current && current.last !== current.startWidth) {
+    setRightPanelWidth(current.last);
+  }
+}
 
 /**
  * The grip on the right column's left edge: drag it to set the column's width.
@@ -34,7 +56,7 @@ export function PanelResizeHandle({
   onPreview: (width: number) => void;
 }) {
   const t = useT();
-  const drag = useRef<{ startX: number; startWidth: number; last: number } | null>(null);
+  const drag = useRef<Drag | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const begin = (event: PointerEvent<HTMLDivElement>) => {
@@ -70,16 +92,20 @@ export function PanelResizeHandle({
   };
 
   // Release, cancel and a lost capture all end the drag the same way: the
-  // width the player last saw is the width that is kept.
+  // width the player last saw is the width that is kept. A press that never
+  // moved stores nothing: on a narrow window the column sits under its stored
+  // width, and a click must not quietly store the narrower one.
   const end = () => {
-    const current = drag.current;
-    if (!current) {
-      return;
+    if (drag.current) {
+      setDragging(false);
+      settleDrag(drag);
     }
-    drag.current = null;
-    setDragging(false);
-    setRightPanelWidth(current.last);
   };
+  // The preview is painted outside React. If the column goes away mid-drag
+  // (hidden by a key or a second finger), no release ever arrives, so the
+  // previewed width is stored here; otherwise the grid would keep a width the
+  // workspace view does not hold.
+  useEffect(() => () => settleDrag(drag), []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
@@ -109,7 +135,9 @@ export function PanelResizeHandle({
       onLostPointerCapture={end}
       onDoubleClick={() => setRightPanelWidth(RIGHT_PANEL_MIN_WIDTH)}
       onKeyDown={onKeyDown}
-      className="absolute inset-y-0 left-0 z-20 w-[5px] cursor-col-resize touch-none outline-none transition-colors hover:bg-cyan-500/50 focus-visible:bg-cyan-500/50 data-[dragging]:bg-cyan-400/70"
+      // The short bar at mid-height is always drawn: a remembered width needs
+      // a control the player can see, not one that only appears under the pointer.
+      className="absolute inset-y-0 left-0 z-20 w-[6px] cursor-col-resize touch-none outline-none transition-colors after:absolute after:left-[2px] after:top-1/2 after:h-8 after:w-[2px] after:-translate-y-1/2 after:rounded-full after:bg-white/30 hover:bg-cyan-500/50 focus-visible:bg-cyan-500/50 data-[dragging]:bg-cyan-400/70"
     />
   );
 }
