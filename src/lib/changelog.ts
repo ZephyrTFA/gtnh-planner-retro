@@ -40,6 +40,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.1",
+    date: "2026-11-20",
+    headline: "Tasks are easier to read, and the right column can be made wider",
+    notes: [
+      "Task states are now named Pending, Working and Done, so a task's title has room in its row.",
+      "A long task title wraps to a second line instead of being cut off.",
+      "Drag the left edge of the right column to make it wider, up to 520px. It stays that wide on your next visit, and a double click on the edge returns it to its usual width.",
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-11-19",
     headline: "A Tasks tab beside the board",
