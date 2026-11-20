@@ -52,7 +52,11 @@ The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLA
   recipe section to an existing card (`addRecipeToNode`).
 ## Inspector and panels
 
-- Right resource column 234 shell px, left items panel 256 (desktop and drawer caps).
+- Left items panel 256 shell px. The right column starts at 234 and drags to 520 from its
+  left edge (`PanelResizeHandle`, stored as `rightPanelWidth`, one width for both tabs);
+  drawers keep the 256 and 234 caps and have no handle. A drag paints `--right-panel-width`
+  on the grid and writes the workspace view once, on release. Pinned by
+  `PanelResizeHandle.test.tsx` and the width block of `src/lib/workspace-view.test.ts`.
   Keep virtual-list row heights in sync with the CSS (`inspector/panel.css`).
 - Resources show Raw or Net, switched in the first section header (Raw by default). In
   Solve, drawer rate rows hang under their resource like files in a folder

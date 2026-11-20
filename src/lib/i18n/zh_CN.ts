@@ -9,6 +9,7 @@ const catalog: Catalog = {
   "Clear done": "清除已完成",
   "Detail": "详情",
   "Detail (optional)": "详情（可选）",
+  "Drag to resize. Double-click to reset.": "拖动调整宽度，双击重置。",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow：Retro 所基于的规划器",
   "Move to the next state": "移到下一个状态",
   "New task": "新任务",

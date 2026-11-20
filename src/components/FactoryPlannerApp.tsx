@@ -26,7 +26,7 @@ import { applyLanguage } from "@/lib/i18n/apply";
 import { useCommunityAuthStore } from "@/store/community-auth-store";
 import { useDesignStore } from "@/store/design-store";
 import { recordResourceTrend, resetResourceTrends } from "@/lib/resource-trends";
-import { useWorkspaceView, writeWorkspaceView } from "@/lib/workspace-view";
+import { RIGHT_PANEL_MIN_WIDTH, useWorkspaceView, writeWorkspaceView } from "@/lib/workspace-view";
 import { openCommunityPost } from "@/lib/community/open-post";
 import { openPlanCodeFromAddress } from "@/lib/open-plan-code";
 import { retryPendingPostFollows } from "@/lib/community/post-follow";
@@ -51,6 +51,7 @@ import { PowerSourceOverlay } from "./PowerSourceOverlay";
 import { FactoryFlow } from "./flow/FactoryFlow";
 import { useBoardSoundEffects } from "./flow/use-board-sound-effects";
 import { InspectorPanel } from "./InspectorPanel";
+import { PanelResizeHandle } from "./PanelResizeHandle";
 import { PanelDrawer } from "./PanelDrawer";
 import { RecipeBrowser } from "./RecipeBrowser";
 import { ONLINE_FEATURES } from "@/lib/site";
@@ -484,26 +485,40 @@ function ColumnWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
   const poolMode = useFactoryStore((state) => state.project.poolMode === true);
   const worksheet = poolMode;
   const rightPanelShown = workspace.rightPanelOpen && !covering && !worksheet;
+  const leftWidth = workspace.leftPanelOpen ? 256 : RAIL_WIDTH;
+  const mainRef = useRef<HTMLElement>(null);
+  // A drag paints straight onto the grid: one style write per move, no
+  // workspace write and no render until the handle is let go.
+  const previewRightPanelWidth = useCallback((width: number) => {
+    mainRef.current?.style.setProperty("--right-panel-width", `${width}px`);
+  }, []);
 
   return (
     <>
       {/* The four-column item browser is 256px wide; the resource column
-          keeps 234px for names, rates and controls. A closed column drops to a
-          rail wide enough for one button, so the way back is always on screen
-          and the board never has to give the width back to a hover target. */}
+          starts at 234px for names, rates and controls and drags wider from
+          its left edge. A closed column drops to a rail wide enough for one
+          button, so the way back is always on screen and the board never has
+          to give the width back to a hover target. */}
       <main
+        ref={mainRef}
         className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden"
         style={{
+          "--right-panel-width": `${workspace.rightPanelWidth}px`,
           // Keep the toolbar's fit budget stable when Pool hides this column.
           "--toolbar-hidden-panel-width": worksheet && !covering
-            ? `${workspace.rightPanelOpen ? 234 : RAIL_WIDTH}px`
+            ? `${workspace.rightPanelOpen ? workspace.rightPanelWidth : RAIL_WIDTH}px`
             : "0px",
           gridTemplateColumns: [
-            workspace.leftPanelOpen ? "256px" : `${RAIL_WIDTH}px`,
+            `${leftWidth}px`,
             "minmax(0,1fr)",
             // With a page over the board the resource column is not folded, it is
             // GONE: nothing to open, no rail to hint that there is.
-            rightPanelShown ? "234px" : covering || worksheet ? "0px" : `${RAIL_WIDTH}px`,
+            // A wide column gives way on a narrow window, down to its own
+            // minimum, so the board always keeps BOARD_MIN_WIDTH.
+            rightPanelShown
+              ? `max(${RIGHT_PANEL_MIN_WIDTH}px, min(var(--right-panel-width), calc(100% - ${leftWidth + BOARD_MIN_WIDTH}px)))`
+              : covering || worksheet ? "0px" : `${RAIL_WIDTH}px`,
           ].join(" "),
         } as CSSProperties}
       >
@@ -516,7 +531,13 @@ function ColumnWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
         )}
         <BoardColumn />
         {rightPanelShown ? (
-          <InspectorPanel />
+          <div className="relative h-full min-h-0 min-w-0">
+            <PanelResizeHandle
+              width={workspace.rightPanelWidth}
+              onPreview={previewRightPanelWidth}
+            />
+            <InspectorPanel />
+          </div>
         ) : covering || worksheet ? null : (
           <PanelRail side="right" label={t("Resources")} />
         )}
@@ -568,6 +589,9 @@ function CompactWorkspace({ workspace, onLoadDatasetVersion }: WorkspaceProps) {
 
 /** Wide enough for one 24px button plus its border. */
 const RAIL_WIDTH = 26;
+
+/** What the board keeps however wide the right column was dragged (shell px). */
+const BOARD_MIN_WIDTH = 320;
 
 /**
  * What a closed side column leaves behind: a 26px rail with the button that

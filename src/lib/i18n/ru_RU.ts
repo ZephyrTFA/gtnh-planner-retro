@@ -9,6 +9,7 @@ const catalog: Catalog = {
   "Clear done": "Убрать выполненные",
   "Detail": "Подробности",
   "Detail (optional)": "Подробности (необязательно)",
+  "Drag to resize. Double-click to reset.": "Потяните, чтобы изменить ширину. Двойной щелчок сбрасывает.",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow, планировщик, на котором основан Retro",
   "Move to the next state": "Перевести в следующее состояние",
   "New task": "Новая задача",
