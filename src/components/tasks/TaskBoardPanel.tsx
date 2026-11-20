@@ -324,9 +324,13 @@ function TaskRow({
                 deleteTask(task.id);
                 onEditDone(task.id);
               }}
-              className="ml-auto rounded px-1.5 py-0.5 text-[10px] text-red-300 hover:bg-red-950"
+              aria-label={t("Delete")}
+              title={t("Delete")}
+              // An icon, not the word: three state names and "Delete" do not
+              // fit one line of the column at its narrowest.
+              className="ml-auto shrink-0 rounded p-1 text-red-300 hover:bg-red-950"
             >
-              {t("Delete")}
+              <Trash2 className="h-3 w-3" aria-hidden />
             </button>
           </div>
         </div>
