@@ -206,7 +206,7 @@ export function setTaskState(id: string, state: TaskState): void {
   writeTasks(current.map((entry) => (entry.id === id ? { ...entry, state } : entry)));
 }
 
-/** The chip's click: Need to be done, Being done, Done, then round again. */
+/** The chip's click: Pending, Working, Done, then round again. */
 export function advanceTask(id: string): void {
   const task = getSnapshot().find((entry) => entry.id === id);
   if (!task) {

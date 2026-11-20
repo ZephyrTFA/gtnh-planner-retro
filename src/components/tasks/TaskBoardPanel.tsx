@@ -143,7 +143,7 @@ function stateLabel(state: TaskState, t: (key: string) => string): string {
   if (state === "done") {
     return t("Done");
   }
-  return state === "doing" ? t("Being done") : t("Need to be done");
+  return state === "doing" ? t("Working") : t("Pending");
 }
 
 function TaskSection({
@@ -258,7 +258,7 @@ function TaskRow({
           onClick={() => onEdit(task.id)}
           className="min-w-0 flex-1 text-left leading-snug hover:underline"
         >
-          <span data-task-title-text className="block truncate">
+          <span data-task-title-text className="line-clamp-2 break-words">
             {task.title}
           </span>
           {task.detail ? (

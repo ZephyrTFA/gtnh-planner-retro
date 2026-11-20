@@ -78,7 +78,7 @@ describe("the Tasks panel", () => {
     useFactoryStore.setState({ isReadOnly: false });
   });
 
-  it("adds a typed task to Need to be done and clears the inputs", () => {
+  it("adds a typed task to Pending and clears the inputs", () => {
     const { container } = render(<TaskBoardPanel />);
     const input = typeTitle(container, "Build the pump");
     fireEvent.keyDown(input, { key: "Enter" });
@@ -87,11 +87,22 @@ describe("the Tasks panel", () => {
     expect(input.value).toBe("");
   });
 
+  it("names the three sections Pending, Working and Done", () => {
+    const { container } = render(<TaskBoardPanel />);
+    fireEvent.keyDown(typeTitle(container, "Build the pump"), { key: "Enter" });
+
+    const heading = (state: TaskState) =>
+      document.querySelector(`[data-task-fold="${state}"]`)?.textContent ?? "";
+    expect(heading("todo")).toContain("Pending");
+    expect(heading("doing")).toContain("Working");
+    expect(heading("done")).toContain("Done");
+  });
+
   it("advances a task with its chip", () => {
     const { container } = render(<TaskBoardPanel />);
     fireEvent.keyDown(typeTitle(container, "Build the pump"), { key: "Enter" });
 
-    const chip = within(section("todo")).getByRole("button", { name: "Need to be done" });
+    const chip = within(section("todo")).getByRole("button", { name: "Pending" });
     fireEvent.click(chip);
     expect(rows("doing")).toEqual(["Build the pump"]);
     expect(rows("todo")).toEqual([]);
@@ -116,9 +127,9 @@ describe("the Tasks panel", () => {
     fireEvent.keyDown(typeTitle(container, "Tank"), { key: "Enter" });
 
     // Tank is the newest row, so it is the first chip in the section.
-    const [tankChip] = within(section("todo")).getAllByRole("button", { name: "Need to be done" });
+    const [tankChip] = within(section("todo")).getAllByRole("button", { name: "Pending" });
     fireEvent.click(tankChip!);
-    fireEvent.click(within(section("doing")).getByRole("button", { name: "Being done" }));
+    fireEvent.click(within(section("doing")).getByRole("button", { name: "Working" }));
 
     unfold("done");
     fireEvent.click(within(section("done")).getByRole("button", { name: "Clear done" }));

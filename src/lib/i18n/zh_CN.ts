@@ -6,14 +6,14 @@ import type { Catalog } from "./index";
  */
 const catalog: Catalog = {
   "Add from board": "从当前板面添加",
-  "Being done": "进行中",
   "Clear done": "清除已完成",
   "Detail": "详情",
   "Detail (optional)": "详情（可选）",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow：Retro 所基于的规划器",
   "Move to the next state": "移到下一个状态",
-  "Need to be done": "待办",
   "New task": "新任务",
+  "Pending": "待办",
+  "Working": "进行中",
   "No tasks yet. Add one above, or turn the board into a list.": "暂无任务。在上方添加，或把当前板面变成清单。",
   "Nothing new to add from this board.": "此板面没有需要新增的内容。",
   "Task title": "任务标题",

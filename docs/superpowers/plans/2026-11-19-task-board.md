@@ -136,8 +136,8 @@ git commit -m "One task per machine card: the open board becomes a build list yo
 - Produces: `TaskBoardPanel()` — a React component with no props, filling the right column. It renders, in order: an `Add from board` button, a one-line result of the last press, the add row (title input, detail input, Enter adds), then one section per `TASK_STATE_ORDER` entry with a foldable heading, its count, `Clear done` in the `done` heading, and rows. A row is a state chip button, the title, the detail as a second line; clicking the row opens inline editing (title field, detail textarea, three-way state control, delete).
 
 - [ ] **Step 1: Write the failing test** in `src/components/tasks/TaskBoardPanel.test.tsx` (`// @vitest-environment jsdom`, seed `useFactoryStore` with a plan and clear the task key in `beforeEach`). Assert:
-  - typing a title and pressing Enter adds a row under "Need to be done" and empties the inputs.
-  - clicking the chip on that row moves it to "Being done".
+  - typing a title and pressing Enter adds a row under "Pending" and empties the inputs.
+  - clicking the chip on that row moves it to "Working".
   - "Add from board" on a two-card plan adds two rows and reports the count; pressing it again adds none and says nothing was new.
   - "Clear done" empties the Done section only.
   - deleting the last task leaves the empty-state line, which names both ways in: add one, or turn the board into a list.

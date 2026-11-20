@@ -6,14 +6,14 @@ import type { Catalog } from "./index";
  */
 const catalog: Catalog = {
   "Add from board": "Добавить со сборки",
-  "Being done": "В работе",
   "Clear done": "Убрать выполненные",
   "Detail": "Подробности",
   "Detail (optional)": "Подробности (необязательно)",
   "GTNH Factory Flow, the planner Retro is built on": "GTNH Factory Flow, планировщик, на котором основан Retro",
   "Move to the next state": "Перевести в следующее состояние",
-  "Need to be done": "Нужно сделать",
   "New task": "Новая задача",
+  "Pending": "Ожидает",
+  "Working": "В работе",
   "No tasks yet. Add one above, or turn the board into a list.": "Задач пока нет. Добавьте выше или превратите сборку в список.",
   "Nothing new to add from this board.": "На этой сборке нового ничего нет.",
   "Task title": "Название задачи",

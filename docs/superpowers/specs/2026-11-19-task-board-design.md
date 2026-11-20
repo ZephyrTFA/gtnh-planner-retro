@@ -22,7 +22,7 @@ the player's own taste across all designs.
 |---|---|
 | Who does a task belong to | One board for the whole browser, shared by every design. Not plan JSON, so it never travels through export, import or a shared link. |
 | Where it lives | A second tab in the right-hand column, next to Resources. |
-| How a task moves | A state chip per row; clicking it advances Need to be done, Being done, Done, then back to the first. No drag anywhere. Newest task first in its column. |
+| How a task moves | A state chip per row; clicking it advances Pending, Working, Done, then back to the first. No drag anywhere. Newest task first in its column. |
 | Where it is stored | localStorage, one JSON blob, read through `useSyncExternalStore`, the pattern `src/lib/workspace-view.ts` already sets. |
 | Turning a board into tasks | A button makes one task per machine card. A task remembers the card it came from, so pressing it again adds only what is missing and never resets progress. |
 
@@ -83,7 +83,7 @@ wrote last: a lost edit is one keystroke, not a plan, so there is no compare-and
 
 `InspectorPanel` (`src/components/InspectorPanel.tsx:287`) becomes a shell with a two-button strip
 at its head, **Resources** and **Tasks**, the latter wearing the count of tasks that are not Done
-(Need to be done plus Being done). Resources keeps
+(Pending plus Working). Resources keeps
 exactly what the column renders today (`FlowIOPanel` plus `MachineShoppingList`); Tasks replaces
 both with `src/components/tasks/TaskBoardPanel.tsx`.
 
@@ -95,8 +95,8 @@ Tasks, top to bottom:
 
 - **Add from board** button.
 - An add row: a title input and, under it, an optional single-line detail input. Enter in either
-  adds the task to "Need to be done"; a blank title adds nothing.
-- Three sections in the order Need to be done, Being done, Done. Each has a heading with its
+  adds the task to "Pending"; a blank title adds nothing.
+- Three sections in the order Pending, Working, Done. Each has a heading with its
   count and folds; Done starts folded, the precedent being the resource panel's own folds, where
   the long tail starts closed.
 - A row is the state chip, the title, and the detail as a second muted line. Clicking the row
@@ -119,7 +119,7 @@ with its handler label, machine count and tier. The builder knows nothing about 
 - Title: `<label> ×<count>`, with the tier in brackets when the entry has one, e.g.
   `Macerator ×2 (LV)`.
 - Detail: `<design name> · <recipe name>`.
-- State: "Need to be done", whatever the board's own construction checklist says. The checklist
+- State: "Pending", whatever the board's own construction checklist says. The checklist
   ticks what is built on the board; this list is the player's, and one does not drive the other.
 
 Pressing it again is safe. A task whose `source` names a card already in the list is not added
