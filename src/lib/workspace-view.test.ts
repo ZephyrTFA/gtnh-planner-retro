@@ -2,6 +2,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clampRightPanelWidth,
+  setRightPanelWidth,
   toggleResourceFavourite,
   toggleResourceHidden,
   writeWorkspaceView,
@@ -104,5 +106,47 @@ describe("the right column's tab", () => {
       JSON.stringify({ rightPanelOpen: true }),
     );
     expect(await readStored()).toBe("resources");
+  });
+});
+
+describe("the right column's width", () => {
+  const KEY = "gtnh-factory-flow-workspace-view";
+
+  /** The reader validates the stored blob, so it gets a fresh module. */
+  async function readStored(blob: unknown) {
+    window.localStorage.setItem(KEY, JSON.stringify(blob));
+    vi.resetModules();
+    const fresh = await import("./workspace-view");
+    return fresh.readWorkspaceViewSnapshot().rightPanelWidth;
+  }
+
+  it("clamps anything stored to the column's range", () => {
+    expect(clampRightPanelWidth(300.4)).toBe(300);
+    expect(clampRightPanelWidth(10)).toBe(234);
+    expect(clampRightPanelWidth(9999)).toBe(520);
+    expect(clampRightPanelWidth("400")).toBe(234);
+    expect(clampRightPanelWidth(Number.NaN)).toBe(234);
+    expect(clampRightPanelWidth(Number.POSITIVE_INFINITY)).toBe(234);
+    expect(clampRightPanelWidth(undefined)).toBe(234);
+  });
+
+  it("defaults to 234 when the blob predates the width", async () => {
+    expect(await readStored({ rightPanelOpen: true })).toBe(234);
+  });
+
+  it("reads a stored width through the clamp", async () => {
+    expect(await readStored({ rightPanelWidth: 400 })).toBe(400);
+    expect(await readStored({ rightPanelWidth: 9999 })).toBe(520);
+    expect(await readStored({ rightPanelWidth: "wide" })).toBe(234);
+  });
+
+  it("stores a clamped width", () => {
+    const stored = () =>
+      (JSON.parse(window.localStorage.getItem(KEY) ?? "{}") as { rightPanelWidth?: number })
+        .rightPanelWidth;
+    setRightPanelWidth(100);
+    expect(stored()).toBe(234);
+    setRightPanelWidth(412);
+    expect(stored()).toBe(412);
   });
 });

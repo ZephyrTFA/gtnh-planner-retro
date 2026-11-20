@@ -31,6 +31,11 @@ export interface WorkspaceView {
    * plan data, so the choice is taste and lives here rather than in a plan.
    */
   rightPanelTab: RightPanelTab;
+  /**
+   * The right column's width in shell px, set by dragging its left edge.
+   * One width for both tabs, so switching tabs never shifts the board.
+   */
+  rightPanelWidth: number;
   /** Hidden resources stay listed, greyed out, instead of dropping away. */
   showHiddenResources: boolean;
   /** Only favourites are listed. */
@@ -56,6 +61,22 @@ export interface WorkspaceView {
 
 export type RightPanelTab = "resources" | "tasks";
 
+/** The right column's narrowest width, and the one it starts at (shell px). */
+export const RIGHT_PANEL_MIN_WIDTH = 234;
+/** Wide enough for a long task title, and still most of a laptop left for the board. */
+export const RIGHT_PANEL_MAX_WIDTH = 520;
+
+/**
+ * A width the column can actually take. Anything that is not a finite number
+ * (a hand-edited blob, a blob from before the width existed) is the default.
+ */
+export function clampRightPanelWidth(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return RIGHT_PANEL_MIN_WIDTH;
+  }
+  return Math.min(RIGHT_PANEL_MAX_WIDTH, Math.max(RIGHT_PANEL_MIN_WIDTH, Math.round(value)));
+}
+
 const WORKSPACE_VIEW_STORAGE_KEY = "gtnh-factory-flow-workspace-view";
 
 export const DEFAULT_WORKSPACE_VIEW: WorkspaceView = {
@@ -65,6 +86,7 @@ export const DEFAULT_WORKSPACE_VIEW: WorkspaceView = {
   leftPanelOpen: true,
   rightPanelOpen: true,
   rightPanelTab: "resources",
+  rightPanelWidth: RIGHT_PANEL_MIN_WIDTH,
   showHiddenResources: false,
   favouritesOnly: false,
   netFlowRates: false,
@@ -136,6 +158,7 @@ function readWorkspaceView(): WorkspaceView {
         parsed.rightPanelTab === "tasks" || parsed.rightPanelTab === "resources"
           ? parsed.rightPanelTab
           : DEFAULT_WORKSPACE_VIEW.rightPanelTab,
+      rightPanelWidth: clampRightPanelWidth(parsed.rightPanelWidth),
       showHiddenResources: flag(
         parsed.showHiddenResources,
         DEFAULT_WORKSPACE_VIEW.showHiddenResources,
@@ -196,6 +219,11 @@ export function useWorkspaceView(): WorkspaceView {
 /** The same value the hook returns, for callers outside React. */
 export function readWorkspaceViewSnapshot(): WorkspaceView {
   return getSnapshot();
+}
+
+/** The resize handle's write: the width goes in clamped, whatever the drag asked for. */
+export function setRightPanelWidth(width: number) {
+  writeWorkspaceView({ rightPanelWidth: clampRightPanelWidth(width) });
 }
 
 /** Flip one resource in or out of a saved key list. */
