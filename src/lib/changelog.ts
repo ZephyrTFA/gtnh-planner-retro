@@ -40,6 +40,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.2",
+    date: "2026-11-23",
+    headline: "Set the Large Thermal Refinery's coil and solenoids",
+    notes: [
+      "Its card has two new knobs: Solenoid, from MV to UMV, and Coil, from Cupronickel upward.",
+      "A better solenoid runs more recipes at once, 2 extra parallels per tier. An IV machine does 44 at MV and 64 at UMV.",
+      "A better coil runs faster on less power, about 2% off the time and 5% off the power per tier.",
+      "Both knobs start at the cheapest part, so a plan you saved before reads as it did.",
+      "The right column's resize edge shows a grip when you hover it, ignores a plain click, and keeps the width of a drag you release early.",
+    ],
+  },
+  {
     version: "1.7.1",
     date: "2026-11-20",
     headline: "Tasks are easier to read, and the right column can be made wider",
