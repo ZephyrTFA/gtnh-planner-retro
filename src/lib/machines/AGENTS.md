@@ -150,12 +150,15 @@ computes in float: replicate it.
 - Extreme Heat Exchanger: a fixed 20-tick cycle (`cycleTicks`) replaces the recipe's
   duration everywhere, search card included; its recipe amounts are per second. The
   dataset's 1 tick is Java's 0 clamped.
-- Multi Smelter (`MTEMultiFurnace`) and Large Fluid Extractor (`MTELargeFluidExtractor`):
-  both need a coil the 2.9 tooltips never mention, so the table carries the knob. The
+- Multi Smelter (`MTEMultiFurnace`), Large Fluid Extractor (`MTELargeFluidExtractor`) and
+  Large Thermal Refinery (`MTEIndustrialThermalCentrifuge`): all need knobs the 2.9
+  tooltips never mention, so the table carries them. The
   smelter runs GT's fixed furnace recipe (`runsGtFurnaceRecipe`) and doubles parallels per
   coil tier; the extractor's coil is speed and EU, its glass must reach the hatches' own
   tier (`glassTier`, `ctx.hatchTier`), and its glass defaults to the top rung so a plan
-  saved before the knob exists keeps running.
+  saved before the knob exists keeps running; the refinery's coil is speed and EU and its
+  solenoids (`solenoidCoil`, MV to UMV, the same ladder the extractor's scraped knob uses)
+  are 2 parallels per solenoid voltage tier.
 - Utupu-Tanuri is both `Multiblock Dehydrator` and `Vacuum Furnace`; keep both aliases on
   one entry (`minimumHeatFromSpecialValue`).
 - Naquadah Fuel Refinery: special value = minimum coil tier (`minimumFromSpecialValue`).
