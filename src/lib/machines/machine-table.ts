@@ -610,6 +610,28 @@ const HEATING_COIL_TIERS: Array<[key: string, label: string, heat: number, block
   ["eternal", "Eternal", 13501, "gregtech:gt.blockcasings5@13"],
 ];
 
+/**
+ * GT's solenoid superconductor coils (`gt.blockcasings.cyclotron_coils`).
+ * `BlockCyclotronCoils` registers metas 0-10 as MV through UMV and its
+ * `getVoltageTier(meta)` is `meta + 2`, so the rung's position is the solenoid's
+ * voltage tier minus 2 - which is what the parallels formulas below read as
+ * `tier(SOLENOID) + 2`. Keys and blocks match the dataset's own scraped control
+ * (the Large Fluid Extractor's), so a plan saved on one machine's knob carries
+ * straight to the other's.
+ */
+const SOLENOID_CONTROL = choiceControl(
+  SOLENOID,
+  msg("Solenoid"),
+  GT_TIER_NAMES.slice(2, 13).map((tier, meta) => ({
+    label: tier,
+    icon:
+      meta === 0
+        ? "gregtech:gt.blockcasings.cyclotron_coils"
+        : `gregtech:gt.blockcasings.cyclotron_coils@${meta}`,
+    name: `${tier} Solenoid Superconductor Coil`,
+  })),
+);
+
 const HEATING_COIL_CONTROL: MachineConfigControl = {
   id: "heatingCoil",
   label: msg("Heating Coil"),
@@ -1222,6 +1244,11 @@ const MACHINES: Record<string, MachineBehaviour> = {
     speed: (c) => 2.5 + 0.05 * c.tier(COIL),
     power: (c) => 0.8 * Math.pow(0.95, c.tier(COIL)),
     parallels: (c) => c.voltageTier * 8 + (c.tier(SOLENOID) + 2) * 2,
+    // Its 2.9 tooltip scraped no knob at all, so both of the structure's
+    // component ladders ride the table: 16 heating coils (speed and EU) and 6
+    // solenoids (2 parallels per solenoid voltage tier). The 6 tiered glasses
+    // are structural - checkMachine puts no number on them. (issue #11)
+    controls: [SOLENOID_CONTROL, HEATING_COIL_CONTROL],
   },
 
   // -- Flat multiblocks -----------------------------------------------------

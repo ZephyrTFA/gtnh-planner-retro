@@ -56,8 +56,8 @@ knobs.
 Coil and voltage questions land in this layer. A coil is a `machineConfigControls` entry, and
 the coil's effect is a formula in that machine's table entry: no entry means no knob and no
 bonus. The 2.9 tooltips scrape a knob only when the machine's own tooltip names it, so a machine
-whose tooltip is silent (the Multi Smelter's coil, the Large Fluid Extractor's coil and glass)
-gets its control from the table instead.
+whose tooltip is silent (the Multi Smelter's coil, the Large Fluid Extractor's coil and glass, the
+Large Thermal Refinery's coil and solenoids) gets its control from the table instead.
 
 ## Workflow 3: the solve
 

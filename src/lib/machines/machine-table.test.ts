@@ -878,4 +878,65 @@ describe("coils the dataset never scraped", () => {
     expect(gate(at({ hatchTier: 4, values: { glassTier: 1 } }))).toBeUndefined();
     expect(gate(at({ hatchTier: 5, values: { glassTier: 1 } }))).toMatch(/glass/i);
   });
+
+  /**
+   * The multiblock thermal centrifuge's 2.9 tooltip scraped neither of the
+   * component ladders its structure asks for, so the card had no knob for
+   * either and every formula read rung zero (issue #11).
+   */
+  const refinery = {
+    machineType: "Large Thermal Refinery",
+    minimumTier: "EV",
+    eut: 120,
+  } as unknown as Recipe;
+
+  it("gives the Large Thermal Refinery its solenoid and coil knobs (issue #11)", () => {
+    expect(getRecipeMachineConfigTierControls(refinery, {}).map((control) => control.id))
+      .toContain("solenoidCoil");
+    expect(getRecipeCoilTierControl(refinery, {})?.current.key).toBe("cupronickel");
+
+    // The knob's rungs are the game's own: gt.blockcasings.cyclotron_coils
+    // metas 0-10, MV to UMV, so a plan saved on the Large Fluid Extractor's
+    // scraped solenoid knob means the same rung here.
+    const solenoid = getRecipeMachineConfigTierControls(refinery, {}).find(
+      (control) => control.id === "solenoidCoil",
+    )!;
+    expect(solenoid.tiers.map((tier) => tier.key)).toEqual([
+      "mv", "hv", "ev", "iv", "luv", "zpm", "uv", "uhv", "uev", "uiv", "umv",
+    ]);
+    expect(solenoid.current.resource.id).toBe("gregtech:gt.blockcasings.cyclotron_coils");
+
+    // MTEIndustrialThermalCentrifuge.getMaxParallelRecipes: 8 per machine
+    // voltage tier plus 2 per solenoid voltage tier (MV solenoid = 2).
+    const parallels = (solenoidTier: number) =>
+      resolveCoefficient(
+        getMachineBehaviour("Large Thermal Refinery")!.parallels,
+        at({ values: { solenoidCoil: solenoidTier } }),
+        1,
+      );
+    expect(parallels(0)).toBe(5 * 8 + 2 * 2);
+    expect(parallels(2)).toBe(5 * 8 + 4 * 2);
+
+    // And the coil the same entry prices speed and EU on: 1/(2.5 + 0.05 x
+    // coil tier) duration, 0.8 x 0.95^coil tier EU, coil tier from Cupronickel.
+    expect(getMachineDurationMultiplier(refinery, { coilTier: "cupronickel" })).toBeCloseTo(
+      1 / 2.5,
+      10,
+    );
+    expect(getMachineDurationMultiplier(refinery, { coilTier: "kanthal" })).toBeCloseTo(
+      1 / 2.55,
+      10,
+    );
+    expect(getMachineEutMultiplier(refinery, { coilTier: "kanthal" })).toBeCloseTo(0.8 * 0.95, 10);
+
+    // Selecting a rung on the card moves the parallels for real.
+    expect(
+      getMachineStructuralParallels(refinery, {
+        overclockTier: "IV",
+        machineConfigTiers: { solenoidCoil: "ev" },
+      }),
+    ).toBe(
+      getMachineStructuralParallels(refinery, { overclockTier: "IV" }) + 2 * 2,
+    );
+  });
 });
