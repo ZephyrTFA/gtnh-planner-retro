@@ -8,7 +8,7 @@
  * drawing the routes it has until the answer lands (`FactoryFlow.tsx`
  * installs it and re-issues the edges). Same inputs, same pure function,
  * same routes; only the thread differs, so the routing invariant in
- * src/components/flow/CLAUDE.md (routes depend on flow-space geometry alone) still holds.
+ * src/components/flow/AGENTS.md (routes depend on flow-space geometry alone) still holds.
  *
  * Scheduling mirrors `solve-books.ts`: one job in flight and only the
  * NEWEST waiting job kept, since a drag publishes fresh geometry several

@@ -17,7 +17,7 @@
  * never `display`, so every element keeps its layout box: the router measures
  * node bounds and slot anchors through those boxes, and a card that changed
  * shape with zoom would reroute the board every time you scrolled the wheel —
- * exactly the viewport-dependent routing CLAUDE.md forbids.
+ * exactly the viewport-dependent routing AGENTS.md forbids.
  */
 
 import { boardZoomScale } from "@/lib/ui-scale";

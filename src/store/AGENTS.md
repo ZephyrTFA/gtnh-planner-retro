@@ -74,4 +74,4 @@ inherits the open one's pack. Picking a pack never edits a read-only plan.
 ## Recipe browser state
 
 `browseResource`, `browseBack` / `browseForward`, `recipeBrowserMachinePin`,
-`beginRecipeRefactor` live in factory-store; the rules are in `src/components/CLAUDE.md`.
+`beginRecipeRefactor` live in factory-store; the rules are in `src/components/AGENTS.md`.

@@ -25,4 +25,4 @@ It reads the same solve books and `buildMachineList` figures as the board.
 - Wheel over settings and hatch controls uses a non-passive capture listener so the
   page does not scroll.
 - Production groups: the Balance toggle pressed (the default) = Match, off = Ignore
-  (pinned in `PoolWorksheet.test.tsx`). Scope semantics are in `src/lib/solver/CLAUDE.md`.
+  (pinned in `PoolWorksheet.test.tsx`). Scope semantics are in `src/lib/solver/AGENTS.md`.

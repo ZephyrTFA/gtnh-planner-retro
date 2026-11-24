@@ -101,4 +101,4 @@ The verdict and ring-diagnosis code lives in `src/components/flow/` (`node-verdi
 ## Machine math
 
 `overclock.ts` and `hatch-input.ts` live here; the rules are in
-`src/lib/machines/CLAUDE.md`. Steam litres: `getNodeSteamReport` in `power-report.ts`.
+`src/lib/machines/AGENTS.md`. Steam litres: `getNodeSteamReport` in `power-report.ts`.

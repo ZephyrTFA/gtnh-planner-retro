@@ -1,6 +1,6 @@
 # App UI (src/components)
 
-The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLAUDE.md`.
+The board has its own notes in `flow/AGENTS.md`, the Pool worksheet in `pool/AGENTS.md`.
 
 ## Interface scale: two pixel spaces
 
@@ -34,7 +34,7 @@ The board has its own notes in `flow/CLAUDE.md`, the Pool worksheet in `pool/CLA
 - `RecipeBrowser.tsx` owns the query state. `browseResource` / `clearResourceBrowser` are
   the only doors in and out. A query is clauses (`recipe-query.ts`) plus ANY / ALL / ONLY
   per side; the dataset engine does the set algebra in a browser worker
-  (`src/lib/server/CLAUDE.md`).
+  (`src/lib/server/AGENTS.md`).
 - Machine chips are a persisted multi-select (`machine-map-selection.v1`), sent as
   `mapMode` + `map=`; counts always cover everything that matched.
 - Results page through machine sections in chip order. An open section short of its

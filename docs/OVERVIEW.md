@@ -1,7 +1,7 @@
 # Overview
 
 How the whole planner fits together, for anyone arriving at the repo cold. Each area's own
-rules are in the `CLAUDE.md` beside its code (the table in `AGENTS.md` points at them); this
+rules are in the `AGENTS.md` beside its code (the table in the root `AGENTS.md` points at them); this
 document is the map those areas sit on, not the rules.
 
 ## The shape of it
@@ -108,7 +108,7 @@ up and reroute crossings with escalating costs. Every tuning dial is in `flow/ro
 
 The app shell is CSS-`zoom`ed by the interface scale setting, but the board unzooms itself and
 carries the factor through its camera, because React Flow would otherwise measure cards and
-pointer in two different pixel spaces (`src/components/CLAUDE.md`).
+pointer in two different pixel spaces (`src/components/AGENTS.md`).
 
 ## Workflow 5: state and persistence
 

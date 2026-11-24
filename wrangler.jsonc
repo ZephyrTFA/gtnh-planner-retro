@@ -10,7 +10,7 @@
 // Secrets, set with `wrangler secret put`, never in this file:
 //   GITHUB_ACCESS_TOKEN  fine-grained token, Issues read/write on GITHUB_REPO only
 //   TURNSTILE_SECRET     the Turnstile widget's secret key
-// See worker/CLAUDE.md.
+// See worker/AGENTS.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gtnh-planner-retro",

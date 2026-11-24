@@ -58,7 +58,7 @@ The board must stay smooth with 100+ cards on weak PCs.
   each under a one-cell rule: share % and verdict word on the left, move up/down and
   remove keys on the right, no name. The picture spans them all.
   The machine menu lists the intersection of the sections' handlers
-  (`getSharedMachineHandlers`; model rules in `src/lib/model/CLAUDE.md`).
+  (`getSharedMachineHandlers`; model rules in `src/lib/model/AGENTS.md`).
 - A card's power section is judged with `hasCardPowerReport`, on the recipe its selected
   handler leaves behind, never the raw dataset recipe: a handler can supply the EU
   (the Multi Smelter's fixed 4 EU/t furnace recipe over a 0 EU smelt). Without a power

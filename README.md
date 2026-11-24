@@ -36,7 +36,7 @@ Community features need Supabase; see [docs/COMMUNITY.md](docs/COMMUNITY.md).
 - `src/components/`, `src/store/`: the Next.js + React Flow UI and Zustand stores.
 
 Working notes for contributors and AI agents are in [AGENTS.md](AGENTS.md) and the
-`CLAUDE.md` file in each area's folder.
+`AGENTS.md` file in each area's folder.
 
 ## License and credits
 
