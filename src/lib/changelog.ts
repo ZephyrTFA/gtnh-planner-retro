@@ -40,6 +40,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.3",
+    date: "2026-11-24",
+    headline: "Programmed circuits look like they do in the game",
+    notes: [
+      "A programmed circuit was drawn far too bright: its screen came out white and its number was faint.",
+      "It now has the game's own colours, dark digits on a grey-green screen.",
+    ],
+  },
+  {
     version: "1.7.2",
     date: "2026-11-23",
     headline: "Set the Large Thermal Refinery's coil and solenoids",
