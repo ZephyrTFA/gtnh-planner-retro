@@ -54,10 +54,9 @@ yarn-error.log*
 dev-server*.log
 .deploy-exotiserver*.sh
 
-# env files (can opt-in for committing if needed)
+# env files stay out of git, public values included; .env.example names the variables
 .env*
 !.env.example
-!.env.production
 
 # vercel
 .vercel

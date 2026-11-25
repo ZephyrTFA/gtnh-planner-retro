@@ -45,6 +45,9 @@ and GitHub are never called for a request that fails an earlier check.
   with Issues read/write on `GITHUB_REPO` and nothing else; `TURNSTILE_SECRET`, the
   widget's secret key. The widget's site key is public: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
   at build time. Without it the menu item is hidden and the CSP names no third party.
+  `tools/deploy.sh` reads both halves from the maintainer's `turnstile.env`, so they
+  always belong to one widget. No env file is tracked, public values included:
+  `.env.production` is local and `.env.example` names the variables.
 - Vars in `wrangler.jsonc`: `SITE_ORIGIN`, `GITHUB_REPO`. The Turnstile widget's allowed
   hostnames must include the site's.
 - Labels to create on the repository first (the token cannot): `from-site`, `kind:bug`,

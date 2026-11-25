@@ -23,9 +23,10 @@ const nextConfig: NextConfig = {
 
 export default function config(phase: string): NextConfig {
   // A release names its own address (canonical links, the sitemap, shared
-  // links). Without one it would publish localhost; .env.production sets it.
+  // links). Without one it would publish localhost. An untracked
+  // .env.production sets it; .env.example names the variables.
   if (phase === PHASE_PRODUCTION_BUILD && !process.env.NEXT_PUBLIC_SITE_URL?.trim()) {
-    throw new Error("NEXT_PUBLIC_SITE_URL must be set for a production build (see .env.production).");
+    throw new Error("NEXT_PUBLIC_SITE_URL must be set for a production build (in an untracked .env.production; see .env.example).");
   }
   return nextConfig;
 }

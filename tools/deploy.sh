@@ -8,6 +8,11 @@
 # maintainer's files in ~/.config/gtnh-retro (cloudflare-deploy.env, github.env,
 # turnstile.env; mode 600) and go up with the version from a temporary 600 file
 # that is shredded on exit. Nothing secret is printed.
+#
+# No env file is tracked. The build's public values come from an untracked
+# .env.production (the names are in .env.example), except the Turnstile site
+# key: it is read from turnstile.env beside the secret it pairs with, so the
+# page and the Worker can never be built from two different widgets.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -24,6 +29,18 @@ if [[ ! -f public/datasets/gtnh/datasets.manifest.json ]]; then
   echo "Refusing to deploy: no dataset in public/datasets/gtnh (run the dataset pipeline)." >&2
   exit 1
 fi
+
+if [[ ! -f .env.production ]]; then
+  echo "Refusing to deploy: no .env.production (untracked; copy .env.example and set NEXT_PUBLIC_SITE_URL)." >&2
+  exit 1
+fi
+
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=$(. ~/.config/gtnh-retro/turnstile.env && printf '%s' "$TURNSTILE_SITE_KEY")
+if [[ -z "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" ]]; then
+  echo "Refusing to deploy: turnstile.env has no TURNSTILE_SITE_KEY (the request form would be hidden)." >&2
+  exit 1
+fi
+export NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 npm run build
 
