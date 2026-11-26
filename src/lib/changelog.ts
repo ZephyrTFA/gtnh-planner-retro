@@ -40,6 +40,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.7.4",
+    date: "2026-11-26",
+    headline: "Zoomed out, a card with several recipes shows the whole machine",
+    notes: [
+      "A card running several recipes showed only its first recipe's share when zoomed out: two recipes at 50% each read 50%.",
+      "The Speed and Usage views now show the machine's total, the same figure as the card's footer.",
+      "The Power view shows the machine's draw: the hungriest recipe's at peak, every recipe's weighted by its share on average.",
+    ],
+  },
+  {
     version: "1.7.3",
     date: "2026-11-24",
     headline: "Programmed circuits look like they do in the game",
