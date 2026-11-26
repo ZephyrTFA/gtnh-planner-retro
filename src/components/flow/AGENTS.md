@@ -59,6 +59,9 @@ The board must stay smooth with 100+ cards on weak PCs.
   remove keys on the right, no name. The picture spans them all.
   The machine menu lists the intersection of the sections' handlers
   (`getSharedMachineHandlers`; model rules in `src/lib/model/AGENTS.md`).
+  Its usage, verdict and draw are the machine's, every section added up (`cardVerdict`,
+  `sharedDraw`, `sharedLitres`), on the footer and on the zoomed-out faces alike; the
+  first section's own figures never stand for the card. Exam: `RecipeNodeGlance.test.tsx`.
 - A card's power section is judged with `hasCardPowerReport`, on the recipe its selected
   handler leaves behind, never the raw dataset recipe: a handler can supply the EU
   (the Multi Smelter's fixed 4 EU/t furnace recipe over a 0 EU smelt). Without a power

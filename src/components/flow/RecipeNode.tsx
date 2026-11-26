@@ -800,12 +800,24 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
       ? (cropsNhManagerEuPerHarvest(setup) * crops) / ticks
       : 0;
   })();
-  const glanceDrawEuT = powerReport
-    ? powerDrawEuT(powerReport, projectNode) * drawScale
-    : 0;
-  const glanceSteamLs = steamReport
-    ? steamDrawLitresPerSecond(steamReport, projectNode) * drawScale
-    : 0;
+  // The zoomed-out faces print the CARD's figures, the ones the footer prints
+  // zoomed in. A shared machine is one machine: its usage, verdict and draw
+  // cover every recipe on it (cardVerdict, sharedDraw, sharedLitres), never
+  // the first section's alone.
+  const glanceDrawEuT = sharedDraw
+    ? averageDraw
+      ? sharedDraw.avgEuT
+      : sharedDraw.peakEuT
+    : powerReport
+      ? powerDrawEuT(powerReport, projectNode) * drawScale
+      : 0;
+  const glanceSteamLs = sharedLitres
+    ? averageDraw
+      ? sharedLitres.avg
+      : sharedLitres.peak
+    : steamReport
+      ? steamDrawLitresPerSecond(steamReport, projectNode) * drawScale
+      : 0;
   // A generator's power view answers with what it MAKES, signed and green
   // like its row in the MACHINES ledger; a parasitic one shows its draw the
   // way any machine does. Both ride the PEAK/AVG switch through drawScale.
@@ -826,9 +838,9 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
   // under the usage view would read as a bottleneck that isn't there.
   const glanceSurface: NodeSurfaceColor | undefined =
     glanceMode === "status"
-      ? heatmapColorFor(result?.utilization, projectNode.enabled !== false)
+      ? heatmapColorFor(sharedUsage ?? result?.utilization, projectNode.enabled !== false)
       : glanceMode === "usage"
-        ? glanceToneSurface(verdictWord(verdict, isCustomRateNode, powerStalled, steamGate !== undefined).tone)
+        ? glanceToneSurface(verdictWord(cardVerdict, isCustomRateNode, powerStalled, steamGate !== undefined).tone)
         : glanceMode === "power"
           ? powerReport
             ? glanceSurfaceFor(GT_TIER_COLORS[powerReport.tier].background)
@@ -1556,13 +1568,13 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           }
           accent={glanceAccent}
           text={
-            verdict.kind === "off" || verdict.kind === "no-recipe" ? (
+            cardVerdict.kind === "off" || cardVerdict.kind === "no-recipe" ? (
               "—"
             ) : (
               <MotionNumberText
-                values={[verdict.pct]}
+                values={[cardVerdict.pct]}
                 render={(shown) => {
-                  const pct = shown[0] ?? verdict.pct;
+                  const pct = shown[0] ?? cardVerdict.pct;
                   return `${pct > 0 && pct < 0.5 ? formatRate(pct, 1) : formatPct(pct)}%`;
                 }}
               />
@@ -1570,7 +1582,7 @@ function RecipeNodeComponent({ data, selected, controlsOnly = false, renderEdito
           }
           word={
             glanceMode === "usage"
-              ? verdictWord(verdict, isCustomRateNode, powerStalled, steamGate !== undefined).word
+              ? verdictWord(cardVerdict, isCustomRateNode, powerStalled, steamGate !== undefined).word
               : undefined
           }
         />
