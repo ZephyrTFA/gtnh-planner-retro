@@ -2,7 +2,8 @@
  * What's new, in players' words.
  *
  * Read by people planning factories, not by developers: say what changed on
- * THEIR board, never how it was built. Newest first. ONE entry per release,
+ * THEIR board, never how it was built. A note states what the app does now;
+ * it does not retell the fault that was there before. Newest first. ONE entry per release,
  * where a release is a deploy to the live site, not a commit (see version.ts).
  *
  * Default to a short headline and at most four one-sentence notes. Put long
@@ -44,8 +45,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-11-26",
     headline: "Zoomed out, a card with several recipes shows the whole machine",
     notes: [
-      "A card running several recipes showed only its first recipe's share when zoomed out: two recipes at 50% each read 50%.",
-      "The Speed and Usage views now show the machine's total, the same figure as the card's footer.",
+      "The Speed and Usage views show the machine's total across all its recipes, the same figure as the card's footer.",
       "The Power view shows the machine's draw: the hungriest recipe's at peak, every recipe's weighted by its share on average.",
     ],
   },
